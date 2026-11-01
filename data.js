@@ -12,6 +12,10 @@ const analysisTools = [
     description: "An audio review tool I built to quality-check 795 participant speech recordings for BHR dementia research. It renders each waveform with zoom and playback-speed controls, lets reviewers drag to annotate time ranges (green flags, red flags, analysis ideas, questions, transcription notes), flag issues like crosstalk, cutoffs, accents, or background noise, rate recordings 1–5, verify transcriptions, and export everything to CSV. Interface preview only; it runs against a local server and audio files.",
     file: "analysis-tools/waveform-annotation-platform.html",
     languages: ["JavaScript"], topics: ["Dementia Research"] },
+  { title: "Emotion Arc Viewer",
+    description: "A real analysis tool I built to understand and keep the emotion data Hume's API returns. The conversations are open-sourced from Hume's API: one chat with Hume's voice AI, exported as 109 segments covering different parts of the same conversation. For each segment it charts the emotional arc of my 1,586 replies and shows what the AI said right before, what I said back, the top 5 of Hume's 48 emotion scores, and the segment's mean intensity and volatility.",
+    file: "analysis-tools/emotion-arc-viewer/index.html",
+    languages: ["JavaScript"], topics: ["Large Language Models"] },
   // { title: "Tool name", description: "One-line description.", file: "analysis-tools/tool-name.html",
   //   languages: ["Python"], topics: ["Dementia Research"] },
 ];
