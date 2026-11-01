@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anya DeCarlo — Portfolio</title>
+  <meta name="description" content="Selected work by Anya DeCarlo.">
+  <style>
+    :root { --bg:#fafaf8; --fg:#1a1a1a; --muted:#6b6b6b; --line:#e4e4e0; --accent:#0d4464; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
+    .wrap { max-width:1100px; margin:0 auto; padding:72px 24px; }
+    header h1 { font-size:2.6rem; font-weight:700; letter-spacing:-0.02em; }
+    header p { color:var(--muted); font-size:1.1rem; margin-top:8px; max-width:600px; }
+    header nav { margin-top:20px; display:flex; gap:20px; }
+    header nav a { color:var(--accent); text-decoration:none; font-weight:500; }
+    header nav a:hover { text-decoration:underline; }
+    h2 { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); margin:64px 0 24px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:28px; }
+    .card { display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; transition:transform .15s, box-shadow .15s; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.08); }
+    .thumb { position:relative; height:200px; overflow:hidden; background:#f0f0ec; border-bottom:1px solid var(--line); }
+    .thumb iframe { width:400%; height:400%; transform:scale(.25); transform-origin:0 0; border:0; pointer-events:none; }
+    .meta { padding:16px 18px 20px; }
+    .meta h3 { font-size:1.05rem; }
+    .meta p { color:var(--muted); font-size:.92rem; margin-top:4px; }
+    .empty { color:var(--muted); font-style:italic; }
+    footer { margin-top:80px; color:var(--muted); font-size:.85rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Anya DeCarlo</h1>
+      <p>Selected projects, tools, and interactive pieces.</p>
+      <nav>
+        <a href="https://github.com/anya-decarlo">GitHub</a>
+      </nav>
+    </header>
+
+    <h2>Work</h2>
+    <div class="grid" id="grid"></div>
+
+    <footer>&copy; <span id="year"></span> Anya DeCarlo</footer>
+  </div>
+
+  <script>
+    // Add a project: drop the file in /work and add an entry here.
+    const projects = [
+      // { title: "Project name", description: "One-line description.", file: "work/project-name.html" },
+    ];
+
+    const grid = document.getElementById("grid");
+    if (!projects.length) {
+      grid.innerHTML = '<p class="empty">Projects coming soon.</p>';
+    }
+    for (const p of projects) {
+      const a = document.createElement("a");
+      a.className = "card";
+      a.href = p.file;
+      a.innerHTML = `
+        <div class="thumb"><iframe src="${p.file}" loading="lazy" tabindex="-1" title="${p.title}"></iframe></div>
+        <div class="meta"><h3>${p.title}</h3><p>${p.description || ""}</p></div>`;
+      grid.appendChild(a);
+    }
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
