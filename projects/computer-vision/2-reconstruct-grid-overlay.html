@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔮 Reconstruct with Grid Overlay</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; background: #111; color: white; text-align: center; }
+        #status { color: #0f0; margin-top: 20px; font-size: 20px; }
+        #canvasContainer { position: relative; display: inline-block; margin-top: 20px; }
+        #canvas { border: 3px solid #0f0; }
+        #gridCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+        button { font-size: 20px; padding: 15px 30px; margin: 10px; cursor: pointer; border: none; border-radius: 8px; background: #FFD700; color: #000; }
+    </style>
+</head>
+<body>
+    <h1>🔮 Reconstruct with Grid Overlay (V3)</h1>
+    <p>Upload CSV with gridX, gridY, quadrant, distance columns!</p>
+    <input type="file" id="csvInput" accept=".csv">
+    <div id="status"></div>
+    <br>
+    <div id="canvasContainer">
+        <canvas id="canvas"></canvas>
+        <canvas id="gridCanvas"></canvas>
+    </div>
+    
+    <script>
+        document.getElementById('csvInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('status').textContent = '⏳ Reading CSV...';
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const csv = event.target.result;
+                    const lines = csv.trim().split('\n');
+                    
+                    // Skip header
+                    const pixels = [];
+                    let maxX = 0;
+                    let maxY = 0;
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const parts = lines[i].split(',');
+                        const x = parseInt(parts[0]);
+                        const y = parseInt(parts[1]);
+                        const gridX = parseInt(parts[2]);
+                        const gridY = parseInt(parts[3]);
+                        const distance = parseFloat(parts[4]);
+                        const quadrant = parts[5];
+                        const hex = parts[6];
+                        
+                        pixels.push({ x, y, gridX, gridY, distance, quadrant, hex });
+                        if (x > maxX) maxX = x;
+                        if (y > maxY) maxY = y;
+                    }
+                    
+                    const width = maxX + 1;
+                    const height = maxY + 1;
+                    
+                    document.getElementById('status').textContent = 
+                        '🎨 Reconstructing ' + width + ' × ' + height + ' (' + pixels.length.toLocaleString() + ' pixels)...';
+                    
+                    const canvas = document.getElementById('canvas');
+                    const gridCanvas = document.getElementById('gridCanvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    gridCanvas.width = width;
+                    gridCanvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    const gridCtx = gridCanvas.getContext('2d');
+                    
+                    // Draw each pixel!
+                    setTimeout(function() {
+                        // Layer 0: Original image
+                        for (let i = 0; i < pixels.length; i++) {
+                            const p = pixels[i];
+                            ctx.fillStyle = p.hex;
+                            ctx.fillRect(p.x, p.y, 1, 1);
+                        }
+                        
+                        // Layer 1: Grid overlay (semi-transparent yellow)
+                        gridCtx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+                        gridCtx.lineWidth = 1;
+                        
+                        // Draw vertical grid lines every 10 pixels
+                        for (let x = 0; x <= width; x += 10) {
+                            gridCtx.beginPath();
+                            gridCtx.moveTo(x, 0);
+                            gridCtx.lineTo(x, height);
+                            gridCtx.stroke();
+                        }
+                        
+                        // Draw horizontal grid lines every 10 pixels
+                        for (let y = 0; y <= height; y += 10) {
+                            gridCtx.beginPath();
+                            gridCtx.moveTo(0, y);
+                            gridCtx.lineTo(width, y);
+                            gridCtx.stroke();
+                        }
+                        
+                        document.getElementById('status').textContent = 
+                            '✅ RECONSTRUCTED WITH GRID! ' + width + ' × ' + height + ' = ' + pixels.length.toLocaleString() + ' pixels!';
+                    }, 100);
+                };
+                reader.readAsText(file);
+            }
+        });
+    </script>
+</body>
+</html>
