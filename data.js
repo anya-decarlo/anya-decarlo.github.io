@@ -49,6 +49,9 @@ const projects = [
 
 // CREATIVE — fun HTMLs, no tags. Files go in /creative.
 const creative = [
+  { title: "Hall of Mirrors",
+    description: "A website redesign concept for William Lasry, built with my own pixel reconstructor. I pulled the LASRY display wordmark off his site, extracted every pixel, rebuilt it as an SVG with my Quadrant Hex Reconstructor, and set it inside a hall of glassy blue mirror panels that shimmer at random, tilt in 3D as you move your mouse, and glow under the cursor.",
+    file: "creative/hall-of-mirrors/index.html" },
   // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
 ];
 

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall of Mirrors</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .mirror-hall {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            perspective: 1000px;
+        }
+
+        .reflection-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            transform-style: preserve-3d;
+        }
+
+        .mirror-panel {
+            background: linear-gradient(
+                135deg,
+                rgba(65, 126, 172, 0.15) 0%,
+                rgba(56, 128, 179, 0.08) 50%,
+                rgba(54, 119, 165, 0.2) 100%
+            );
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(65, 126, 172, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mirror-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                var(--shimmer-angle, 45deg),
+                transparent 30%,
+                rgba(65, 126, 172, 0.3) 50%,
+                transparent 70%
+            );
+            animation: shimmer var(--shimmer-duration, 3s) infinite;
+            animation-delay: var(--shimmer-delay, 0s);
+        }
+
+        .mirror-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at var(--x, 50%) var(--y, 50%),
+                rgba(65, 126, 172, 0.4) 0%,
+                transparent 50%
+            );
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mirror-panel:hover::after {
+            opacity: 1;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+
+        .depth-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .reflection {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                rgba(65, 126, 172, 0.9) 0%,
+                rgba(56, 128, 179, 0.5) 50%,
+                transparent 100%
+            );
+            filter: blur(2px);
+            animation: float 12s infinite ease-in-out;
+            animation-delay: calc(var(--float-delay) * 0.5s);
+            transition: opacity 2s ease;
+        }
+
+        .reflection.fade-out {
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(-30px) scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                rgba(65, 126, 172, 0.6) 0%,
+                rgba(56, 128, 179, 0.3) 40%,
+                transparent 70%
+            );
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 2s ease;
+            mix-blend-mode: screen;
+            opacity: 1;
+        }
+
+        .cursor-glow.fade-out {
+            opacity: 0;
+        }
+
+        .infinite-reflection {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 100px,
+                    rgba(65, 126, 172, 0.08) 100px,
+                    rgba(65, 126, 172, 0.08) 101px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 100px,
+                    rgba(65, 126, 172, 0.08) 100px,
+                    rgba(65, 126, 172, 0.08) 101px
+                );
+            animation: perspective-shift 20s infinite ease-in-out;
+        }
+
+        @keyframes perspective-shift {
+            0%, 100% {
+                transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+            }
+            25% {
+                transform: perspective(1000px) rotateX(2deg) rotateY(2deg);
+            }
+            50% {
+                transform: perspective(1000px) rotateX(0deg) rotateY(-2deg);
+            }
+            75% {
+                transform: perspective(1000px) rotateX(-2deg) rotateY(0deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mirror-hall">
+        <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; display: flex; align-items: center; justify-content: center;">
+            <img src="reconstructed-font-6.svg" alt="Background Illuminator" style="max-width: 90vw; max-height: 90vh; width: auto; height: auto; opacity: 0.15; filter: blur(1px) brightness(1.5) drop-shadow(0 0 80px rgba(65, 126, 172, 0.8)) drop-shadow(0 0 120px rgba(56, 128, 179, 0.6)); mix-blend-mode: screen;">
+        </div>
+        <div class="infinite-reflection"></div>
+        <div class="reflection-layer" id="mirrorGrid"></div>
+        <div class="depth-layer" id="depthLayer"></div>
+        <div class="cursor-glow" id="cursorGlow"></div>
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none;">
+            <img src="reconstructed-font-2.svg" alt="LASRY" style="max-width: 80vw; height: auto; opacity: 0.95; filter: drop-shadow(0 0 40px rgba(65, 126, 172, 0.6)) drop-shadow(0 0 80px rgba(255, 255, 255, 0.3));">
+        </div>
+    </div>
+
+    <script>
+        const mirrorGrid = document.getElementById('mirrorGrid');
+        const depthLayer = document.getElementById('depthLayer');
+        const cursorGlow = document.getElementById('cursorGlow');
+
+        // Create mirror panels with stochastic shimmer
+        for (let i = 0; i < 25; i++) {
+            const panel = document.createElement('div');
+            panel.className = 'mirror-panel';
+            panel.style.setProperty('--delay', i);
+            
+            // Stochastic shimmer properties
+            const shimmerDelay = Math.random() * 5; // Random delay 0-5s
+            const shimmerDuration = 2 + Math.random() * 3; // Random duration 2-5s
+            const shimmerAngle = Math.random() * 360; // Random angle
+            
+            panel.style.setProperty('--shimmer-delay', `${shimmerDelay}s`);
+            panel.style.setProperty('--shimmer-duration', `${shimmerDuration}s`);
+            panel.style.setProperty('--shimmer-angle', `${shimmerAngle}deg`);
+            
+            panel.addEventListener('mousemove', (e) => {
+                const rect = panel.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                panel.style.setProperty('--x', `${x}%`);
+                panel.style.setProperty('--y', `${y}%`);
+            });
+            
+            mirrorGrid.appendChild(panel);
+        }
+
+        // Cursor tracking
+        document.addEventListener('mousemove', (e) => {
+            cursorGlow.style.left = `${e.clientX}px`;
+            cursorGlow.style.top = `${e.clientY}px`;
+        });
+
+        // Add subtle rotation to reflection layer based on mouse
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 10;
+            const y = (e.clientY / window.innerHeight - 0.5) * 10;
+            mirrorGrid.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+        });
+    </script>
+</body>
+</html>
