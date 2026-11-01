@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotional Experiences</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a0033 50%, #2d1b69 100%);
+            min-height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 72px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% {
+                filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.5));
+            }
+            50% {
+                filter: drop-shadow(0 0 40px rgba(118, 75, 162, 0.8));
+            }
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .emotion-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .emotion-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .emotion-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .emotion-card:hover::before {
+            opacity: 1;
+        }
+
+        .emotion-number {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .emotion-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .emotion-description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .emotion-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .experience-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .experience-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.8;
+        }
+
+        /* Color accents for each emotion */
+        .emotion-card[data-emotion="calm"] { border-left: 4px solid #4a90e2; }
+        .emotion-card[data-emotion="joy"] { border-left: 4px solid #ff6b6b; }
+        .emotion-card[data-emotion="nostalgia"] { border-left: 4px solid #a29bfe; }
+        .emotion-card[data-emotion="organic"] { border-left: 4px solid #dc143c; }
+        .emotion-card[data-emotion="melting"] { border-left: 4px solid #e67e22; }
+        .emotion-card[data-emotion="depth"] { border-left: 4px solid #6495ed; }
+        .emotion-card[data-emotion="precision"] { border-left: 4px solid #ffd700; }
+        .emotion-card[data-emotion="loudness"] { border-left: 4px solid #ff00ff; }
+        .emotion-card[data-emotion="chaos"] { border-left: 4px solid #ff6b9d; }
+        .emotion-card[data-emotion="awareness"] { border-left: 4px solid #00ff00; }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 48px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Emotional Experiences</h1>
+            <p class="subtitle">10 distinct feelings translated into code</p>
+        </header>
+
+        <div class="grid">
+            <!-- 1. Overwhelming Calm -->
+            <div class="emotion-card" data-emotion="calm">
+                <div class="emotion-number">01</div>
+                <h2 class="emotion-title">Overwhelming Calm</h2>
+                <p class="emotion-description">
+                    Dense calm. Like being underwater at night, surrounded by bioluminescence. Slow movements, deep blues, particles floating in layers of depth.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">60s cycles</span>
+                    <span class="tag">90 particles</span>
+                    <span class="tag">4 depth layers</span>
+                    <span class="tag">meditative</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('overwhelming-calm.html')">
+                    Experience Calm →
+                </button>
+            </div>
+
+            <!-- 2. Aggressive Joy -->
+            <div class="emotion-card" data-emotion="joy">
+                <div class="emotion-number">02</div>
+                <h2 class="emotion-title">Aggressive Joy</h2>
+                <p class="emotion-description">
+                    Violent happiness. Colors that hurt to look at. Everything too fast, too bright, too much. Joy attacking you with confetti and screen shake.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">0.3s cycles</span>
+                    <span class="tag">100% saturation</span>
+                    <span class="tag">screen shake</span>
+                    <span class="tag">overwhelming</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('aggressive-joy.html')">
+                    Experience Joy →
+                </button>
+            </div>
+
+            <!-- 3. Nostalgic Future -->
+            <div class="emotion-card" data-emotion="nostalgia">
+                <div class="emotion-number">03</div>
+                <h2 class="emotion-title">Nostalgic Future</h2>
+                <p class="emotion-description">
+                    Remembering what hasn't happened yet. VHS scan lines over holographic interfaces. Blade Runner meets Windows 95. The 80s vision of now.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">VHS artifacts</span>
+                    <span class="tag">CRT curvature</span>
+                    <span class="tag">retro-futurism</span>
+                    <span class="tag">temporal confusion</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('nostalgic-future.html')">
+                    Experience Nostalgia →
+                </button>
+            </div>
+
+            <!-- 4. Organic Machine -->
+            <div class="emotion-card" data-emotion="organic">
+                <div class="emotion-number">04</div>
+                <h2 class="emotion-title">Organic Machine</h2>
+                <p class="emotion-description">
+                    Technology that breathes. Circuits that pulse like veins. Everything following heartbeat rhythm. The line between biological and technological, dissolved.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">heartbeat timing</span>
+                    <span class="tag">vein circuits</span>
+                    <span class="tag">breathing</span>
+                    <span class="tag">alive</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('organic-machine.html')">
+                    Experience Organic →
+                </button>
+            </div>
+
+            <!-- 5. Melting Reality -->
+            <div class="emotion-card" data-emotion="melting">
+                <div class="emotion-number">05</div>
+                <h2 class="emotion-title">Melting Reality</h2>
+                <p class="emotion-description">
+                    Solid things becoming liquid. Boundaries dissolving. Shapes dripping, borders blurring. Like watching ice cream melt in slow motion.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">SVG filters</span>
+                    <span class="tag">morphing shapes</span>
+                    <span class="tag">liquid motion</span>
+                    <span class="tag">dissolution</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('melting-reality.html')">
+                    Experience Melting →
+                </button>
+            </div>
+
+            <!-- 6. Infinite Depth -->
+            <div class="emotion-card" data-emotion="depth">
+                <div class="emotion-number">06</div>
+                <h2 class="emotion-title">Infinite Depth</h2>
+                <p class="emotion-description">
+                    Layers that never end. 10 parallax layers responding to your mouse. Looking into a canyon forever. Scroll to dive deeper. It never ends.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">10 layers</span>
+                    <span class="tag">mouse parallax</span>
+                    <span class="tag">3D transforms</span>
+                    <span class="tag">endless</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('infinite-depth.html')">
+                    Experience Depth →
+                </button>
+            </div>
+
+            <!-- 7. Crystalline Precision -->
+            <div class="emotion-card" data-emotion="precision">
+                <div class="emotion-number">07</div>
+                <h2 class="emotion-title">Crystalline Precision</h2>
+                <p class="emotion-description">
+                    Perfect geometry. Mathematical beauty. Fibonacci sequences, golden ratio, Metatron's Cube. Everything pixel-perfect, mathematically exact.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">sacred geometry</span>
+                    <span class="tag">φ = 1.618...</span>
+                    <span class="tag">perfect angles</span>
+                    <span class="tag">mathematical</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('crystalline-precision.html')">
+                    Experience Precision →
+                </button>
+            </div>
+
+            <!-- 8. Silent Loudness -->
+            <div class="emotion-card" data-emotion="loudness">
+                <div class="emotion-number">08</div>
+                <h2 class="emotion-title">Silent Loudness</h2>
+                <p class="emotion-description">
+                    Visual noise that feels like sound. Colors vibrating so fast they scream. Moiré patterns, rapid flashing, synesthesia. It feels loud even with no audio.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">0.05s flicker</span>
+                    <span class="tag">moiré patterns</span>
+                    <span class="tag">visual noise</span>
+                    <span class="tag">synesthesia</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('silent-loudness.html')">
+                    Experience Loudness →
+                </button>
+            </div>
+
+            <!-- 9. Comfortable Chaos -->
+            <div class="emotion-card" data-emotion="chaos">
+                <div class="emotion-number">09</div>
+                <h2 class="emotion-title">Comfortable Chaos</h2>
+                <p class="emotion-description">
+                    Disorder that feels safe. A messy desk that's actually organized. Everything moving at different speeds, different angles, but nothing collides.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">collision detection</span>
+                    <span class="tag">random angles</span>
+                    <span class="tag">cozy</span>
+                    <span class="tag">safe disorder</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('comfortable-chaos.html')">
+                    Experience Chaos →
+                </button>
+            </div>
+
+            <!-- 10. Hyper-Awareness -->
+            <div class="emotion-card" data-emotion="awareness">
+                <div class="emotion-number">10</div>
+                <h2 class="emotion-title">Hyper-Awareness</h2>
+                <p class="emotion-description">
+                    Too much information, all at once. Seeing the Matrix code. Data streams, counters, graphs, logs. Everything updating constantly. Information overload.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">10ms updates</span>
+                    <span class="tag">data streams</span>
+                    <span class="tag">real-time</span>
+                    <span class="tag">overwhelming</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('hyper-awareness.html')">
+                    Experience Awareness →
+                </button>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p class="footer-text">
+                10 distinct feelings translated into code<br>
+                Each one technically precise, emotionally specific<br>
+                Created in 31 minutes of pure flow<br>
+                January 16, 2026 • 5:06 AM - 5:37 AM
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function openExperience(filename) {
+            window.location.href = filename;
+        }
+
+        // Add subtle animation on scroll
+        const cards = document.querySelectorAll('.emotion-card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = `all 0.6s ease ${index * 0.1}s`;
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

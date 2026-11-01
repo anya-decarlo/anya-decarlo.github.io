@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comfortable Chaos</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Indie+Flower&family=Permanent+Marker&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* SCATTERED SHAPES */
+        .shape {
+            position: absolute;
+            border: 3px solid;
+            animation: gentleFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes gentleFloat {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(20px, -15px) rotate(5deg);
+            }
+            50% {
+                transform: translate(-10px, 10px) rotate(-3deg);
+            }
+            75% {
+                transform: translate(15px, -5px) rotate(4deg);
+            }
+        }
+
+        /* RANDOM TEXT SNIPPETS */
+        .text-snippet {
+            position: absolute;
+            font-family: 'Comic Neue', cursive;
+            color: rgba(0, 0, 0, 0.6);
+            animation: textBob 15s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes textBob {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(2deg);
+            }
+        }
+
+        /* DOODLES */
+        .doodle {
+            position: absolute;
+            stroke-width: 2;
+            fill: none;
+            animation: doodleWiggle 12s ease-in-out infinite;
+        }
+
+        @keyframes doodleWiggle {
+            0%, 100% {
+                transform: rotate(0deg) scale(1);
+            }
+            33% {
+                transform: rotate(3deg) scale(1.02);
+            }
+            66% {
+                transform: rotate(-3deg) scale(0.98);
+            }
+        }
+
+        /* STICKY NOTES */
+        .sticky-note {
+            position: absolute;
+            width: 150px;
+            padding: 15px;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            font-family: 'Indie Flower', cursive;
+            font-size: 14px;
+            color: #2d3436;
+            animation: stickyFloat 18s ease-in-out infinite;
+            transform-origin: top center;
+        }
+
+        @keyframes stickyFloat {
+            0%, 100% {
+                transform: rotate(-2deg) translateY(0);
+            }
+            50% {
+                transform: rotate(2deg) translateY(-8px);
+            }
+        }
+
+        /* SCATTERED DOTS */
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+            animation: dotDrift 25s ease-in-out infinite;
+        }
+
+        @keyframes dotDrift {
+            0%, 100% {
+                transform: translate(0, 0);
+            }
+            25% {
+                transform: translate(15px, -10px);
+            }
+            50% {
+                transform: translate(-8px, 12px);
+            }
+            75% {
+                transform: translate(10px, -15px);
+            }
+        }
+
+        /* SQUIGGLY LINES */
+        .squiggle {
+            position: absolute;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            animation: squiggleMove 14s ease-in-out infinite;
+        }
+
+        @keyframes squiggleMove {
+            0%, 100% {
+                transform: translateX(0) rotate(0deg);
+            }
+            50% {
+                transform: translateX(10px) rotate(5deg);
+            }
+        }
+
+        /* RANDOM ICONS */
+        .icon {
+            position: absolute;
+            font-size: 40px;
+            animation: iconBounce 16s ease-in-out infinite;
+        }
+
+        @keyframes iconBounce {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg) scale(1);
+            }
+            25% {
+                transform: translateY(-12px) rotate(5deg) scale(1.05);
+            }
+            50% {
+                transform: translateY(0) rotate(-5deg) scale(1);
+            }
+            75% {
+                transform: translateY(-8px) rotate(3deg) scale(1.03);
+            }
+        }
+
+        /* PAPER SCRAPS */
+        .paper-scrap {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px dashed rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.7);
+            animation: paperFloat 20s ease-in-out infinite;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes paperFloat {
+            0%, 100% {
+                transform: rotate(3deg) translateY(0);
+            }
+            50% {
+                transform: rotate(-3deg) translateY(-10px);
+            }
+        }
+
+        /* COFFEE STAINS */
+        .coffee-stain {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139, 69, 19, 0.2) 0%, rgba(139, 69, 19, 0.05) 70%, transparent 100%);
+            animation: stainPulse 30s ease-in-out infinite;
+        }
+
+        @keyframes stainPulse {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        /* CENTRAL MESSAGE */
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Permanent Marker', cursive;
+            font-size: 48px;
+            color: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 100;
+            animation: messageWobble 8s ease-in-out infinite;
+        }
+
+        @keyframes messageWobble {
+            0%, 100% {
+                transform: translate(-50%, -50%) rotate(-1deg);
+            }
+            50% {
+                transform: translate(-50%, -50%) rotate(1deg);
+            }
+        }
+
+        /* ORGANIZED CHAOS LABEL */
+        .label {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Comic Neue', cursive;
+            font-size: 16px;
+            color: rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <!-- Scattered elements container -->
+    <div id="chaos"></div>
+
+    <!-- Central message -->
+    <div class="message">messy<br>but cozy</div>
+
+    <!-- Label -->
+    <div class="label">✨ organized chaos ✨</div>
+
+    <script>
+        // Cozy color palette - pastels and muted tones
+        const cozyColors = [
+            '#ff6b6b', // Coral
+            '#4ecdc4', // Turquoise
+            '#45b7d1', // Sky blue
+            '#f9ca24', // Yellow
+            '#6c5ce7', // Purple
+            '#fd79a8', // Pink
+            '#a29bfe', // Lavender
+            '#00b894', // Mint
+            '#fdcb6e', // Orange
+            '#e17055', // Terracotta
+        ];
+
+        // Random text snippets
+        const snippets = [
+            'ideas', 'notes', 'thoughts', 'dreams', 'plans',
+            'doodles', 'sketches', 'reminders', 'lists', 'scribbles',
+            'coffee', 'music', 'books', 'art', 'chaos',
+            'creative', 'messy', 'cozy', 'warm', 'safe'
+        ];
+
+        // Random icons/emojis
+        const icons = [
+            '☕', '📝', '✏️', '🎨', '📚', '🎵', '⭐', '💡', '🌙', '☀️',
+            '🌸', '🍃', '🎭', '🎪', '🎨', '✨', '💫', '🌈', '🎯', '🎲'
+        ];
+
+        const container = document.getElementById('chaos');
+
+        // Generate scattered shapes
+        function generateShapes() {
+            const shapeTypes = ['circle', 'square', 'triangle'];
+            
+            for (let i = 0; i < 30; i++) {
+                const shape = document.createElement('div');
+                shape.className = 'shape';
+                
+                const type = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+                const size = 30 + Math.random() * 80;
+                
+                shape.style.width = size + 'px';
+                shape.style.height = size + 'px';
+                shape.style.left = Math.random() * 100 + '%';
+                shape.style.top = Math.random() * 100 + '%';
+                shape.style.borderColor = cozyColors[Math.floor(Math.random() * cozyColors.length)];
+                shape.style.animationDelay = Math.random() * 20 + 's';
+                shape.style.animationDuration = (15 + Math.random() * 10) + 's';
+                shape.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                if (type === 'circle') {
+                    shape.style.borderRadius = '50%';
+                } else if (type === 'triangle') {
+                    shape.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+                }
+                
+                container.appendChild(shape);
+            }
+        }
+
+        // Generate text snippets
+        function generateTextSnippets() {
+            for (let i = 0; i < 25; i++) {
+                const text = document.createElement('div');
+                text.className = 'text-snippet';
+                text.textContent = snippets[Math.floor(Math.random() * snippets.length)];
+                text.style.left = Math.random() * 90 + '%';
+                text.style.top = Math.random() * 90 + '%';
+                text.style.fontSize = (14 + Math.random() * 20) + 'px';
+                text.style.transform = `rotate(${-15 + Math.random() * 30}deg)`;
+                text.style.animationDelay = Math.random() * 15 + 's';
+                text.style.fontWeight = Math.random() > 0.5 ? '700' : '400';
+                
+                container.appendChild(text);
+            }
+        }
+
+        // Generate sticky notes
+        function generateStickyNotes() {
+            const noteColors = [
+                'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)',
+                'linear-gradient(135deg, #fab1a0 0%, #ff7675 100%)',
+                'linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)',
+                'linear-gradient(135deg, #55efc4 0%, #00b894 100%)',
+                'linear-gradient(135deg, #fd79a8 0%, #e84393 100%)',
+            ];
+            
+            const noteTexts = [
+                'remember this!',
+                'important idea',
+                'to do later',
+                'creative thought',
+                'random note',
+                'don\'t forget',
+                'maybe someday',
+                'good vibes only'
+            ];
+            
+            for (let i = 0; i < 12; i++) {
+                const note = document.createElement('div');
+                note.className = 'sticky-note';
+                note.textContent = noteTexts[Math.floor(Math.random() * noteTexts.length)];
+                note.style.left = Math.random() * 85 + '%';
+                note.style.top = Math.random() * 85 + '%';
+                note.style.background = noteColors[Math.floor(Math.random() * noteColors.length)];
+                note.style.transform = `rotate(${-10 + Math.random() * 20}deg)`;
+                note.style.animationDelay = Math.random() * 18 + 's';
+                
+                container.appendChild(note);
+            }
+        }
+
+        // Generate scattered dots
+        function generateDots() {
+            for (let i = 0; i < 50; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                const size = 5 + Math.random() * 15;
+                dot.style.width = size + 'px';
+                dot.style.height = size + 'px';
+                dot.style.left = Math.random() * 100 + '%';
+                dot.style.top = Math.random() * 100 + '%';
+                dot.style.background = cozyColors[Math.floor(Math.random() * cozyColors.length)];
+                dot.style.animationDelay = Math.random() * 25 + 's';
+                
+                container.appendChild(dot);
+            }
+        }
+
+        // Generate squiggly lines (SVG)
+        function generateSquiggles() {
+            for (let i = 0; i < 15; i++) {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('class', 'squiggle');
+                svg.setAttribute('width', '200');
+                svg.setAttribute('height', '100');
+                svg.style.left = Math.random() * 80 + '%';
+                svg.style.top = Math.random() * 80 + '%';
+                svg.style.animationDelay = Math.random() * 14 + 's';
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const d = `M 10 50 Q ${30 + Math.random() * 40} ${20 + Math.random() * 60}, ${70 + Math.random() * 40} 50 T 190 50`;
+                path.setAttribute('d', d);
+                path.setAttribute('stroke', cozyColors[Math.floor(Math.random() * cozyColors.length)]);
+                
+                svg.appendChild(path);
+                container.appendChild(svg);
+            }
+        }
+
+        // Generate random icons
+        function generateIcons() {
+            for (let i = 0; i < 20; i++) {
+                const icon = document.createElement('div');
+                icon.className = 'icon';
+                icon.textContent = icons[Math.floor(Math.random() * icons.length)];
+                icon.style.left = Math.random() * 90 + '%';
+                icon.style.top = Math.random() * 90 + '%';
+                icon.style.animationDelay = Math.random() * 16 + 's';
+                icon.style.transform = `rotate(${-20 + Math.random() * 40}deg)`;
+                
+                container.appendChild(icon);
+            }
+        }
+
+        // Generate paper scraps
+        function generatePaperScraps() {
+            const scrapTexts = ['✓', '→', '★', '?', '!', '...', 'yes', 'no', 'maybe'];
+            
+            for (let i = 0; i < 15; i++) {
+                const scrap = document.createElement('div');
+                scrap.className = 'paper-scrap';
+                scrap.textContent = scrapTexts[Math.floor(Math.random() * scrapTexts.length)];
+                scrap.style.left = Math.random() * 85 + '%';
+                scrap.style.top = Math.random() * 85 + '%';
+                scrap.style.width = (40 + Math.random() * 60) + 'px';
+                scrap.style.height = (30 + Math.random() * 40) + 'px';
+                scrap.style.animationDelay = Math.random() * 20 + 's';
+                
+                container.appendChild(scrap);
+            }
+        }
+
+        // Generate coffee stains
+        function generateCoffeeStains() {
+            for (let i = 0; i < 8; i++) {
+                const stain = document.createElement('div');
+                stain.className = 'coffee-stain';
+                const size = 50 + Math.random() * 100;
+                stain.style.width = size + 'px';
+                stain.style.height = size + 'px';
+                stain.style.left = Math.random() * 90 + '%';
+                stain.style.top = Math.random() * 90 + '%';
+                stain.style.animationDelay = Math.random() * 30 + 's';
+                
+                container.appendChild(stain);
+            }
+        }
+
+        // Initialize all chaos
+        generateShapes();
+        generateTextSnippets();
+        generateStickyNotes();
+        generateDots();
+        generateSquiggles();
+        generateIcons();
+        generatePaperScraps();
+        generateCoffeeStains();
+
+        // Collision detection - ensure nothing overlaps too much
+        function checkCollisions() {
+            const elements = container.children;
+            for (let i = 0; i < elements.length; i++) {
+                const rect1 = elements[i].getBoundingClientRect();
+                for (let j = i + 1; j < elements.length; j++) {
+                    const rect2 = elements[j].getBoundingClientRect();
+                    
+                    // If overlapping significantly, nudge apart
+                    if (!(rect1.right < rect2.left || 
+                          rect1.left > rect2.right || 
+                          rect1.bottom < rect2.top || 
+                          rect1.top > rect2.bottom)) {
+                        
+                        const overlap = Math.min(
+                            rect1.right - rect2.left,
+                            rect2.right - rect1.left,
+                            rect1.bottom - rect2.top,
+                            rect2.bottom - rect1.top
+                        );
+                        
+                        if (overlap > 20) {
+                            const currentLeft = parseFloat(elements[j].style.left);
+                            elements[j].style.left = (currentLeft + 5) + '%';
+                        }
+                    }
+                }
+            }
+        }
+
+        // Run collision check once after elements are placed
+        setTimeout(checkCollisions, 100);
+    </script>
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melting Reality</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LIQUID BACKGROUND */
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(230, 126, 34, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(155, 89, 182, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(52, 152, 219, 0.2) 0%, transparent 60%);
+            animation: liquidShift 15s ease-in-out infinite;
+            filter: blur(80px);
+            z-index: 1;
+        }
+
+        @keyframes liquidShift {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+            }
+            50% {
+                transform: scale(1.2) rotate(180deg);
+            }
+        }
+
+        /* DRIPPING SHAPES */
+        .drip-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .drip {
+            position: absolute;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: drip 8s ease-in infinite;
+            filter: blur(3px);
+        }
+
+        @keyframes drip {
+            0% {
+                transform: translateY(0) scaleY(1);
+                opacity: 0.8;
+                border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            }
+            50% {
+                border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%;
+            }
+            100% {
+                transform: translateY(100vh) scaleY(2);
+                opacity: 0;
+                border-radius: 50% 50% 50% 50% / 90% 90% 10% 10%;
+            }
+        }
+
+        /* MELTING TEXT */
+        .melt-text {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Georgia', serif;
+            font-size: 80px;
+            font-weight: 700;
+            color: #e67e22;
+            text-align: center;
+            z-index: 5;
+            filter: url(#melt-filter);
+            animation: textMelt 10s ease-in-out infinite;
+        }
+
+        @keyframes textMelt {
+            0%, 100% {
+                filter: url(#melt-filter) blur(0px);
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                filter: url(#melt-filter) blur(2px);
+                transform: translateX(-50%) translateY(20px);
+            }
+        }
+
+        /* MORPHING BLOBS */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            animation: blobMorph 12s ease-in-out infinite;
+        }
+
+        @keyframes blobMorph {
+            0%, 100% {
+                border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%;
+                transform: translate(0, 0) scale(1);
+            }
+            25% {
+                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+                transform: translate(20px, -20px) scale(1.1);
+            }
+            50% {
+                border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+            75% {
+                border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%;
+                transform: translate(20px, 20px) scale(1.05);
+            }
+        }
+
+        /* DISSOLVING BORDERS */
+        .dissolve-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 300px;
+            border: 3px solid rgba(155, 89, 182, 0.6);
+            border-radius: 20px;
+            z-index: 4;
+            animation: borderDissolve 8s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(155, 89, 182, 0.3);
+        }
+
+        @keyframes borderDissolve {
+            0%, 100% {
+                border-radius: 20px;
+                border-width: 3px;
+                filter: blur(0px);
+                opacity: 0.6;
+            }
+            50% {
+                border-radius: 80px;
+                border-width: 10px;
+                filter: blur(5px);
+                opacity: 0.3;
+            }
+        }
+
+        /* FLOWING GRADIENTS */
+        .flow {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                rgba(230, 126, 34, 0.4) 0%,
+                rgba(155, 89, 182, 0.4) 50%,
+                rgba(52, 152, 219, 0.4) 100%);
+            filter: blur(60px);
+            animation: flowMove 20s ease-in-out infinite;
+        }
+
+        @keyframes flowMove {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.6;
+            }
+            25% {
+                transform: translate(100px, -100px) scale(1.3);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translate(-50px, 100px) scale(0.8);
+                opacity: 0.4;
+            }
+            75% {
+                transform: translate(-100px, -50px) scale(1.1);
+                opacity: 0.7;
+            }
+        }
+
+        /* LIQUID PARTICLES */
+        .liquid-particle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(8px);
+            animation: liquidFloat 15s ease-in-out infinite;
+        }
+
+        @keyframes liquidFloat {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                border-radius: 50%;
+            }
+            25% {
+                transform: translate(30px, -40px) scale(1.2);
+                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            }
+            50% {
+                transform: translate(-20px, -80px) scale(0.8);
+                border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+            }
+            75% {
+                transform: translate(-40px, -40px) scale(1.1);
+                border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%;
+            }
+        }
+
+        /* MELTING OVERLAY */
+        .melt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(230, 126, 34, 0.1) 30%,
+                rgba(155, 89, 182, 0.1) 70%,
+                transparent 100%);
+            animation: overlayMelt 12s ease-in-out infinite;
+            z-index: 6;
+            pointer-events: none;
+            filter: blur(20px);
+        }
+
+        @keyframes overlayMelt {
+            0%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            50% {
+                opacity: 0.6;
+                transform: translateY(50px);
+            }
+        }
+
+        /* RIPPLE EFFECT */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(52, 152, 219, 0.4);
+            animation: rippleExpand 6s ease-out infinite;
+        }
+
+        @keyframes rippleExpand {
+            0% {
+                width: 50px;
+                height: 50px;
+                opacity: 0.8;
+            }
+            100% {
+                width: 400px;
+                height: 400px;
+                opacity: 0;
+            }
+        }
+
+        /* STATUS TEXT */
+        .status {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Georgia', serif;
+            font-size: 18px;
+            color: rgba(155, 89, 182, 0.6);
+            text-align: center;
+            z-index: 7;
+            letter-spacing: 2px;
+            font-style: italic;
+            animation: statusMelt 8s ease-in-out infinite;
+        }
+
+        @keyframes statusMelt {
+            0%, 100% {
+                opacity: 0.6;
+                filter: blur(0px);
+            }
+            50% {
+                opacity: 0.3;
+                filter: blur(1px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Liquid background -->
+    <div class="liquid-bg"></div>
+
+    <!-- Flowing gradients -->
+    <div id="flows"></div>
+
+    <!-- Morphing blobs -->
+    <div id="blobs"></div>
+
+    <!-- Dripping shapes -->
+    <div class="drip-container" id="drips"></div>
+
+    <!-- Liquid particles -->
+    <div id="liquidParticles"></div>
+
+    <!-- Ripples -->
+    <div id="ripples"></div>
+
+    <!-- Dissolving border box -->
+    <div class="dissolve-box"></div>
+
+    <!-- Melting overlay -->
+    <div class="melt-overlay"></div>
+
+    <!-- Melting text with SVG filter -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <filter id="melt-filter">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blur">
+                    <animate attributeName="stdDeviation" 
+                        values="0;2;0" 
+                        dur="10s" 
+                        repeatCount="indefinite"/>
+                </feGaussianBlur>
+                <feDisplacementMap in="SourceGraphic" in2="blur" scale="20" xChannelSelector="R" yChannelSelector="G">
+                    <animate attributeName="scale" 
+                        values="0;30;0" 
+                        dur="10s" 
+                        repeatCount="indefinite"/>
+                </feDisplacementMap>
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="melt-text">DISSOLVING</div>
+
+    <!-- Status text -->
+    <div class="status">everything is melting • boundaries fading • solid becoming liquid</div>
+
+    <script>
+        // Color palette - warm and cool liquids
+        const liquidColors = [
+            'rgba(230, 126, 34, 0.5)',  // Orange
+            'rgba(155, 89, 182, 0.5)',  // Purple
+            'rgba(52, 152, 219, 0.5)',  // Blue
+            'rgba(241, 196, 15, 0.5)',  // Yellow
+            'rgba(231, 76, 60, 0.5)',   // Red
+        ];
+
+        // Generate dripping shapes
+        function generateDrips() {
+            const container = document.getElementById('drips');
+            
+            setInterval(() => {
+                const drip = document.createElement('div');
+                drip.className = 'drip';
+                
+                const size = 20 + Math.random() * 60;
+                drip.style.width = size + 'px';
+                drip.style.height = size + 'px';
+                drip.style.left = Math.random() * 100 + '%';
+                drip.style.top = '-100px';
+                drip.style.background = liquidColors[Math.floor(Math.random() * liquidColors.length)];
+                drip.style.animationDuration = (6 + Math.random() * 4) + 's';
+                drip.style.animationDelay = Math.random() * 2 + 's';
+                
+                container.appendChild(drip);
+                
+                setTimeout(() => drip.remove(), 10000);
+            }, 1000);
+        }
+
+        // Generate morphing blobs
+        function generateBlobs() {
+            const container = document.getElementById('blobs');
+            
+            for (let i = 0; i < 8; i++) {
+                const blob = document.createElement('div');
+                blob.className = 'blob';
+                
+                const size = 150 + Math.random() * 200;
+                blob.style.width = size + 'px';
+                blob.style.height = size + 'px';
+                blob.style.left = Math.random() * 100 + '%';
+                blob.style.top = Math.random() * 100 + '%';
+                blob.style.background = liquidColors[Math.floor(Math.random() * liquidColors.length)];
+                blob.style.animationDelay = Math.random() * 12 + 's';
+                blob.style.animationDuration = (10 + Math.random() * 8) + 's';
+                blob.style.zIndex = '2';
+                
+                container.appendChild(blob);
+            }
+        }
+
+        // Generate flowing gradients
+        function generateFlows() {
+            const container = document.getElementById('flows');
+            
+            for (let i = 0; i < 6; i++) {
+                const flow = document.createElement('div');
+                flow.className = 'flow';
+                flow.style.left = Math.random() * 100 + '%';
+                flow.style.top = Math.random() * 100 + '%';
+                flow.style.animationDelay = Math.random() * 20 + 's';
+                flow.style.animationDuration = (15 + Math.random() * 10) + 's';
+                flow.style.zIndex = '3';
+                
+                container.appendChild(flow);
+            }
+        }
+
+        // Generate liquid particles
+        function generateLiquidParticles() {
+            const container = document.getElementById('liquidParticles');
+            
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'liquid-particle';
+                
+                const size = 10 + Math.random() * 30;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.background = liquidColors[Math.floor(Math.random() * liquidColors.length)];
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (12 + Math.random() * 8) + 's';
+                particle.style.zIndex = '3';
+                
+                container.appendChild(particle);
+            }
+        }
+
+        // Generate ripples
+        function generateRipples() {
+            const container = document.getElementById('ripples');
+            
+            setInterval(() => {
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                ripple.style.left = Math.random() * 100 + '%';
+                ripple.style.top = Math.random() * 100 + '%';
+                ripple.style.borderColor = liquidColors[Math.floor(Math.random() * liquidColors.length)];
+                ripple.style.animationDuration = (5 + Math.random() * 3) + 's';
+                ripple.style.zIndex = '4';
+                
+                container.appendChild(ripple);
+                
+                setTimeout(() => ripple.remove(), 7000);
+            }, 2000);
+        }
+
+        // Initialize
+        generateDrips();
+        generateBlobs();
+        generateFlows();
+        generateLiquidParticles();
+        generateRipples();
+
+        // Cycle melting text
+        const meltTexts = ['DISSOLVING', 'MELTING', 'FLOWING', 'LIQUID', 'DRIPPING', 'FADING'];
+        const textElement = document.querySelector('.melt-text');
+        let textIndex = 0;
+        
+        setInterval(() => {
+            textIndex = (textIndex + 1) % meltTexts.length;
+            textElement.textContent = meltTexts[textIndex];
+        }, 10000);
+
+        // Cycle status text
+        const statusTexts = [
+            'everything is melting • boundaries fading • solid becoming liquid',
+            'shapes losing form • edges dissolving • reality flowing',
+            'structure breaking down • matter becoming fluid • stability gone',
+            'watching ice cream melt • slow motion dissolution • beautiful decay'
+        ];
+        const statusElement = document.querySelector('.status');
+        let statusIndex = 0;
+        
+        setInterval(() => {
+            statusIndex = (statusIndex + 1) % statusTexts.length;
+            statusElement.textContent = statusTexts[statusIndex];
+        }, 12000);
+    </script>
+</body>
+</html>

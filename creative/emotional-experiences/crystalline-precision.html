@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystalline Precision</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* PERFECT GRADIENT BACKGROUND */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                hsl(200, 100%, 5%) 0%,
+                hsl(220, 100%, 8%) 25%,
+                hsl(240, 100%, 10%) 50%,
+                hsl(260, 100%, 8%) 75%,
+                hsl(280, 100%, 5%) 100%);
+            z-index: 1;
+        }
+
+        /* SACRED GEOMETRY CONTAINER */
+        .geometry-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            z-index: 5;
+        }
+
+        /* ROTATING HEXAGON */
+        .hexagon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            border: 2px solid rgba(100, 200, 255, 0.6);
+            animation: hexRotate 20s linear infinite;
+        }
+
+        @keyframes hexRotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* GOLDEN RATIO SPIRAL */
+        .spiral {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center;
+            animation: spiralRotate 30s linear infinite;
+        }
+
+        @keyframes spiralRotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* FIBONACCI CIRCLES */
+        .fib-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 1px solid rgba(150, 100, 255, 0.4);
+            animation: fibPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes fibPulse {
+            0%, 100% {
+                opacity: 0.4;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        /* PERFECT GRID */
+        .grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(0deg, transparent 49px, rgba(100, 200, 255, 0.1) 49px, rgba(100, 200, 255, 0.1) 50px, transparent 50px),
+                linear-gradient(90deg, transparent 49px, rgba(100, 200, 255, 0.1) 49px, rgba(100, 200, 255, 0.1) 50px, transparent 50px);
+            background-size: 50px 50px;
+            z-index: 2;
+        }
+
+        /* PLATONIC SOLIDS */
+        .platonic {
+            position: absolute;
+            border: 2px solid;
+            animation: platonicFloat 15s ease-in-out infinite;
+        }
+
+        @keyframes platonicFloat {
+            0%, 100% {
+                transform: rotate(0deg) translateY(0);
+            }
+            25% {
+                transform: rotate(90deg) translateY(-20px);
+            }
+            50% {
+                transform: rotate(180deg) translateY(0);
+            }
+            75% {
+                transform: rotate(270deg) translateY(-20px);
+            }
+        }
+
+        /* PERFECT TRIANGLES */
+        .triangle {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 86.6px solid; /* Perfect equilateral: height = side * √3/2 */
+            animation: triangleRotate 12s linear infinite;
+        }
+
+        @keyframes triangleRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* METATRON'S CUBE */
+        .metatron-line {
+            position: absolute;
+            height: 1px;
+            background: rgba(200, 150, 255, 0.3);
+            transform-origin: left center;
+        }
+
+        /* VESICA PISCIS */
+        .vesica {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 200, 100, 0.4);
+            animation: vesicaPulse 10s ease-in-out infinite;
+        }
+
+        @keyframes vesicaPulse {
+            0%, 100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* PERFECT SQUARES */
+        .square {
+            position: absolute;
+            border: 2px solid rgba(100, 255, 200, 0.5);
+            animation: squareRotate 16s linear infinite;
+        }
+
+        @keyframes squareRotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* GOLDEN RATIO RECTANGLES */
+        .golden-rect {
+            position: absolute;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            animation: goldenPulse 12s ease-in-out infinite;
+        }
+
+        @keyframes goldenPulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
+        }
+
+        /* PRECISION LINES */
+        .precision-line {
+            position: absolute;
+            background: rgba(100, 200, 255, 0.2);
+            animation: linePulse 6s ease-in-out infinite;
+        }
+
+        @keyframes linePulse {
+            0%, 100% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* CENTRAL POINT */
+        .center-point {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            z-index: 10;
+            animation: pointPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pointPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 1;
+            }
+        }
+
+        /* MATHEMATICAL TEXT */
+        .math-text {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: rgba(100, 200, 255, 0.5);
+            letter-spacing: 3px;
+            z-index: 10;
+            text-align: center;
+        }
+
+        /* SYMMETRY INDICATOR */
+        .symmetry {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: rgba(150, 100, 255, 0.6);
+            letter-spacing: 5px;
+            z-index: 10;
+        }
+
+        /* PERFECT CIRCLES */
+        .perfect-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid;
+            animation: circleExpand 10s ease-out infinite;
+        }
+
+        @keyframes circleExpand {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Perfect gradient background -->
+    <div class="gradient-bg"></div>
+
+    <!-- Perfect grid -->
+    <div class="grid"></div>
+
+    <!-- Geometry container -->
+    <div class="geometry-container" id="geometryContainer"></div>
+
+    <!-- Central point -->
+    <div class="center-point"></div>
+
+    <!-- Symmetry indicator -->
+    <div class="symmetry">⬡ PERFECT SYMMETRY ⬡</div>
+
+    <!-- Mathematical text -->
+    <div class="math-text">
+        φ = 1.618033988749... • π = 3.141592653589... • √2 = 1.414213562373...
+    </div>
+
+    <script>
+        const PHI = 1.618033988749; // Golden ratio
+        const PI = Math.PI;
+        const container = document.getElementById('geometryContainer');
+
+        // Generate Fibonacci circles (1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
+        function generateFibonacciCircles() {
+            const fib = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+            const colors = [
+                'rgba(150, 100, 255, 0.4)',
+                'rgba(100, 150, 255, 0.4)',
+                'rgba(100, 200, 255, 0.4)',
+                'rgba(100, 255, 200, 0.4)',
+            ];
+            
+            fib.forEach((num, index) => {
+                const circle = document.createElement('div');
+                circle.className = 'fib-circle';
+                const size = num * 3;
+                circle.style.width = size + 'px';
+                circle.style.height = size + 'px';
+                circle.style.borderColor = colors[index % colors.length];
+                circle.style.animationDelay = (index * 0.5) + 's';
+                container.appendChild(circle);
+            });
+        }
+
+        // Generate hexagons at different scales
+        function generateHexagons() {
+            const sizes = [100, 200, 300, 400];
+            const speeds = [15, 20, 25, 30];
+            
+            sizes.forEach((size, index) => {
+                const hex = document.createElement('div');
+                hex.className = 'hexagon';
+                hex.style.width = size + 'px';
+                hex.style.height = size + 'px';
+                hex.style.borderColor = `rgba(100, 200, 255, ${0.6 - index * 0.1})`;
+                hex.style.animationDuration = speeds[index] + 's';
+                container.appendChild(hex);
+            });
+        }
+
+        // Generate perfect squares at 45° intervals
+        function generateSquares() {
+            for (let i = 0; i < 8; i++) {
+                const square = document.createElement('div');
+                square.className = 'square';
+                const size = 100 + (i * 30);
+                square.style.width = size + 'px';
+                square.style.height = size + 'px';
+                square.style.top = '50%';
+                square.style.left = '50%';
+                square.style.borderColor = `rgba(100, 255, 200, ${0.5 - i * 0.05})`;
+                square.style.animationDuration = (12 + i * 2) + 's';
+                square.style.animationDelay = (i * 0.5) + 's';
+                container.appendChild(square);
+            }
+        }
+
+        // Generate equilateral triangles
+        function generateTriangles() {
+            const positions = [
+                { top: '20%', left: '20%' },
+                { top: '20%', left: '80%' },
+                { top: '80%', left: '20%' },
+                { top: '80%', left: '80%' },
+            ];
+            
+            positions.forEach((pos, index) => {
+                const triangle = document.createElement('div');
+                triangle.className = 'triangle';
+                triangle.style.top = pos.top;
+                triangle.style.left = pos.left;
+                triangle.style.borderBottomColor = `rgba(255, 200, 100, ${0.5 - index * 0.1})`;
+                triangle.style.animationDelay = (index * 3) + 's';
+                container.appendChild(triangle);
+            });
+        }
+
+        // Generate golden ratio rectangles
+        function generateGoldenRectangles() {
+            for (let i = 0; i < 5; i++) {
+                const rect = document.createElement('div');
+                rect.className = 'golden-rect';
+                const width = 100 + (i * 40);
+                const height = width / PHI; // Golden ratio
+                rect.style.width = width + 'px';
+                rect.style.height = height + 'px';
+                rect.style.top = (30 + i * 10) + '%';
+                rect.style.left = (30 + i * 10) + '%';
+                rect.style.animationDelay = (i * 2) + 's';
+                container.appendChild(rect);
+            }
+        }
+
+        // Generate Metatron's Cube (13 circles connected by lines)
+        function generateMetatronsCube() {
+            const radius = 150;
+            const points = [];
+            
+            // Center point
+            points.push({ x: 400, y: 400 });
+            
+            // 6 points in hexagon around center
+            for (let i = 0; i < 6; i++) {
+                const angle = (PI / 3) * i;
+                points.push({
+                    x: 400 + radius * Math.cos(angle),
+                    y: 400 + radius * Math.sin(angle)
+                });
+            }
+            
+            // 6 outer points
+            for (let i = 0; i < 6; i++) {
+                const angle = (PI / 3) * i + (PI / 6);
+                points.push({
+                    x: 400 + radius * 1.5 * Math.cos(angle),
+                    y: 400 + radius * 1.5 * Math.sin(angle)
+                });
+            }
+            
+            // Draw lines connecting all points
+            for (let i = 0; i < points.length; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    const line = document.createElement('div');
+                    line.className = 'metatron-line';
+                    
+                    const dx = points[j].x - points[i].x;
+                    const dy = points[j].y - points[i].y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+                    
+                    line.style.width = length + 'px';
+                    line.style.left = points[i].x + 'px';
+                    line.style.top = points[i].y + 'px';
+                    line.style.transform = `rotate(${angle}rad)`;
+                    
+                    container.appendChild(line);
+                }
+            }
+        }
+
+        // Generate Vesica Piscis (two overlapping circles)
+        function generateVesicaPiscis() {
+            const vesica1 = document.createElement('div');
+            vesica1.className = 'vesica';
+            vesica1.style.transform = 'translate(-60%, -50%)';
+            vesica1.style.animationDelay = '0s';
+            container.appendChild(vesica1);
+            
+            const vesica2 = document.createElement('div');
+            vesica2.className = 'vesica';
+            vesica2.style.transform = 'translate(-40%, -50%)';
+            vesica2.style.animationDelay = '5s';
+            container.appendChild(vesica2);
+        }
+
+        // Generate expanding perfect circles from center
+        function generateExpandingCircles() {
+            setInterval(() => {
+                const circle = document.createElement('div');
+                circle.className = 'perfect-circle';
+                circle.style.top = '50%';
+                circle.style.left = '50%';
+                circle.style.width = '50px';
+                circle.style.height = '50px';
+                circle.style.borderColor = `rgba(${100 + Math.random() * 155}, ${100 + Math.random() * 155}, 255, 0.5)`;
+                
+                container.appendChild(circle);
+                
+                setTimeout(() => circle.remove(), 10000);
+            }, 3000);
+        }
+
+        // Generate precision lines (horizontal and vertical at golden ratio intervals)
+        function generatePrecisionLines() {
+            // Horizontal lines
+            for (let i = 1; i <= 5; i++) {
+                const line = document.createElement('div');
+                line.className = 'precision-line';
+                line.style.width = '100%';
+                line.style.height = '1px';
+                line.style.top = (100 / PHI * i / 5) + '%';
+                line.style.left = '0';
+                line.style.animationDelay = (i * 0.5) + 's';
+                container.appendChild(line);
+            }
+            
+            // Vertical lines
+            for (let i = 1; i <= 5; i++) {
+                const line = document.createElement('div');
+                line.className = 'precision-line';
+                line.style.width = '1px';
+                line.style.height = '100%';
+                line.style.left = (100 / PHI * i / 5) + '%';
+                line.style.top = '0';
+                line.style.animationDelay = (i * 0.5 + 2.5) + 's';
+                container.appendChild(line);
+            }
+        }
+
+        // Initialize all geometry
+        generateFibonacciCircles();
+        generateHexagons();
+        generateSquares();
+        generateTriangles();
+        generateGoldenRectangles();
+        generateMetatronsCube();
+        generateVesicaPiscis();
+        generatePrecisionLines();
+        generateExpandingCircles();
+
+        // Update mathematical constants display
+        setInterval(() => {
+            const mathText = document.querySelector('.math-text');
+            const constants = [
+                `φ = ${PHI.toFixed(15)}... • π = ${PI.toFixed(15)}... • √2 = ${Math.sqrt(2).toFixed(15)}...`,
+                `e = ${Math.E.toFixed(15)}... • √3 = ${Math.sqrt(3).toFixed(15)}... • √5 = ${Math.sqrt(5).toFixed(15)}...`,
+                `GOLDEN RATIO • FIBONACCI SEQUENCE • SACRED GEOMETRY`,
+                `PERFECT SYMMETRY • MATHEMATICAL PRECISION • CRYSTALLINE STRUCTURE`
+            ];
+            const randomIndex = Math.floor(Math.random() * constants.length);
+            mathText.textContent = constants[randomIndex];
+        }, 8000);
+    </script>
+</body>
+</html>

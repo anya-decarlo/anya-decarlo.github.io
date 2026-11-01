@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGGRESSIVE JOY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* SCREAMING COLOR BACKGROUND */
+        .color-explosion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, #FFFF00 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, #FF00FF 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #00FF00 0%, transparent 40%),
+                radial-gradient(circle at 10% 80%, #FF0000 0%, transparent 40%),
+                radial-gradient(circle at 90% 20%, #00FFFF 0%, transparent 40%);
+            background-size: 200% 200%;
+            animation: colorScream 0.8s ease-in-out infinite;
+            filter: saturate(2) brightness(1.3);
+            z-index: 1;
+        }
+
+        @keyframes colorScream {
+            0%, 100% { 
+                background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%;
+                filter: saturate(2) brightness(1.3) hue-rotate(0deg);
+            }
+            50% { 
+                background-position: 100% 100%, 0% 0%, 70% 30%, 100% 0%, 0% 100%;
+                filter: saturate(3) brightness(1.5) hue-rotate(30deg);
+            }
+        }
+
+        /* VIOLENT CONFETTI */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confettiFall 0.6s linear infinite;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg) scale(0.5);
+                opacity: 0.8;
+            }
+        }
+
+        /* BOUNCING SHAPES */
+        .bouncer {
+            position: absolute;
+            border-radius: 50%;
+            animation: bounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            filter: blur(2px);
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0) scale(1) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-80px) scale(1.3) rotate(180deg);
+            }
+        }
+
+        /* PULSING RINGS */
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 8px solid;
+            animation: ringPulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0.3;
+            }
+        }
+
+        /* SCREEN SHAKE */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-5px, 5px) rotate(1deg); }
+            20% { transform: translate(5px, -5px) rotate(-1deg); }
+            30% { transform: translate(-5px, -5px) rotate(1deg); }
+            40% { transform: translate(5px, 5px) rotate(-1deg); }
+            50% { transform: translate(-5px, 5px) rotate(1deg); }
+            60% { transform: translate(5px, -5px) rotate(-1deg); }
+            70% { transform: translate(-5px, -5px) rotate(1deg); }
+            80% { transform: translate(5px, 5px) rotate(-1deg); }
+            90% { transform: translate(-5px, 5px) rotate(1deg); }
+        }
+
+        .shake-container {
+            animation: shake 0.3s infinite;
+        }
+
+        /* SPINNING STARS */
+        .star {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid;
+            animation: starSpin 0.3s linear infinite;
+        }
+
+        .star::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid;
+            top: 8px;
+            left: -15px;
+        }
+
+        @keyframes starSpin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.5); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* RAPID FLASH OVERLAY */
+        .flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            animation: flash 0.2s ease-in-out infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% { 
+                background: rgba(255, 255, 0, 0);
+            }
+            50% { 
+                background: rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* SCREAMING TEXT */
+        .joy-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Impact', sans-serif;
+            font-size: 120px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            z-index: 20;
+            animation: textExplode 0.5s ease-in-out infinite;
+            text-shadow: 
+                0 0 20px #FFFF00,
+                0 0 40px #FF00FF,
+                0 0 60px #00FF00,
+                0 0 80px #FF0000,
+                0 0 100px #00FFFF;
+            background: linear-gradient(45deg, #FFFF00, #FF00FF, #00FF00, #FF0000, #00FFFF);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textExplode 0.5s ease-in-out infinite, gradientShift 0.3s linear infinite;
+        }
+
+        @keyframes textExplode {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* ENERGY PARTICLES */
+        .energy {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            animation: energyBurst 0.4s ease-out infinite;
+        }
+
+        @keyframes energyBurst {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* CHAOS LINES */
+        .chaos-line {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #FFFF00, transparent);
+            animation: lineZoom 0.3s linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes lineZoom {
+            0% {
+                width: 0;
+                left: 0;
+            }
+            100% {
+                width: 100%;
+                left: 0;
+            }
+        }
+
+        /* BLOOM EFFECT */
+        .bloom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+            animation: bloomPulse 0.4s ease-in-out infinite;
+            z-index: 15;
+            pointer-events: none;
+            filter: blur(30px);
+        }
+
+        @keyframes bloomPulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Color explosion background -->
+    <div class="color-explosion"></div>
+
+    <!-- Shake container for everything -->
+    <div class="shake-container">
+        <!-- Confetti -->
+        <div class="confetti-container" id="confettiContainer"></div>
+
+        <!-- Bouncing shapes -->
+        <div id="bouncers"></div>
+
+        <!-- Pulsing rings -->
+        <div id="rings"></div>
+
+        <!-- Spinning stars -->
+        <div id="stars"></div>
+
+        <!-- Energy particles -->
+        <div id="energy"></div>
+
+        <!-- Chaos lines -->
+        <div id="chaosLines"></div>
+    </div>
+
+    <!-- Bloom effect -->
+    <div class="bloom"></div>
+
+    <!-- Flash overlay -->
+    <div class="flash"></div>
+
+    <!-- SCREAMING TEXT -->
+    <div class="joy-text">JOY!!!</div>
+
+    <script>
+        // VIOLENT COLORS
+        const violentColors = [
+            '#FFFF00', // Pure yellow
+            '#FF00FF', // Pure magenta
+            '#00FF00', // Pure green
+            '#FF0000', // Pure red
+            '#00FFFF', // Pure cyan
+            '#FF6600', // Orange
+            '#FF0099', // Hot pink
+            '#00FF99', // Mint
+        ];
+
+        // Generate VIOLENT confetti
+        function generateConfetti() {
+            const container = document.getElementById('confettiContainer');
+            
+            setInterval(() => {
+                for (let i = 0; i < 5; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '-20px';
+                    confetti.style.background = violentColors[Math.floor(Math.random() * violentColors.length)];
+                    confetti.style.animationDuration = (0.4 + Math.random() * 0.3) + 's';
+                    confetti.style.animationDelay = Math.random() * 0.2 + 's';
+                    
+                    container.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 1000);
+                }
+            }, 100);
+        }
+
+        // Generate BOUNCING shapes
+        function generateBouncers() {
+            const container = document.getElementById('bouncers');
+            
+            for (let i = 0; i < 20; i++) {
+                const bouncer = document.createElement('div');
+                bouncer.className = 'bouncer';
+                bouncer.style.left = Math.random() * 100 + '%';
+                bouncer.style.top = Math.random() * 100 + '%';
+                bouncer.style.width = (30 + Math.random() * 50) + 'px';
+                bouncer.style.height = bouncer.style.width;
+                bouncer.style.background = violentColors[Math.floor(Math.random() * violentColors.length)];
+                bouncer.style.animationDelay = Math.random() * 0.4 + 's';
+                bouncer.style.animationDuration = (0.3 + Math.random() * 0.2) + 's';
+                bouncer.style.zIndex = '3';
+                
+                container.appendChild(bouncer);
+            }
+        }
+
+        // Generate PULSING rings
+        function generateRings() {
+            const container = document.getElementById('rings');
+            
+            for (let i = 0; i < 15; i++) {
+                const ring = document.createElement('div');
+                ring.className = 'ring';
+                ring.style.left = Math.random() * 100 + '%';
+                ring.style.top = Math.random() * 100 + '%';
+                ring.style.width = (50 + Math.random() * 100) + 'px';
+                ring.style.height = ring.style.width;
+                ring.style.borderColor = violentColors[Math.floor(Math.random() * violentColors.length)];
+                ring.style.animationDelay = Math.random() * 0.5 + 's';
+                ring.style.animationDuration = (0.4 + Math.random() * 0.2) + 's';
+                ring.style.zIndex = '4';
+                
+                container.appendChild(ring);
+            }
+        }
+
+        // Generate SPINNING stars
+        function generateStars() {
+            const container = document.getElementById('stars');
+            
+            for (let i = 0; i < 25; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                const color = violentColors[Math.floor(Math.random() * violentColors.length)];
+                star.style.borderBottomColor = color;
+                star.style.animationDelay = Math.random() * 0.3 + 's';
+                star.style.animationDuration = (0.2 + Math.random() * 0.2) + 's';
+                star.style.zIndex = '6';
+                
+                // Set after pseudo-element color via style
+                const afterColor = violentColors[Math.floor(Math.random() * violentColors.length)];
+                star.style.setProperty('--after-color', afterColor);
+                
+                container.appendChild(star);
+            }
+        }
+
+        // Generate ENERGY particles bursting from center
+        function generateEnergy() {
+            const container = document.getElementById('energy');
+            
+            setInterval(() => {
+                for (let i = 0; i < 10; i++) {
+                    const energy = document.createElement('div');
+                    energy.className = 'energy';
+                    energy.style.left = '50%';
+                    energy.style.top = '50%';
+                    energy.style.background = violentColors[Math.floor(Math.random() * violentColors.length)];
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 100 + Math.random() * 200;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    energy.style.setProperty('--tx', tx + 'px');
+                    energy.style.setProperty('--ty', ty + 'px');
+                    energy.style.animationDuration = (0.3 + Math.random() * 0.2) + 's';
+                    energy.style.zIndex = '7';
+                    
+                    container.appendChild(energy);
+                    
+                    setTimeout(() => energy.remove(), 500);
+                }
+            }, 150);
+        }
+
+        // Generate CHAOS lines
+        function generateChaosLines() {
+            const container = document.getElementById('chaosLines');
+            
+            setInterval(() => {
+                const line = document.createElement('div');
+                line.className = 'chaos-line';
+                line.style.top = Math.random() * 100 + '%';
+                line.style.background = `linear-gradient(90deg, transparent, ${violentColors[Math.floor(Math.random() * violentColors.length)]}, transparent)`;
+                line.style.animationDuration = (0.2 + Math.random() * 0.2) + 's';
+                line.style.zIndex = '8';
+                
+                container.appendChild(line);
+                
+                setTimeout(() => line.remove(), 400);
+            }, 200);
+        }
+
+        // INITIALIZE CHAOS
+        generateConfetti();
+        generateBouncers();
+        generateRings();
+        generateStars();
+        generateEnergy();
+        generateChaosLines();
+
+        // Random text changes
+        const joyTexts = ['JOY!!!', 'YES!!!', 'WOW!!!', 'YEAH!!!', 'WOOO!!!', 'AHHH!!!'];
+        const textElement = document.querySelector('.joy-text');
+        
+        setInterval(() => {
+            textElement.textContent = joyTexts[Math.floor(Math.random() * joyTexts.length)];
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Depth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        /* PARALLAX CONTAINER */
+        .parallax-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        /* DEPTH LAYERS */
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layer 1 - Closest (brightest, sharpest) */
+        .layer-1 {
+            transform: translateZ(0px);
+            opacity: 0.9;
+            filter: blur(0px);
+            z-index: 10;
+        }
+
+        /* Layer 2 */
+        .layer-2 {
+            transform: translateZ(-100px) scale(0.9);
+            opacity: 0.8;
+            filter: blur(1px);
+            z-index: 9;
+        }
+
+        /* Layer 3 */
+        .layer-3 {
+            transform: translateZ(-200px) scale(0.8);
+            opacity: 0.7;
+            filter: blur(2px);
+            z-index: 8;
+        }
+
+        /* Layer 4 */
+        .layer-4 {
+            transform: translateZ(-300px) scale(0.7);
+            opacity: 0.6;
+            filter: blur(3px);
+            z-index: 7;
+        }
+
+        /* Layer 5 */
+        .layer-5 {
+            transform: translateZ(-400px) scale(0.6);
+            opacity: 0.5;
+            filter: blur(4px);
+            z-index: 6;
+        }
+
+        /* Layer 6 */
+        .layer-6 {
+            transform: translateZ(-500px) scale(0.5);
+            opacity: 0.4;
+            filter: blur(5px);
+            z-index: 5;
+        }
+
+        /* Layer 7 */
+        .layer-7 {
+            transform: translateZ(-600px) scale(0.4);
+            opacity: 0.3;
+            filter: blur(6px);
+            z-index: 4;
+        }
+
+        /* Layer 8 */
+        .layer-8 {
+            transform: translateZ(-700px) scale(0.35);
+            opacity: 0.25;
+            filter: blur(7px);
+            z-index: 3;
+        }
+
+        /* Layer 9 */
+        .layer-9 {
+            transform: translateZ(-800px) scale(0.3);
+            opacity: 0.2;
+            filter: blur(8px);
+            z-index: 2;
+        }
+
+        /* Layer 10 - Farthest (dimmest, most blurred) */
+        .layer-10 {
+            transform: translateZ(-900px) scale(0.25);
+            opacity: 0.15;
+            filter: blur(10px);
+            z-index: 1;
+        }
+
+        /* GEOMETRIC SHAPES */
+        .shape {
+            position: absolute;
+            border: 2px solid;
+            animation: shapeFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes shapeFloat {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(30px, -30px) rotate(90deg);
+            }
+            50% {
+                transform: translate(0, -60px) rotate(180deg);
+            }
+            75% {
+                transform: translate(-30px, -30px) rotate(270deg);
+            }
+        }
+
+        /* DEPTH PARTICLES */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: particleDrift 30s linear infinite;
+        }
+
+        @keyframes particleDrift {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        /* DEPTH RINGS */
+        .depth-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(100, 149, 237, 0.3);
+            border-radius: 50%;
+            animation: ringPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 0.6;
+            }
+        }
+
+        /* PERSPECTIVE GRID */
+        .grid-line {
+            position: absolute;
+            background: rgba(100, 149, 237, 0.2);
+            animation: gridShift 15s linear infinite;
+        }
+
+        @keyframes gridShift {
+            0% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 0.4;
+            }
+            100% {
+                opacity: 0.2;
+            }
+        }
+
+        /* DEPTH INDICATOR */
+        .depth-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            color: rgba(100, 149, 237, 0.4);
+            text-align: center;
+            z-index: 20;
+            letter-spacing: 8px;
+            animation: textDepth 10s ease-in-out infinite;
+        }
+
+        @keyframes textDepth {
+            0%, 100% {
+                opacity: 0.4;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        /* CANYON WALLS */
+        .wall {
+            position: absolute;
+            background: linear-gradient(to bottom, 
+                rgba(25, 25, 112, 0.3) 0%,
+                rgba(72, 61, 139, 0.2) 50%,
+                rgba(0, 0, 0, 0.5) 100%);
+            animation: wallShift 12s ease-in-out infinite;
+        }
+
+        @keyframes wallShift {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* ATMOSPHERIC FOG */
+        .fog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center,
+                transparent 0%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.7) 100%);
+            z-index: 15;
+            pointer-events: none;
+            animation: fogShift 20s ease-in-out infinite;
+        }
+
+        @keyframes fogShift {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* DEPTH COUNTER */
+        .counter {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: rgba(100, 149, 237, 0.5);
+            letter-spacing: 3px;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <!-- Parallax container -->
+    <div class="parallax-container" id="parallaxContainer">
+        <!-- 10 depth layers will be generated here -->
+    </div>
+
+    <!-- Atmospheric fog -->
+    <div class="fog"></div>
+
+    <!-- Depth text -->
+    <div class="depth-text">∞ DEPTH ∞</div>
+
+    <!-- Depth counter -->
+    <div class="counter">LAYER <span id="layerCount">∞</span> • DEPTH <span id="depthCount">∞</span>m</div>
+
+    <script>
+        // Color palette - deep blues and purples fading to black
+        const depthColors = [
+            'rgba(100, 149, 237, 0.8)',  // Layer 1 - Cornflower blue
+            'rgba(65, 105, 225, 0.7)',   // Layer 2 - Royal blue
+            'rgba(72, 61, 139, 0.6)',    // Layer 3 - Dark slate blue
+            'rgba(75, 0, 130, 0.5)',     // Layer 4 - Indigo
+            'rgba(25, 25, 112, 0.4)',    // Layer 5 - Midnight blue
+            'rgba(0, 0, 128, 0.35)',     // Layer 6 - Navy
+            'rgba(0, 0, 80, 0.3)',       // Layer 7 - Darker navy
+            'rgba(0, 0, 50, 0.25)',      // Layer 8 - Almost black
+            'rgba(0, 0, 30, 0.2)',       // Layer 9 - Very dark
+            'rgba(0, 0, 20, 0.15)',      // Layer 10 - Nearly black
+        ];
+
+        // Generate depth layers
+        function generateLayers() {
+            const container = document.getElementById('parallaxContainer');
+            
+            for (let layerNum = 1; layerNum <= 10; layerNum++) {
+                const layer = document.createElement('div');
+                layer.className = `layer layer-${layerNum}`;
+                
+                // Add shapes to each layer
+                for (let i = 0; i < 5; i++) {
+                    const shape = document.createElement('div');
+                    shape.className = 'shape';
+                    
+                    const size = 50 + Math.random() * 100;
+                    shape.style.width = size + 'px';
+                    shape.style.height = size + 'px';
+                    shape.style.left = Math.random() * 100 + '%';
+                    shape.style.top = Math.random() * 100 + '%';
+                    shape.style.borderColor = depthColors[layerNum - 1];
+                    shape.style.animationDelay = Math.random() * 20 + 's';
+                    shape.style.animationDuration = (15 + Math.random() * 10) + 's';
+                    
+                    // Random shape type
+                    if (Math.random() > 0.5) {
+                        shape.style.borderRadius = '50%';
+                    }
+                    
+                    layer.appendChild(shape);
+                }
+                
+                // Add particles to each layer
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.top = Math.random() * 100 + '%';
+                    particle.style.background = depthColors[layerNum - 1];
+                    particle.style.animationDelay = Math.random() * 30 + 's';
+                    particle.style.animationDuration = (25 + Math.random() * 15) + 's';
+                    
+                    layer.appendChild(particle);
+                }
+                
+                // Add depth rings to middle layers
+                if (layerNum >= 3 && layerNum <= 8) {
+                    const ring = document.createElement('div');
+                    ring.className = 'depth-ring';
+                    const ringSize = 200 + (layerNum * 50);
+                    ring.style.width = ringSize + 'px';
+                    ring.style.height = ringSize + 'px';
+                    ring.style.borderColor = depthColors[layerNum - 1];
+                    ring.style.animationDelay = (layerNum * 1.5) + 's';
+                    
+                    layer.appendChild(ring);
+                }
+                
+                // Add canyon walls to outer layers
+                if (layerNum >= 5) {
+                    const wallLeft = document.createElement('div');
+                    wallLeft.className = 'wall';
+                    wallLeft.style.left = '0';
+                    wallLeft.style.top = '0';
+                    wallLeft.style.width = '20%';
+                    wallLeft.style.height = '100%';
+                    wallLeft.style.animationDelay = (layerNum * 2) + 's';
+                    layer.appendChild(wallLeft);
+                    
+                    const wallRight = document.createElement('div');
+                    wallRight.className = 'wall';
+                    wallRight.style.right = '0';
+                    wallRight.style.top = '0';
+                    wallRight.style.width = '20%';
+                    wallRight.style.height = '100%';
+                    wallRight.style.animationDelay = (layerNum * 2 + 1) + 's';
+                    layer.appendChild(wallRight);
+                }
+                
+                container.appendChild(layer);
+            }
+        }
+
+        // Mouse parallax effect
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        function updateParallax() {
+            const container = document.getElementById('parallaxContainer');
+            const layers = container.querySelectorAll('.layer');
+            
+            layers.forEach((layer, index) => {
+                const depth = (index + 1) * 100;
+                const moveX = mouseX * depth * 0.1;
+                const moveY = mouseY * depth * 0.1;
+                
+                const scale = 1 - (index * 0.1);
+                const opacity = 0.9 - (index * 0.075);
+                const blur = index;
+                
+                layer.style.transform = `translateZ(-${depth}px) scale(${scale}) translate(${moveX}px, ${moveY}px)`;
+            });
+            
+            requestAnimationFrame(updateParallax);
+        }
+
+        // Animate depth counter
+        let depth = 0;
+        setInterval(() => {
+            depth += 10;
+            if (depth > 9999) depth = 0;
+            document.getElementById('depthCount').textContent = depth;
+        }, 100);
+
+        // Animate layer counter
+        let currentLayer = 1;
+        setInterval(() => {
+            currentLayer++;
+            if (currentLayer > 10) currentLayer = 1;
+            document.getElementById('layerCount').textContent = currentLayer;
+        }, 2000);
+
+        // Initialize
+        generateLayers();
+        updateParallax();
+
+        // Scroll depth effect (optional - creates zoom effect)
+        let scrollDepth = 0;
+        document.addEventListener('wheel', (e) => {
+            scrollDepth += e.deltaY * 0.1;
+            scrollDepth = Math.max(-500, Math.min(500, scrollDepth));
+            
+            const container = document.getElementById('parallaxContainer');
+            container.style.transform = `translateZ(${scrollDepth}px)`;
+        });
+    </script>
+</body>
+</html>
