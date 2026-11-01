@@ -2,7 +2,12 @@
 
 Portfolio site, live at https://anya-decarlo.github.io
 
-## Adding a project
+## Adding a Work project
 1. Put the HTML file in `work/`.
-2. Add an entry to the `projects` list in `index.html`, with `languages` (e.g. R, SQL, Python) and `topics` (e.g. Dementia Research). Filter buttons are generated from these tags.
-3. Commit and push — GitHub Pages redeploys automatically.
+2. Add an entry to the `projects` list in `index.html`, with `languages` (e.g. R, SQL, Python) and `topics` (e.g. Dementia Research, Sports Data). Filter buttons are generated from these tags.
+
+## Adding a Creative piece
+1. Put the HTML file in `creative/`.
+2. Add an entry to the `creative` list in `index.html` (no tags needed).
+
+Commit and push — GitHub Pages redeploys automatically.

@@ -44,14 +44,19 @@
       <h1>Anya DeCarlo</h1>
       <p>Selected projects, tools, and interactive pieces.</p>
       <nav>
+        <a href="#work">Work</a>
+        <a href="#creative">Creative</a>
         <a href="https://github.com/anya-decarlo">GitHub</a>
       </nav>
     </header>
 
-    <h2>Work</h2>
+    <h2 id="work">Work</h2>
     <div class="filters" id="filters"></div>
     <p class="count" id="count"></p>
     <div class="grid" id="grid"></div>
+
+    <h2 id="creative">Creative</h2>
+    <div class="grid" id="creative-grid"></div>
 
     <footer>&copy; <span id="year"></span> Anya DeCarlo</footer>
   </div>
@@ -62,6 +67,11 @@
     const projects = [
       // { title: "Project name", description: "One-line description.", file: "work/project-name.html",
       //   languages: ["R", "SQL"], topics: ["Dementia Research"] },
+    ];
+
+    // Fun / creative HTMLs: put the file in /creative and add an entry here (no tags needed).
+    const creative = [
+      // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
     ];
 
     const groups = [
@@ -130,18 +140,29 @@
           ...(p.languages || []).map(t => `<span class="tag lang">${esc(t)}</span>`),
           ...(p.topics || []).map(t => `<span class="tag">${esc(t)}</span>`),
         ].join("");
-        const a = document.createElement("a");
-        a.className = "card";
-        a.href = p.file;
-        a.innerHTML = `
-          <div class="thumb"><iframe src="${esc(p.file)}" loading="lazy" tabindex="-1" title="${esc(p.title)}"></iframe></div>
-          <div class="meta"><h3>${esc(p.title)}</h3><p>${esc(p.description || "")}</p><div class="tags">${tags}</div></div>`;
-        grid.appendChild(a);
+        grid.appendChild(card(p, tags));
       }
+    }
+
+    function card(p, tags = "") {
+      const a = document.createElement("a");
+      a.className = "card";
+      a.href = p.file;
+      a.innerHTML = `
+        <div class="thumb"><iframe src="${esc(p.file)}" loading="lazy" tabindex="-1" title="${esc(p.title)}"></iframe></div>
+        <div class="meta"><h3>${esc(p.title)}</h3><p>${esc(p.description || "")}</p>${tags ? `<div class="tags">${tags}</div>` : ""}</div>`;
+      return a;
+    }
+
+    function renderCreative() {
+      const el = document.getElementById("creative-grid");
+      if (!creative.length) el.innerHTML = '<p class="empty">Coming soon.</p>';
+      for (const p of creative) el.appendChild(card(p));
     }
 
     buildFilters();
     render();
+    renderCreative();
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
