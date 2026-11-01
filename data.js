@@ -19,7 +19,7 @@ const analysisTools = [
 // PROJECTS — multi-page projects. Files go in /projects/<id>/. Each card opens project.html?p=<id>.
 const projects = [
   { id: "computer-vision", title: "Computer Vision: Pixel Extraction & Reconstruction",
-    description: "A browser toolkit that turns an image into pixel data and back at native resolution: every single pixel becomes its own CSV row with its position and hex color. Extract Pixels creates the CSV; the reconstructors redraw the image from it, with grid overlays or only the colors and quadrants you pick, and export it as SVG.",
+    description: "A browser toolkit that turns an image into pixel data and back at native resolution: every single pixel becomes its own CSV row with its position and hex color. Extract Pixels creates the CSV; the reconstructors redraw the image from it, with grid overlays or only the colors and quadrants you pick, and export it as SVG. I built it to reverse-engineer display fonts and lift handwriting off scanned notebook pages.",
     tryIt: {
       text: "Download the sample image (or use your own), open Extract Pixels to turn it into a CSV, then load that CSV into the reconstructors.",
       downloads: [
