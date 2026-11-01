@@ -19,7 +19,7 @@ const analysisTools = [
 // PROJECTS — multi-page projects. Files go in /projects/<id>/. Each card opens project.html?p=<id>.
 const projects = [
   { id: "computer-vision", title: "Computer Vision: Pixel Extraction & Reconstruction",
-    description: "A browser-based pipeline that reads an image at native resolution, pixel by pixel, and rebuilds it from the data. Step 1 writes one CSV row per pixel with its x/y position, the 100×100-pixel grid quadrant it falls in, distance from center, and hex color, so the grid scales with the image: a scanned notebook page comes out to 33.6 million pixels across 3,366 quadrants. Between steps, a Python filter thresholds each quadrant's green channel (mean − 2σ) to keep only the ink, adapting to uneven lighting and paper color. The reconstructors rebuild the image from only the colors and quadrants you choose and export it as SVG. I built it to reverse-engineer display fonts and lift handwriting off scanned notebook pages.",
+    description: "A browser toolkit that turns an image into pixel data and back at native resolution: every single pixel becomes its own CSV row with its position and hex color. Extract Pixels creates the CSV; the reconstructors redraw the image from it, with grid overlays or only the colors and quadrants you pick, and export it as SVG.",
     tryIt: {
       text: "Download the sample image (or use your own), open Extract Pixels to turn it into a CSV, then load that CSV into the reconstructors.",
       downloads: [
