@@ -44,8 +44,9 @@
     <footer>&copy; <span id="year"></span> Anya DeCarlo</footer>
   </div>
 
-  <script src="data.js"></script>
-  <script src="site.js"></script>
+  <script>
+    for (const f of ["data.js", "site.js"]) document.write(`<script src="${f}?v=${Date.now()}"><\/script>`);
+  </script>
   <script>
     renderFiltered("work", work);
     renderFiltered("tools", analysisTools);
