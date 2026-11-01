@@ -26,18 +26,19 @@ function renderSimple(id, items, opts = () => ({})) {
   for (const p of items) el.appendChild(card(p, opts(p)));
 }
 
-function renderWork() {
+function renderFiltered(prefix, items) {
   const groups = [
     { key: "languages", label: "Language" },
     { key: "topics", label: "Topic" },
   ];
   const selected = { languages: new Set(), topics: new Set() };
-  const grid = document.getElementById("grid");
-  const filtersEl = document.getElementById("filters");
-  const countEl = document.getElementById("count");
+  const grid = document.getElementById(`${prefix}-grid`);
+  const filtersEl = document.getElementById(`${prefix}-filters`);
+  const countEl = document.getElementById(`${prefix}-count`);
+  if (!grid) return;
 
   for (const g of groups) {
-    const values = [...new Set(work.flatMap(p => p[g.key] || []))].sort();
+    const values = [...new Set(items.flatMap(p => p[g.key] || []))].sort();
     if (!values.length) continue;
     const row = document.createElement("div");
     row.className = "filter-row";
@@ -75,12 +76,12 @@ function renderWork() {
 
   function render() {
     grid.innerHTML = "";
-    if (!work.length) {
+    if (!items.length) {
       grid.innerHTML = '<p class="empty">Coming soon.</p>';
       return;
     }
-    const shown = work.filter(matches);
-    countEl.textContent = `Showing ${shown.length} of ${work.length} projects`;
+    const shown = items.filter(matches);
+    countEl.textContent = `Showing ${shown.length} of ${items.length}`;
     if (!shown.length) grid.innerHTML = '<p class="empty">No projects match these filters.</p>';
     for (const p of shown) {
       const tags = [

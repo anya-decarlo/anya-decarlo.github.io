@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waveform Annotation Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: #2a2a2a;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #3a3a3a;
+        }
+        
+        .file-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .file-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 40px;
+            font-size: 14px;
+        }
+        
+        .file-counter {
+            font-size: 14px;
+            color: #aaa;
+        }
+        
+        .pidn-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .pidn-progress-text {
+            font-size: 12px;
+            color: #888;
+            font-family: 'Georgia', serif;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        
+        .pidn-progress-bar {
+            width: 200px;
+            height: 12px;
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.8) 0%, rgba(50, 50, 50, 0.6) 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .pidn-progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 50%, #c0c0c0 100%);
+            border-radius: 20px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 0 10px rgba(255, 255, 255, 0.3),
+                inset 0 1px 2px rgba(255, 255, 255, 0.8),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .csv-counter-widget {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: #aaa;
+            font-size: 12px;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+        
+        .csv-counter-widget .count {
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        /* Waveform Area */
+        .waveform-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #0a0a0a;
+        }
+        
+        .timeline-controls {
+            background: #2a2a2a;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        
+        .playback-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .control-btn {
+            background: #3a3a3a;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: #4a4a4a;
+        }
+        
+        .control-btn.playing {
+            background: #e74c3c;
+        }
+        
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 30px #ffffff;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .zoom-label {
+            font-size: 14px;
+            color: #888;
+        }
+        
+        .zoom-slider {
+            width: 150px;
+        }
+        
+        .speed-control {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .speed-btn {
+            background: #3a3a3a;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .speed-btn.active {
+            background: #3498db;
+        }
+        
+        /* Canvas Container */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 500px;
+            height: 60vh;
+        }
+        
+        #waveformCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        /* Label Panel */
+        .label-panel {
+            background: #2a2a2a;
+            padding: 15px;
+            border-top: 2px solid #3a3a3a;
+        }
+        
+        .binary-checks {
+            padding: 12px 15px;
+            background: #1a1a1a;
+            border-bottom: 2px solid #3a3a3a;
+            margin: -15px -15px 15px -15px;
+        }
+        
+        .binary-check-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .binary-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+        
+        .binary-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+            border: 2px solid #3a3a3a;
+            background: #1a1a1a;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            text-align: center;
+        }
+        
+        .binary-btn:hover {
+            background: #2a2a2a;
+            border-color: #4a4a4a;
+        }
+        
+        .binary-btn.active {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        .duration-info-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .duration-info {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff;
+            white-space: nowrap;
+        }
+        
+        .label-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            margin-top: 15px;
+            color: #888;
+        }
+        
+        .label-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .label-btn {
+            padding: 10px 18px;
+            border: 2px solid #3a3a3a;
+            background: #1a1a1a;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .label-btn:hover {
+            border-color: #4a4a4a;
+            background: #2a2a2a;
+        }
+        
+        .label-btn.selected {
+            border-color: #3498db;
+            background: #3498db;
+        }
+        
+        .label-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .add-label-btn {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+        
+        .add-label-btn:hover {
+            background: #229954;
+            border-color: #229954;
+        }
+        
+        /* Annotations List */
+        .annotations-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: #2a2a2a;
+            border-left: 2px solid #3a3a3a;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(300px);
+            transition: transform 0.3s;
+        }
+        
+        .annotations-sidebar.open {
+            transform: translateX(0);
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .annotations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .annotation-item {
+            background: #1a1a1a;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .annotation-item:hover {
+            background: #2a2a2a;
+        }
+        
+        .annotation-time {
+            font-size: 12px;
+            color: #888;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .annotation-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+        
+        .annotation-type {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        /* Toggle Sidebar Button */
+        .toggle-sidebar-btn {
+            position: fixed;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px 0 0 4px;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        /* Modal for adding labels */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 2px solid #3a3a3a;
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .btn-cancel {
+            background: #666;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #555;
+        }
+        
+        /* Review Notes Section */
+        .review-notes {
+            background: #2a2a2a;
+            padding: 10px 15px;
+            border-top: 2px solid #3a3a3a;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .review-notes-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            white-space: nowrap;
+        }
+        
+        .rating-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .rating-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #aaa;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .rating-btn:hover {
+            background: #333;
+            border-color: #555;
+        }
+        
+        .rating-btn.selected {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+            font-weight: 600;
+        }
+        
+        .notes-textarea {
+            flex: 1;
+            padding: 8px 12px;
+            padding-right: 200px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            color: white;
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: inherit;
+            resize: none;
+            height: 80px;
+        }
+        
+        .notes-textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="file-info">
+                <div class="progress-info">
+                    <div>
+                        <span id="fileName">No file loaded</span>
+                        <span class="file-counter" id="progressInfo">File 0 of 0</span>
+                    </div>
+                    <div class="pidn-progress-container">
+                        <div class="pidn-progress-text" id="pidnProgressText">0 / 795 PIDNs reviewed</div>
+                        <div class="pidn-progress-bar">
+                            <div class="pidn-progress-fill" id="pidnProgressFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PIDN Lookup -->
+                <div style="padding: 10px 20px; background: #2a2a2a; border-top: 1px solid #3a3a3a; display: flex; gap: 10px; align-items: center;">
+                    <label style="color: #aaa; font-size: 14px;">Jump to PIDN:</label>
+                    <input type="text" id="pidnLookup" placeholder="Enter PIDN..." 
+                           style="flex: 1; padding: 8px; background: #1a1a1a; border: 1px solid #3a3a3a; color: white; border-radius: 4px; font-family: monospace;"
+                           onkeypress="if(event.key==='Enter') jumpToPIDN()">
+                    <button onclick="jumpToPIDN()" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Go</button>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="previousFile()">← Previous</button>
+                    <button class="btn btn-primary" onclick="nextFile()">Next →</button>
+                    <button class="btn btn-success" onclick="exportAnnotations()">Export CSV</button>
+                    <div class="csv-counter-widget">
+                        <span class="count" id="csvCount">0</span> CSVs saved
+                    </div>
+                    <span id="pidnsRemaining" style="color: #888; font-size: 13px; margin-left: 15px; display: inline-block; text-align: center; min-width: 180px;">0 Happy Memories to Check</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Waveform Area -->
+        <div class="waveform-area">
+            <!-- Timeline Controls -->
+            <div class="timeline-controls">
+                <div class="playback-controls">
+                    <button class="control-btn" onclick="rewind5()">⏪ 5s</button>
+                    <button class="control-btn" id="playBtn" onclick="togglePlayback()">▶</button>
+                    <div class="time-display" id="timeDisplay">00:00.000 / 00:00.000</div>
+                </div>
+                
+                <div class="zoom-controls">
+                    <span class="zoom-label">Zoom:</span>
+                    <input type="range" class="zoom-slider" id="zoomSlider" min="1" max="100" value="1" oninput="updateZoom()">
+                    <span class="zoom-label" id="zoomLevel">1x</span>
+                </div>
+                
+                <div class="speed-control">
+                    <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
+                    <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
+                    <button class="speed-btn" onclick="setSpeed(0.8)">0.8x</button>
+                    <button class="speed-btn" onclick="setSpeed(0.85)">0.85x</button>
+                    <button class="speed-btn active" onclick="setSpeed(1.0)">1x</button>
+                    <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
+                    <button class="speed-btn" onclick="setSpeed(2.0)">2x</button>
+                </div>
+            </div>
+            
+            <!-- Canvas -->
+            <div class="canvas-container">
+                <canvas id="waveformCanvas"></canvas>
+            </div>
+            
+            <!-- Horizontal Scrollbar -->
+            <div style="padding: 10px 20px; background: #2a2a2a; border-top: 1px solid #3a3a3a;">
+                <input type="range" id="scrollBar" min="0" max="100" value="0" 
+                       style="width: 100%; cursor: pointer;" 
+                       oninput="updateScroll()">
+            </div>
+        </div>
+        
+        <!-- Label Panel -->
+        <div class="label-panel">
+            <!-- Binary Quality Checks -->
+            <div class="binary-checks">
+                <div class="binary-check-title">Issues Detected</div>
+                <div class="binary-buttons">
+                    <button class="binary-btn" id="anomalyCheck" onclick="toggleBinaryCheck('anomaly')">Anomaly</button>
+                    <button class="binary-btn" id="over65Check" onclick="toggleBinaryCheck('over_65')">Over 65 seconds</button>
+                    <button class="binary-btn" id="under60Check" onclick="toggleBinaryCheck('under_60')">Under 60 seconds</button>
+                    <button class="binary-btn" id="stopsEarlyCheck" onclick="toggleBinaryCheck('stops_early')">Stops before full minute</button>
+                    <button class="binary-btn" id="cutoffMidSentenceCheck" onclick="toggleBinaryCheck('cutoff_mid_sentence')">Cutoff mid-sentence</button>
+                    <button class="binary-btn" id="accentCheck" onclick="toggleBinaryCheck('accent')">Non-native English accent</button>
+                    <button class="binary-btn" id="nativeAccentCheck" onclick="toggleBinaryCheck('native_accent')">Native English accent</button>
+                    <button class="binary-btn" id="lispCheck" onclick="toggleBinaryCheck('lisp')">Lisp</button>
+                    <button class="binary-btn" id="roboticCheck" onclick="toggleBinaryCheck('robotic')">Robotic/unnatural voice</button>
+                    <button class="binary-btn" id="popsCheck" onclick="toggleBinaryCheck('pops')">Pops/clicks/glitches</button>
+                    <button class="binary-btn" id="multiVoiceCheck" onclick="toggleBinaryCheck('multi_voice')">Multiple voices/crosstalk</button>
+                    <button class="binary-btn" id="muffledCheck" onclick="toggleBinaryCheck('muffled')">Muffled/distant sound</button>
+                    <button class="binary-btn" id="echoCheck" onclick="toggleBinaryCheck('echo')">Echo/reverb</button>
+                    <button class="binary-btn" id="dogCheck" onclick="toggleBinaryCheck('dog')">Dog barking</button>
+                    <button class="binary-btn" id="transcriptionVerifiedCheck" onclick="toggleBinaryCheck('transcription_verified')">Transcription Verified</button>
+                </div>
+                <div class="duration-info-container">
+                    <div class="duration-info" id="durationInfo">--</div>
+                    <div class="duration-info" id="amplitudeInfo">Range: --</div>
+                </div>
+            </div>
+            
+            <div class="label-section-title">Quick Labels (Click or use keyboard shortcuts)</div>
+            <div class="label-buttons" id="labelButtons">
+                <!-- Labels will be added dynamically -->
+            </div>
+        </div>
+        
+        <!-- Review Notes Section -->
+        <div class="review-notes">
+            <div class="review-notes-title">RATING</div>
+            <div class="rating-buttons">
+                <button class="rating-btn" onclick="setRating(1)">1</button>
+                <button class="rating-btn" onclick="setRating(2)">2</button>
+                <button class="rating-btn" onclick="setRating(3)">3</button>
+                <button class="rating-btn" onclick="setRating(4)">4</button>
+                <button class="rating-btn" onclick="setRating(5)">5</button>
+            </div>
+            <div class="review-notes-title">GREEN FLAGS</div>
+            <textarea class="notes-textarea" id="greenFlags" placeholder="Positive observations..." oninput="saveCurrentReview()" style="height: 50px;"></textarea>
+            <div class="review-notes-title">RED FLAGS</div>
+            <textarea class="notes-textarea" id="redFlags" placeholder="Issues or concerns..." oninput="saveCurrentReview()" style="height: 50px;"></textarea>
+            <div class="review-notes-title">ANALYSIS IDEAS</div>
+            <textarea class="notes-textarea" id="analysisIdeas" placeholder="Ideas for analysis..." oninput="saveCurrentReview()" style="height: 50px;"></textarea>
+            <div class="review-notes-title">QUESTIONS TO CLARIFY</div>
+            <textarea class="notes-textarea" id="questionsToClarity" placeholder="Things to investigate..." oninput="saveCurrentReview()" style="height: 50px;"></textarea>
+        </div>
+        
+        <!-- Transcription Section -->
+        <div class="review-notes">
+            <div class="review-notes-title">TRANSCRIPTION</div>
+            <textarea class="notes-textarea" id="transcriptionText" placeholder="Manual transcription..." oninput="saveCurrentReview()" style="width: 80%; flex: none;"></textarea>
+        </div>
+    </div>
+    
+    <!-- Annotations Sidebar -->
+    <div class="annotations-sidebar" id="annotationsSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Annotations</div>
+            <button class="btn btn-primary" onclick="toggleSidebar()">✕</button>
+        </div>
+        <div class="annotations-list" id="annotationsList">
+            <!-- Annotations will be listed here -->
+        </div>
+    </div>
+    
+    <!-- Toggle Sidebar Button -->
+    <button class="toggle-sidebar-btn" onclick="toggleSidebar()">📋</button>
+    
+    <!-- Add Label Modal -->
+    <div class="modal" id="addLabelModal">
+        <div class="modal-content">
+            <div class="modal-title">Add New Label</div>
+            <input type="text" class="modal-input" id="newLabelInput" placeholder="Enter label name (e.g., 'scratch', 'bird')">
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeAddLabelModal()">Cancel</button>
+                <button class="btn btn-success" onclick="addNewLabel()">Add Label</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // State
+        let currentFileIndex = 0;
+        let audioFiles = [];
+        let annotations = [];
+        let selectedLabel = null;
+        let isPlaying = false;
+        let binaryChecks = {}; // Store binary checks per PIDN
+        let audioContext = null;
+        let audioBuffer = null;
+        let sourceNode = null;
+        let startTime = 0;
+        let pauseTime = 0;
+        let playbackSpeed = 1.0;
+        let zoomLevel = 1;
+        let waveformData = null;
+        let canvas = null;
+        let ctx = null;
+        let animationFrame = null;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragEndX = 0;
+        let scrollOffset = 0;
+        let isPanning = false;
+        let panStartX = 0;
+        let panOffsetX = 0;
+        
+        // Label definitions with colors
+        const defaultLabels = [
+            { name: 'bird', color: '#f39c12', key: 'b' },
+            { name: 'burp', color: '#00b894', key: 'x' },
+            { name: 'clock_ticking', color: '#fdcb6e', key: 'ñ' },
+            { name: 'clapping', color: '#e91e63', key: 'c' },
+            { name: 'closed_mouth_laugh', color: '#f1c40f', key: 'j' },
+            { name: 'cough', color: '#2980b9', key: 'u' },
+            { name: 'crackling', color: '#e17055', key: 'Ω' },
+            { name: 'creak', color: '#8b4513', key: 'π' },
+            { name: 'digital_chime', color: '#ffd700', key: '∑' },
+            { name: 'dog', color: '#3498db', key: 'd' },
+            { name: 'dry_mouth', color: '#c0392b', key: 'y' },
+            { name: 'exhale', color: '#2ecc71', key: '6' },
+            { name: 'fabric_over_mic', color: '#8e44ad', key: 'a' },
+            { name: 'feedback', color: '#ff6348', key: 'å' },
+            { name: 'gain', color: '#ff7675', key: 'ç' },
+            { name: 'gulp', color: '#16a085', key: 'g' },
+            { name: 'gurgle', color: '#16a085', key: '´' },
+            { name: 'inhale', color: '#3498db', key: '5' },
+            { name: 'knock', color: '#9b59b6', key: 'k' },
+            { name: 'lip_smack', color: '#27ae60', key: 'l' },
+            { name: 'mic_shuffling', color: '#74b9ff', key: 'æ' },
+            { name: 'mic_tap', color: '#a29bfe', key: 'ø' },
+            { name: 'mouth_sigh', color: '#7f8c8d', key: '1' },
+            { name: 'multiple_sources', color: '#ff6b6b', key: 'p' },
+            { name: 'music', color: '#9c27b0', key: 'm' },
+            { name: 'nose_sigh', color: '#95a5a6', key: 'v' },
+            { name: 'open_mouth_laugh', color: '#e67e22', key: 'q' },
+            { name: 'popping', color: '#00cec9', key: '≈' },
+            { name: 'pot_banging', color: '#d63031', key: 'ç' },
+            { name: 'ringing', color: '#e8b339', key: '3' },
+            { name: 'rustle', color: '#34495e', key: 'r' },
+            { name: 'scratch', color: '#e74c3c', key: 's' },
+            { name: 'silence', color: '#607d8b', key: 'i' },
+            { name: 'sneeze', color: '#9b59b6', key: 'e' },
+            { name: 'sniffle', color: '#d35400', key: 'f' },
+            { name: 'stomach_gurgle', color: '#6c5ce7', key: 'b' },
+            { name: 'stutter', color: '#fd79a8', key: '8' },
+            { name: 'swallowing', color: '#1abc9c', key: '2' },
+            { name: 'talking_over', color: '#e67e22', key: 'o' },
+            { name: 'throat_clear', color: '#f39c12', key: 'h' },
+            { name: 'thud', color: '#5d4e37', key: '4' },
+            { name: 'tisk', color: '#e84393', key: '7' },
+            { name: 'TV', color: '#1abc9c', key: 't' },
+            { name: 'um_uh', color: '#a29bfe', key: '9' },
+            { name: 'wind', color: '#95a5a6', key: 'w' },
+            { name: 'yawn', color: '#e74c3c', key: 'z' },
+            { name: 'phone_tap', color: '#3742fa', key: '√' },
+            { name: 'cat_meow', color: '#f368e0', key: '∫' },
+            { name: 'gag', color: '#48dbfb', key: 'ƒ' },
+            { name: 'unknown_sound', color: '#686de0', key: '≤' },
+            { name: 'lisp', color: '#ff9ff3', key: '≥' },
+            { name: 'word_mix_up', color: '#ff6b9d', key: '¬' }
+        ];
+        
+        let labels = [...defaultLabels];
+        let allAnnotations = {}; // Store annotations by PIDN
+        let allReviews = {}; // Store reviews by PIDN
+        
+        // Load saved data from localStorage on startup
+        function loadSavedData() {
+            try {
+                const savedAnnotations = localStorage.getItem('allAnnotations');
+                if (savedAnnotations) {
+                    allAnnotations = JSON.parse(savedAnnotations);
+                    console.log('Loaded annotations from localStorage:', Object.keys(allAnnotations).length, 'files');
+                }
+                
+                const savedReviews = localStorage.getItem('allReviews');
+                if (savedReviews) {
+                    allReviews = JSON.parse(savedReviews);
+                    console.log('Loaded reviews from localStorage:', Object.keys(allReviews).length, 'files');
+                }
+                
+                const savedBinaryChecks = localStorage.getItem('binaryChecks');
+                if (savedBinaryChecks) {
+                    binaryChecks = JSON.parse(savedBinaryChecks);
+                    console.log('Loaded binary checks from localStorage:', Object.keys(binaryChecks).length, 'files');
+                }
+            } catch (e) {
+                console.error('Error loading saved data:', e);
+            }
+        }
+        
+        // Save all data to localStorage
+        function saveAllData() {
+            try {
+                localStorage.setItem('allAnnotations', JSON.stringify(allAnnotations));
+                localStorage.setItem('allReviews', JSON.stringify(allReviews));
+                localStorage.setItem('binaryChecks', JSON.stringify(binaryChecks));
+                console.log('Saved all data to localStorage');
+            } catch (e) {
+                console.error('Error saving data:', e);
+            }
+        }
+        
+        // Manual save with visual feedback
+        function manualSave() {
+            // Save current file first
+            if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                const currentPIDN = audioFiles[currentFileIndex].pidn;
+                allAnnotations[currentPIDN] = [...annotations];
+                saveCurrentReview();
+            }
+            
+            saveAllData();
+            
+            // Count saved items
+            const totalFiles = Object.keys(allReviews).length;
+            const totalAnnotations = Object.values(allAnnotations).reduce((sum, anns) => sum + anns.length, 0);
+            
+            // Show alert with counts
+            alert(`✓ ${totalFiles} files saved (${totalAnnotations} annotations)`);
+        }
+        
+        // Fetch CSV count from monitor server
+        async function updateCSVCount() {
+            try {
+                const response = await fetch('http://localhost:8765/api/status');
+                const data = await response.json();
+                document.getElementById('csvCount').textContent = data.count;
+            } catch (error) {
+                // If server not running, just show 0
+                console.log('CSV monitor server not running');
+            }
+        }
+        
+        // Auto-refresh CSV count every 10 seconds
+        function startCSVCountMonitor() {
+            updateCSVCount(); // Initial update
+            setInterval(updateCSVCount, 10000); // Update every 10 seconds
+        }
+        
+        // Initialize
+        window.onload = async function() {
+            canvas = document.getElementById('waveformCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Start CSV count monitor (updates every 10 seconds)
+            startCSVCountMonitor();
+            
+            // Initialize audio context
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Load saved data from localStorage
+            loadSavedData();
+            
+            // Load file list
+            await loadFileList();
+            
+            // Render labels
+            renderLabels();
+            
+            // Load last file (or first if no history)
+            if (audioFiles.length > 0) {
+                await loadFile(currentFileIndex);
+            }
+            
+            // Canvas interactions
+            canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseup', handleCanvasMouseUp);
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault()); // Prevent default right-click menu
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyPress);
+        };
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            drawWaveform();
+        }
+        
+        async function loadFileList() {
+            try {
+                const response = await fetch('/csvs/waveform_analysis_master.csv');
+                const csvText = await response.text();
+                
+                // Parse CSV properly - handle commas in quoted fields
+                const lines = csvText.trim().split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                console.log('CSV Headers:', headers);
+                
+                audioFiles = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Parse CSV line with proper quote handling
+                    const values = [];
+                    let current = '';
+                    let inQuotes = false;
+                    
+                    for (let j = 0; j < line.length; j++) {
+                        const char = line[j];
+                        if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            values.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    values.push(current.trim());
+                    
+                    // Build row object
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+                    
+                    if (row.PIDN && row.audio_file_path) {
+                        audioFiles.push({
+                            pidn: row.PIDN,
+                            audio_file_path: row.audio_file_path,
+                            path: `/audio${row.audio_file_path}`
+                        });
+                    }
+                }
+                
+                // CRITICAL: Sort by PIDN to ensure consistent order
+                audioFiles.sort((a, b) => a.pidn.localeCompare(b.pidn));
+                
+                console.log(`Loaded ${audioFiles.length} audio files`);
+                console.log('First file:', audioFiles[0]);
+                
+                // Load last position from localStorage
+                const lastIndex = parseInt(localStorage.getItem('annotation_last_index') || '0');
+                currentFileIndex = Math.min(lastIndex, audioFiles.length - 1);
+            } catch (error) {
+                console.error('Error loading CSV:', error);
+                audioFiles = [];
+            }
+        }
+        
+        async function loadFile(index) {
+            // Save current file's annotations and review before switching
+            if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                const currentPIDN = audioFiles[currentFileIndex].pidn;
+                allAnnotations[currentPIDN] = [...annotations];
+                saveCurrentReview();
+                console.log(`Saved ${annotations.length} annotations for ${currentPIDN}`);
+            }
+            
+            currentFileIndex = index;
+            const file = audioFiles[index];
+            
+            // Save current position to localStorage
+            localStorage.setItem('annotation_last_index', index.toString());
+            
+            // Update UI
+            document.getElementById('fileName').textContent = `${file.pidn}`;
+            document.getElementById('progressInfo').textContent = `File ${index + 1} of ${audioFiles.length}`;
+            
+            // Update PIDN progress bar - count unique PIDNs with reviews
+            const totalPIDNs = audioFiles.length;
+            const reviewedPIDNs = Object.keys(allReviews).length;
+            const remaining = totalPIDNs - reviewedPIDNs;
+            const percentage = (reviewedPIDNs / totalPIDNs) * 100;
+            
+            document.getElementById('pidnProgressText').textContent = `${reviewedPIDNs} / ${totalPIDNs} PIDNs reviewed`;
+            document.getElementById('pidnProgressFill').style.width = percentage + '%';
+            document.getElementById('pidnsRemaining').textContent = `${remaining} Happy Memories to Check`;
+            
+            // Load audio
+            try {
+                const response = await fetch(file.path);
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Extract waveform data
+                waveformData = audioBuffer.getChannelData(0);
+                
+                // Load annotations for this PIDN
+                annotations = allAnnotations[file.pidn] || [];
+                console.log(`Loaded ${annotations.length} annotations for ${file.pidn}`);
+                
+                // Load binary checks for this PIDN
+                updateBinaryCheckUI();
+                
+                // Load review data for this PIDN
+                loadCurrentReview();
+                
+                // Update duration info - just show the number glowing white
+                const duration = audioBuffer.duration;
+                const durationText = `${Math.floor(duration)}s`;
+                document.getElementById('durationInfo').textContent = durationText;
+                
+                // Draw waveform
+                drawWaveform();
+                renderAnnotationsList();
+            } catch (error) {
+                console.error('Error loading audio:', error);
+            }
+        }
+        
+        function drawWaveform() {
+            if (!waveformData || !ctx) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Background
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw time grid (0.5s intervals)
+            drawTimeGrid();
+            
+            // Draw Y-axis amplitude scale
+            drawAmplitudeScale();
+            
+            // Draw waveform with proper amplitude visualization
+            const duration = audioBuffer.duration;
+            const sampleRate = audioBuffer.sampleRate;
+            const samplesPerSecond = sampleRate;
+            const startSample = Math.floor(scrollOffset * samplesPerSecond);
+            const visibleDuration = duration / zoomLevel;
+            const samplesVisible = Math.floor(visibleDuration * samplesPerSecond);
+            const step = Math.max(1, Math.floor(samplesVisible / canvas.width));
+            const centerY = canvas.height / 2;
+            
+            // Find max amplitude in visible range for auto-scaling
+            let maxAmp = 0;
+            for (let i = 0; i < canvas.width; i++) {
+                const startIdx = startSample + Math.floor(i * step);
+                const endIdx = Math.min(startIdx + step, waveformData.length);
+                for (let j = startIdx; j < endIdx; j++) {
+                    maxAmp = Math.max(maxAmp, Math.abs(waveformData[j]));
+                }
+            }
+            
+            // Scale factor - use more vertical space for better visibility
+            const scaleFactor = maxAmp > 0.05 ? 0.95 / maxAmp : 1.0;
+            
+            // Draw waveform as filled vertical bars showing min/max for each pixel column
+            ctx.fillStyle = '#00d4ff';
+            
+            for (let i = 0; i < canvas.width; i++) {
+                const startIdx = startSample + Math.floor(i * step);
+                const endIdx = Math.min(startIdx + step, waveformData.length);
+                
+                if (startIdx >= waveformData.length) break;
+                
+                // Find min and max in this pixel's sample range
+                let min = 0;
+                let max = 0;
+                for (let j = startIdx; j < endIdx; j++) {
+                    const value = waveformData[j];
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                }
+                
+                // Scale and draw filled vertical bar from min to max
+                const yMax = centerY - (max * centerY * scaleFactor);
+                const yMin = centerY - (min * centerY * scaleFactor);
+                const barHeight = Math.max(1, yMin - yMax);
+                
+                ctx.fillRect(i, yMax, 1, barHeight);
+            }
+            
+            // Draw annotations
+            drawAnnotations();
+            
+            // Draw playhead
+            if (isPlaying || pauseTime > 0) {
+                drawPlayhead();
+            }
+        }
+        
+        function drawAmplitudeScale() {
+            // Draw Y-axis amplitude labels
+            ctx.font = 'bold 18px monospace';
+            ctx.textAlign = 'left';
+            
+            const centerY = canvas.height / 2;
+            const amplitudes = [1.0, 0.5, 0, -0.5, -1.0];
+            
+            amplitudes.forEach(amp => {
+                const y = centerY - (amp * centerY * 0.9);
+                const label = amp.toFixed(1);
+                
+                // Draw horizontal line
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+                
+                // Draw dark background for label
+                const textWidth = ctx.measureText(label).width;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(2, y - 20, textWidth + 8, 24);
+                
+                // Draw label in bright green
+                ctx.fillStyle = '#00ff00';
+                ctx.fillText(label, 5, y - 2);
+            });
+            
+            ctx.textAlign = 'center';
+        }
+        
+        function drawTimeGrid() {
+            const duration = audioBuffer ? audioBuffer.duration : 0;
+            const visibleDuration = duration / zoomLevel;
+            const interval = 0.5; // 0.5 second intervals
+            const pixelsPerSecond = canvas.width / visibleDuration;
+            
+            ctx.strokeStyle = '#2a2a2a';
+            ctx.lineWidth = 1;
+            
+            const startTime = scrollOffset;
+            const endTime = scrollOffset + visibleDuration;
+            
+            for (let t = Math.floor(startTime / interval) * interval; t <= endTime; t += interval) {
+                const x = (t - startTime) * pixelsPerSecond;
+                if (x < 0 || x > canvas.width) continue;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+                
+                // Draw time label every second with background
+                if (t % 1 === 0) {
+                    const label = `${t.toFixed(1)}s`;
+                    ctx.font = 'bold 18px monospace';
+                    
+                    // Draw dark background
+                    const textWidth = ctx.measureText(label).width;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(x + 2, 0, textWidth + 6, 24);
+                    
+                    // Draw text
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillText(label, x + 5, 18);
+                }
+            }
+            
+            // Draw total duration at top right with background
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 20px monospace';
+            
+            const totalLabel = `Total: ${duration.toFixed(1)}s`;
+            const totalWidth = ctx.measureText(totalLabel).width;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(canvas.width - totalWidth - 10, 0, totalWidth + 10, 28);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillText(totalLabel, canvas.width - 5, 22);
+            
+            // Draw zoom level at top right with background
+            const zoomLabel = `Zoom: ${zoomLevel.toFixed(1)}x`;
+            const zoomWidth = ctx.measureText(zoomLabel).width;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(canvas.width - zoomWidth - 10, 30, zoomWidth + 10, 28);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillText(zoomLabel, canvas.width - 5, 52);
+            
+            ctx.textAlign = 'center';
+        }
+        
+        function drawAnnotations() {
+            if (!audioBuffer) return;
+            
+            const duration = audioBuffer.duration;
+            const visibleDuration = duration / zoomLevel;
+            const startTime = scrollOffset;
+            const endTime = scrollOffset + visibleDuration;
+            
+            // Draw existing annotations
+            annotations.forEach(ann => {
+                // Only draw if annotation is in visible range
+                if (ann.end < startTime || ann.start > endTime) return;
+                
+                const label = labels.find(l => l.name === ann.label);
+                if (!label) return;
+                
+                const startX = ((ann.start - startTime) / visibleDuration) * canvas.width;
+                const endX = ((ann.end - startTime) / visibleDuration) * canvas.width;
+                
+                ctx.fillStyle = label.color + '40'; // 25% opacity
+                ctx.fillRect(startX, 0, endX - startX, canvas.height);
+                
+                ctx.strokeStyle = label.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(startX, 0, endX - startX, canvas.height);
+            });
+            
+            // Draw current drag selection
+            if (isDragging && selectedLabel) {
+                const label = labels.find(l => l.name === selectedLabel);
+                if (label) {
+                    const startX = Math.min(dragStartX, dragEndX);
+                    const width = Math.abs(dragEndX - dragStartX);
+                    
+                    ctx.fillStyle = label.color + '60'; // 40% opacity
+                    ctx.fillRect(startX, 0, width, canvas.height);
+                    
+                    ctx.strokeStyle = label.color;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(startX, 0, width, canvas.height);
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+        
+        function drawPlayhead() {
+            const currentTime = isPlaying ? 
+                (audioContext.currentTime - startTime) * playbackSpeed : 
+                pauseTime;
+            
+            const duration = audioBuffer ? audioBuffer.duration : 1;
+            
+            // Auto-scroll to follow playhead when zoomed in and playing
+            if (isPlaying && zoomLevel > 1) {
+                const visibleDuration = duration / zoomLevel;
+                const maxScroll = duration - visibleDuration;
+                
+                // Keep playhead centered in view (or at least visible)
+                const targetScroll = currentTime - (visibleDuration / 2);
+                scrollOffset = Math.max(0, Math.min(maxScroll, targetScroll));
+                
+                // Update scroll bar to match
+                const scrollBar = document.getElementById('scrollBar');
+                if (scrollBar && maxScroll > 0) {
+                    scrollBar.value = (scrollOffset / maxScroll) * 100;
+                }
+            }
+            
+            // Calculate playhead position relative to visible area
+            const visibleDuration = duration / zoomLevel;
+            const visibleStartTime = scrollOffset;
+            const relativeTime = currentTime - visibleStartTime;
+            const x = (relativeTime / visibleDuration) * canvas.width;
+            
+            // Draw bright red playback line
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 5;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Draw draggable circle at top of playhead (bigger for easier dragging)
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(x, 12, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // White center for contrast
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x, 12, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Update time display
+            updateTimeDisplay(currentTime, duration);
+            
+            if (isPlaying) {
+                animationFrame = requestAnimationFrame(drawWaveform);
+            }
+        }
+        
+        function updateTimeDisplay(current, total) {
+            const formatTime = (t) => {
+                const mins = Math.floor(t / 60);
+                const secs = Math.floor(t % 60);
+                const ms = Math.floor((t % 1) * 1000);
+                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+            };
+            
+            document.getElementById('timeDisplay').textContent = 
+                `${formatTime(current)} / ${formatTime(total)}`;
+        }
+        
+        function togglePlayback() {
+            if (isPlaying) {
+                pauseAudio();
+            } else {
+                playAudio();
+            }
+        }
+        
+        // YouTube-style skip buttons - jump backward/forward by 5 seconds
+        function startRewind() {
+            if (!audioBuffer) return;
+            
+            const currentTime = isPlaying ? audioContext.currentTime - startTime : pauseTime;
+            const newTime = Math.max(0, currentTime - 5);
+            
+            if (isPlaying) {
+                pauseAudio();
+                pauseTime = newTime;
+                playAudio();
+            } else {
+                pauseTime = newTime;
+                drawWaveform();
+            }
+        }
+        
+        function stopRewind() {
+            // No-op for click-based skip
+        }
+        
+        function startFastForward() {
+            if (!audioBuffer) return;
+            
+            const currentTime = isPlaying ? audioContext.currentTime - startTime : pauseTime;
+            const duration = audioBuffer.duration;
+            const newTime = Math.min(duration, currentTime + 5);
+            
+            if (isPlaying) {
+                pauseAudio();
+                pauseTime = newTime;
+                playAudio();
+            } else {
+                pauseTime = newTime;
+                drawWaveform();
+            }
+        }
+        
+        function stopFastForward() {
+            // No-op for click-based skip
+        }
+        
+        function rewind5() {
+            if (audioBuffer) {
+                const currentTime = isPlaying ? audioContext.currentTime - startTime : pauseTime;
+                const newTime = Math.max(0, currentTime - 5);
+                
+                if (isPlaying) {
+                    pauseAudio();
+                    pauseTime = newTime;
+                    playAudio();
+                } else {
+                    pauseTime = newTime;
+                    drawWaveform();
+                }
+            }
+        }
+        
+        async function playAudio() {
+            if (!audioBuffer) return;
+            
+            // Resume AudioContext if suspended (browser autoplay policy)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            
+            // Stop existing playback
+            if (sourceNode) {
+                try {
+                    sourceNode.stop();
+                } catch (e) {
+                    // Already stopped
+                }
+                sourceNode = null;
+            }
+            
+            // Create new source
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            sourceNode.playbackRate.value = playbackSpeed;
+            sourceNode.connect(audioContext.destination);
+            
+            // Start from pause point or beginning
+            const offset = pauseTime || 0;
+            
+            // Reset if at end
+            if (offset >= audioBuffer.duration) {
+                pauseTime = 0;
+            }
+            
+            sourceNode.start(0, pauseTime);
+            startTime = audioContext.currentTime - pauseTime;
+            
+            isPlaying = true;
+            const playBtn = document.getElementById('playBtn');
+            playBtn.textContent = '⏸';
+            playBtn.classList.add('playing');
+            
+            const playBtnQuick = document.getElementById('playBtnQuick');
+            if (playBtnQuick) {
+                playBtnQuick.textContent = '⏸';
+            }
+            
+            // Handle end of playback
+            sourceNode.onended = () => {
+                if (isPlaying) {
+                    isPlaying = false;
+                    pauseTime = 0;
+                    const playBtn = document.getElementById('playBtn');
+                    playBtn.textContent = '▶';
+                    playBtn.classList.remove('playing');
+                    drawWaveform();
+                }
+            };
+            
+            // Start animation
+            drawWaveform();
+        }
+        
+        function pauseAudio() {
+            if (sourceNode) {
+                try {
+                    const currentPlayTime = (audioContext.currentTime - startTime) * playbackSpeed;
+                    pauseTime = Math.min(currentPlayTime, audioBuffer.duration);
+                    sourceNode.stop();
+                } catch (e) {
+                    console.log('Error stopping audio:', e);
+                }
+                sourceNode = null;
+            }
+            
+            isPlaying = false;
+            const playBtn = document.getElementById('playBtn');
+            playBtn.textContent = '▶';
+            playBtn.classList.remove('playing');
+            
+            const playBtnQuick = document.getElementById('playBtnQuick');
+            if (playBtnQuick) {
+                playBtnQuick.textContent = '▶';
+            }
+            
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            
+            drawWaveform();
+        }
+        
+        function setSpeed(speed) {
+            playbackSpeed = speed;
+            
+            // Update active button
+            document.querySelectorAll('.speed-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // If playing, restart with new speed
+            if (isPlaying) {
+                const wasPlaying = isPlaying;
+                pauseAudio();
+                if (wasPlaying) {
+                    playAudio();
+                }
+            }
+        }
+        
+        function updateZoom() {
+            const slider = document.getElementById('zoomSlider') || document.getElementById('zoomSliderQuick');
+            const newZoom = parseInt(slider.value);
+            if (newZoom !== zoomLevel) {
+                zoomLevel = newZoom;
+                const zoomDisplay = document.getElementById('zoomLevel');
+                const zoomDisplayQuick = document.getElementById('zoomLevelQuick');
+                if (zoomDisplay) zoomDisplay.textContent = `${zoomLevel}x`;
+                if (zoomDisplayQuick) zoomDisplayQuick.textContent = `${zoomLevel}x`;
+                
+                // Sync both sliders
+                const otherSlider = document.getElementById('zoomSlider') || document.getElementById('zoomSliderQuick');
+                if (otherSlider && otherSlider !== slider) {
+                    otherSlider.value = zoomLevel;
+                }
+                
+                // Reset scroll when zoom changes
+                scrollOffset = 0;
+                document.getElementById('scrollBar').value = 0;
+                
+                drawWaveform();
+            }
+        }
+        
+        function updateScroll() {
+            const scrollBar = document.getElementById('scrollBar');
+            const scrollPercent = parseInt(scrollBar.value) / 100;
+            
+            // Calculate max scroll based on zoom level
+            const duration = audioBuffer ? audioBuffer.duration : 0;
+            const visibleDuration = duration / zoomLevel;
+            const maxScroll = duration - visibleDuration;
+            
+            scrollOffset = scrollPercent * maxScroll;
+            drawWaveform();
+        }
+        
+        function renderLabels() {
+            const container = document.getElementById('labelButtons');
+            container.innerHTML = '';
+            
+            labels.forEach(label => {
+                const btn = document.createElement('button');
+                btn.className = 'label-btn';
+                btn.onclick = () => selectLabel(label.name);
+                
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'label-color';
+                colorDiv.style.background = label.color;
+                
+                const text = document.createTextNode(`${label.name} (${label.key})`);
+                
+                btn.appendChild(colorDiv);
+                btn.appendChild(text);
+                container.appendChild(btn);
+            });
+            
+            // Add line break to separate labels from controls
+            const lineBreak = document.createElement('div');
+            lineBreak.style.width = '100%';
+            lineBreak.style.height = '0';
+            container.appendChild(lineBreak);
+            
+            // Create centered controls container
+            const controlsWrapper = document.createElement('div');
+            controlsWrapper.style.display = 'flex';
+            controlsWrapper.style.justifyContent = 'center';
+            controlsWrapper.style.gap = '8px';
+            controlsWrapper.style.width = '100%';
+            controlsWrapper.style.flexWrap = 'wrap';
+            
+            // Add Save/Zoom controls
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'label-btn save-btn';
+            saveBtn.id = 'manualSaveBtn';
+            saveBtn.textContent = 'Save';
+            saveBtn.onclick = manualSave;
+            controlsWrapper.appendChild(saveBtn);
+            
+            // Add zoom controls
+            const zoomLabel = document.createElement('span');
+            zoomLabel.textContent = 'Zoom:';
+            zoomLabel.style.marginLeft = '10px';
+            zoomLabel.style.color = '#888';
+            controlsWrapper.appendChild(zoomLabel);
+            
+            const zoomSlider = document.createElement('input');
+            zoomSlider.type = 'range';
+            zoomSlider.className = 'zoom-slider';
+            zoomSlider.id = 'zoomSliderQuick';
+            zoomSlider.min = '1';
+            zoomSlider.max = '100';
+            zoomSlider.value = '1';
+            zoomSlider.oninput = updateZoom;
+            zoomSlider.style.width = '100px';
+            controlsWrapper.appendChild(zoomSlider);
+            
+            const zoomLevelSpan = document.createElement('span');
+            zoomLevelSpan.id = 'zoomLevelQuick';
+            zoomLevelSpan.textContent = '1x';
+            zoomLevelSpan.style.color = '#888';
+            zoomLevelSpan.style.marginRight = '10px';
+            controlsWrapper.appendChild(zoomLevelSpan);
+            
+            // Add navigation/playback controls grouped together
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'label-btn control-btn';
+            prevBtn.textContent = '← Previous';
+            prevBtn.onclick = previousFile;
+            controlsWrapper.appendChild(prevBtn);
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'label-btn control-btn';
+            nextBtn.textContent = 'Next →';
+            nextBtn.onclick = nextFile;
+            controlsWrapper.appendChild(nextBtn);
+            
+            const rewindBtn = document.createElement('button');
+            rewindBtn.className = 'label-btn control-btn';
+            rewindBtn.textContent = '⏪';
+            rewindBtn.onmousedown = startRewind;
+            rewindBtn.onmouseup = stopRewind;
+            rewindBtn.onmouseleave = stopRewind;
+            controlsWrapper.appendChild(rewindBtn);
+            
+            const playBtnNew = document.createElement('button');
+            playBtnNew.className = 'label-btn control-btn';
+            playBtnNew.id = 'playBtnQuick';
+            playBtnNew.textContent = '▶';
+            playBtnNew.onclick = togglePlayback;
+            controlsWrapper.appendChild(playBtnNew);
+            
+            const fastForwardBtn = document.createElement('button');
+            fastForwardBtn.className = 'label-btn control-btn';
+            fastForwardBtn.textContent = '⏩';
+            fastForwardBtn.onmousedown = startFastForward;
+            fastForwardBtn.onmouseup = stopFastForward;
+            fastForwardBtn.onmouseleave = stopFastForward;
+            controlsWrapper.appendChild(fastForwardBtn);
+            
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'label-btn refresh-btn';
+            refreshBtn.textContent = 'Refresh';
+            refreshBtn.onclick = () => location.reload();
+            controlsWrapper.appendChild(refreshBtn);
+            
+            const exportBtn = document.createElement('button');
+            exportBtn.className = 'label-btn export-btn';
+            exportBtn.textContent = 'Export';
+            exportBtn.onclick = exportAnnotations;
+            controlsWrapper.appendChild(exportBtn);
+            
+            const addBtn = document.createElement('button');
+            addBtn.className = 'label-btn add-label-btn';
+            addBtn.textContent = '+ Add Label';
+            addBtn.onclick = openAddLabelModal;
+            controlsWrapper.appendChild(addBtn);
+            
+            // Append controls wrapper to main container
+            container.appendChild(controlsWrapper);
+        }
+        
+        function selectLabel(labelName) {
+            // Toggle selection - click same label to deselect
+            if (selectedLabel === labelName) {
+                selectedLabel = null;
+                document.querySelectorAll('.label-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+            } else {
+                selectedLabel = labelName;
+                document.querySelectorAll('.label-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                event.target.classList.add('selected');
+            }
+        }
+        
+        let isDraggingPlayhead = false;
+        
+        function handleCanvasMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            
+            // Right-click to delete annotation
+            if (e.button === 2) {
+                e.preventDefault();
+                const clickedAnnotation = getAnnotationAtPosition(x);
+                if (clickedAnnotation !== null) {
+                    if (confirm(`Delete ${clickedAnnotation.label} annotation?`)) {
+                        annotations.splice(clickedAnnotation.index, 1);
+                        console.log('Deleted annotation:', clickedAnnotation);
+                        
+                        // Save to localStorage
+                        if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                            const currentPIDN = audioFiles[currentFileIndex].pidn;
+                            allAnnotations[currentPIDN] = [...annotations];
+                            saveAllData();
+                        }
+                        
+                        renderAnnotationsList();
+                        drawWaveform();
+                    }
+                }
+                return;
+            }
+            
+            // Check if clicking near playhead (within 20 pixels for easier grabbing)
+            const currentTime = isPlaying ? (audioContext.currentTime - startTime) * playbackSpeed : pauseTime;
+            const duration = audioBuffer ? audioBuffer.duration : 1;
+            const playheadX = (currentTime / duration) * canvas.width;
+            
+            if (Math.abs(x - playheadX) < 20) {
+                // Dragging playhead
+                isDraggingPlayhead = true;
+                if (isPlaying) {
+                    pauseAudio();
+                }
+                canvas.style.cursor = 'grabbing';
+                return;
+            }
+            
+            if (selectedLabel) {
+                // Annotation mode
+                isDragging = true;
+                dragStartX = x;
+                dragEndX = dragStartX;
+            } else if (zoomLevel > 1) {
+                // Pan mode when zoomed
+                isPanning = true;
+                panStartX = x;
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+        
+        function handleCanvasMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            
+            if (isDraggingPlayhead) {
+                // Scrub through audio
+                const duration = audioBuffer ? audioBuffer.duration : 1;
+                const newTime = Math.max(0, Math.min(duration, (x / canvas.width) * duration));
+                pauseTime = newTime;
+                drawWaveform();
+                return;
+            }
+            
+            if (isDragging) {
+                dragEndX = x;
+                drawWaveform();
+            } else if (isPanning) {
+                const delta = x - panStartX;
+                panOffsetX += delta;
+                panStartX = x;
+                drawWaveform();
+            }
+        }
+        
+        function handleCanvasMouseUp(e) {
+            if (isDraggingPlayhead) {
+                isDraggingPlayhead = false;
+                canvas.style.cursor = 'crosshair';
+                return;
+            }
+            
+            if (isPanning) {
+                isPanning = false;
+                canvas.style.cursor = 'crosshair';
+                return;
+            }
+            
+            if (!isDragging || !selectedLabel) return;
+            
+            isDragging = false;
+            
+            // Convert pixel positions to time (accounting for scroll and zoom)
+            const duration = audioBuffer ? audioBuffer.duration : 0;
+            const visibleDuration = duration / zoomLevel;
+            const startTime = scrollOffset + (Math.min(dragStartX, dragEndX) / canvas.width) * visibleDuration;
+            const endTime = scrollOffset + (Math.max(dragStartX, dragEndX) / canvas.width) * visibleDuration;
+            
+            // Only create annotation if drag was significant (> 5 pixels)
+            if (Math.abs(dragEndX - dragStartX) > 5) {
+                const annotation = {
+                    pidn: audioFiles[currentFileIndex].pidn,
+                    start: startTime,
+                    end: endTime,
+                    label: selectedLabel,
+                    type: 'region',
+                    timestamp: new Date().toISOString()
+                };
+                
+                annotations.push(annotation);
+                console.log('Created annotation:', annotation);
+                
+                // Save annotations immediately to localStorage
+                if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                    const currentPIDN = audioFiles[currentFileIndex].pidn;
+                    allAnnotations[currentPIDN] = [...annotations];
+                    saveAllData();
+                }
+                
+                renderAnnotationsList();
+                drawWaveform();
+            }
+        }
+        
+        function getAnnotationAtPosition(x) {
+            // Convert x position to time (accounting for scroll and zoom)
+            const duration = audioBuffer ? audioBuffer.duration : 0;
+            const visibleDuration = duration / zoomLevel;
+            const startTime = scrollOffset;
+            const clickTime = startTime + (x / canvas.width) * visibleDuration;
+            
+            console.log('Click at x:', x, 'time:', clickTime, 'scrollOffset:', scrollOffset);
+            
+            // Find annotation at this time (check in reverse order to get topmost)
+            for (let i = annotations.length - 1; i >= 0; i--) {
+                const ann = annotations[i];
+                console.log('Checking annotation', i, 'start:', ann.start, 'end:', ann.end, 'label:', ann.label);
+                if (clickTime >= ann.start && clickTime <= ann.end) {
+                    console.log('Found annotation at index', i);
+                    return { ...ann, index: i };
+                }
+            }
+            console.log('No annotation found at this position');
+            return null;
+        }
+        
+        function handleKeyPress(e) {
+            // Don't trigger shortcuts when typing in input fields or textareas
+            const activeElement = document.activeElement;
+            const isTyping = activeElement.tagName === 'TEXTAREA' || 
+                           activeElement.tagName === 'INPUT' ||
+                           activeElement.isContentEditable;
+            
+            // Space bar = play/pause (but not when typing)
+            if (e.code === 'Space' && !isTyping) {
+                e.preventDefault();
+                togglePlayback();
+                return;
+            }
+            
+            // Label shortcuts (also not when typing)
+            if (!isTyping) {
+                const label = labels.find(l => l.key === e.key.toLowerCase());
+                if (label) {
+                    selectLabel(label.name);
+                }
+            }
+        }
+        
+        function openAddLabelModal() {
+            document.getElementById('addLabelModal').classList.add('show');
+            document.getElementById('newLabelInput').focus();
+        }
+        
+        function closeAddLabelModal() {
+            document.getElementById('addLabelModal').classList.remove('show');
+            document.getElementById('newLabelInput').value = '';
+        }
+        
+        function addNewLabel() {
+            const input = document.getElementById('newLabelInput');
+            const name = input.value.trim();
+            
+            if (!name) return;
+            
+            // Generate random color
+            const color = '#' + Math.floor(Math.random()*16777215).toString(16);
+            
+            // Add label
+            labels.push({
+                name: name,
+                color: color,
+                key: name[0].toLowerCase()
+            });
+            
+            renderLabels();
+            closeAddLabelModal();
+        }
+        
+        function loadAnnotationsForFile(pidn) {
+            // TODO: Load from server/storage
+            annotations = [];
+            renderAnnotationsList();
+        }
+        
+        function renderAnnotationsList() {
+            const container = document.getElementById('annotationsList');
+            container.innerHTML = '';
+            
+            if (annotations.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 20px; text-align: center;">No annotations yet</div>';
+                return;
+            }
+            
+            annotations.forEach((ann, index) => {
+                const item = document.createElement('div');
+                item.className = 'annotation-item';
+                item.style.borderLeftColor = labels.find(l => l.name === ann.label)?.color || '#3498db';
+                
+                item.innerHTML = `
+                    <div class="annotation-time">${ann.start.toFixed(3)}s - ${ann.end.toFixed(3)}s</div>
+                    <div class="annotation-label">${ann.label}</div>
+                    <div class="annotation-type">${ann.type}</div>
+                    <button onclick="deleteAnnotation(${index}); event.stopPropagation();" style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; margin-top: 5px;">Delete</button>
+                `;
+                
+                item.onclick = () => seekToAnnotation(ann);
+                container.appendChild(item);
+            });
+        }
+        
+        function deleteAnnotation(index) {
+            if (confirm('Delete this annotation?')) {
+                annotations.splice(index, 1);
+                renderAnnotationsList();
+                drawWaveform();
+            }
+        }
+        
+        function seekToAnnotation(annotation) {
+            pauseAudio();
+            pauseTime = annotation.start;
+            drawWaveform();
+        }
+        
+        function toggleSidebar() {
+            document.getElementById('annotationsSidebar').classList.toggle('open');
+        }
+        
+        function previousFile() {
+            if (currentFileIndex > 0) {
+                loadFile(currentFileIndex - 1);
+            }
+        }
+        
+        function nextFile() {
+            if (currentFileIndex < audioFiles.length - 1) {
+                loadFile(currentFileIndex + 1);
+            }
+        }
+        
+        function jumpToPIDN() {
+            const input = document.getElementById('pidnLookup');
+            const searchPIDN = input.value.trim().toLowerCase();
+            
+            if (!searchPIDN) {
+                alert('Please enter a PIDN');
+                return;
+            }
+            
+            // Find the index of the PIDN
+            const index = audioFiles.findIndex(file => 
+                file.pidn.toLowerCase() === searchPIDN
+            );
+            
+            if (index === -1) {
+                alert(`PIDN "${searchPIDN}" not found`);
+                return;
+            }
+            
+            // Load the file
+            loadFile(index);
+            input.value = '';
+        }
+        
+        function toggleBinaryCheck(checkType) {
+            const pidn = audioFiles[currentFileIndex].pidn;
+            if (!binaryChecks[pidn]) {
+                binaryChecks[pidn] = {};
+            }
+            
+            // Toggle the check
+            binaryChecks[pidn][checkType] = !binaryChecks[pidn][checkType];
+            
+            // Update UI
+            updateBinaryCheckUI();
+            
+            // Save to localStorage
+            saveAllData();
+            
+            console.log(`Binary check ${checkType} for ${pidn}:`, binaryChecks[pidn][checkType]);
+        }
+        
+        function updateBinaryCheckUI() {
+            const pidn = audioFiles[currentFileIndex]?.pidn;
+            if (!pidn) return;
+            
+            const checks = binaryChecks[pidn] || {};
+            
+            // Update the 15 issue button states
+            document.getElementById('anomalyCheck')?.classList.toggle('active', checks.anomaly || false);
+            document.getElementById('over65Check')?.classList.toggle('active', checks.over_65 || false);
+            document.getElementById('under60Check')?.classList.toggle('active', checks.under_60 || false);
+            document.getElementById('stopsEarlyCheck')?.classList.toggle('active', checks.stops_early || false);
+            document.getElementById('cutoffMidSentenceCheck')?.classList.toggle('active', checks.cutoff_mid_sentence || false);
+            document.getElementById('accentCheck')?.classList.toggle('active', checks.accent || false);
+            document.getElementById('nativeAccentCheck')?.classList.toggle('active', checks.native_accent || false);
+            document.getElementById('lispCheck')?.classList.toggle('active', checks.lisp || false);
+            document.getElementById('roboticCheck')?.classList.toggle('active', checks.robotic || false);
+            document.getElementById('popsCheck')?.classList.toggle('active', checks.pops || false);
+            document.getElementById('multiVoiceCheck')?.classList.toggle('active', checks.multi_voice || false);
+            document.getElementById('muffledCheck')?.classList.toggle('active', checks.muffled || false);
+            document.getElementById('echoCheck')?.classList.toggle('active', checks.echo || false);
+            document.getElementById('dogCheck')?.classList.toggle('active', checks.dog || false);
+            document.getElementById('transcriptionVerifiedCheck')?.classList.toggle('active', checks.transcription_verified || false);
+        }
+        
+        // Rating and review functions
+        function setRating(rating) {
+            document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelectorAll('.rating-btn')[rating - 1].classList.add('selected');
+            saveCurrentReview();
+            saveAllData();
+        }
+        
+        function saveCurrentReview() {
+            if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                const currentPIDN = audioFiles[currentFileIndex].pidn;
+                const selectedRating = document.querySelector('.rating-btn.selected');
+                const rating = selectedRating ? parseInt(selectedRating.textContent) : null;
+                const greenFlags = document.getElementById('greenFlags').value;
+                const redFlags = document.getElementById('redFlags').value;
+                const analysisIdeas = document.getElementById('analysisIdeas').value;
+                const questionsToClarity = document.getElementById('questionsToClarity').value;
+                const transcription = document.getElementById('transcriptionText').value;
+                
+                // Get all binary checks
+                const checks = binaryChecks[currentPIDN] || {};
+                
+                allReviews[currentPIDN] = {
+                    pidn: currentPIDN,
+                    rating: rating,
+                    greenFlags: greenFlags,
+                    redFlags: redFlags,
+                    analysisIdeas: analysisIdeas,
+                    questionsToClarity: questionsToClarity,
+                    transcription: transcription,
+                    ...checks,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                saveAllData();
+                
+                console.log('Saved review for', currentPIDN, '- Rating:', rating, 'Transcription:', transcription);
+            }
+        }
+        
+        function loadCurrentReview() {
+            if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                const currentPIDN = audioFiles[currentFileIndex].pidn;
+                const review = allReviews[currentPIDN];
+                
+                console.log('Loading review for', currentPIDN, '- Found:', review);
+                
+                // Clear rating
+                document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
+                
+                if (review) {
+                    // Load rating
+                    if (review.rating) {
+                        const ratingBtns = document.querySelectorAll('.rating-btn');
+                        if (ratingBtns[review.rating - 1]) {
+                            ratingBtns[review.rating - 1].classList.add('selected');
+                            console.log('Loaded rating:', review.rating);
+                        }
+                    }
+                    // Load notes fields
+                    document.getElementById('greenFlags').value = review.greenFlags || '';
+                    document.getElementById('redFlags').value = review.redFlags || '';
+                    document.getElementById('analysisIdeas').value = review.analysisIdeas || '';
+                    document.getElementById('questionsToClarity').value = review.questionsToClarity || '';
+                    // Load transcription
+                    const transcriptionField = document.getElementById('transcriptionText');
+                    if (transcriptionField) {
+                        transcriptionField.value = review.transcription || '';
+                        console.log('Loaded transcription:', review.transcription);
+                    }
+                } else {
+                    document.getElementById('greenFlags').value = '';
+                    document.getElementById('redFlags').value = '';
+                    document.getElementById('analysisIdeas').value = '';
+                    document.getElementById('questionsToClarity').value = '';
+                    const transcriptionField = document.getElementById('transcriptionText');
+                    if (transcriptionField) {
+                        transcriptionField.value = '';
+                    }
+                }
+            }
+        }
+        
+        function exportAnnotations() {
+            // Save current file's annotations and review first
+            if (currentFileIndex >= 0 && audioFiles[currentFileIndex]) {
+                const currentPIDN = audioFiles[currentFileIndex].pidn;
+                allAnnotations[currentPIDN] = [...annotations];
+                saveCurrentReview();
+            }
+            
+            // Create CSV with all data: annotations, binary checks, ratings, notes, and transcription
+            let csv = 'PIDN,rating,green_flags,red_flags,analysis_ideas,questions_to_clarify,transcription,Anomaly,Over 65 seconds,Under 60 seconds,Stops before full minute,Cutoff mid-sentence,Non-native English accent,Native English accent,Lisp,Robotic/unnatural voice,Pops/clicks/glitches,Multiple voices/crosstalk,Muffled/distant sound,Echo/reverb,Dog barking,Transcription Verified,start_time,end_time,label,annotation_type,timestamp\n';
+            
+            // Get all unique PIDNs (from annotations, binary checks, and reviews)
+            const allPIDNs = new Set([...Object.keys(allAnnotations), ...Object.keys(binaryChecks), ...Object.keys(allReviews)]);
+            
+            for (const pidn of allPIDNs) {
+                const pidnAnnotations = allAnnotations[pidn] || [];
+                const checks = binaryChecks[pidn] || {};
+                const review = allReviews[pidn] || {};
+                
+                console.log(`Exporting ${pidn} - Rating: ${review.rating}`);
+                
+                // Build binary check columns (15 checks)
+                const binaryColumns = [
+                    checks.anomaly ? '1' : '0',
+                    checks.over_65 ? '1' : '0',
+                    checks.under_60 ? '1' : '0',
+                    checks.stops_early ? '1' : '0',
+                    checks.cutoff_mid_sentence ? '1' : '0',
+                    checks.accent ? '1' : '0',
+                    checks.native_accent ? '1' : '0',
+                    checks.lisp ? '1' : '0',
+                    checks.robotic ? '1' : '0',
+                    checks.pops ? '1' : '0',
+                    checks.multi_voice ? '1' : '0',
+                    checks.muffled ? '1' : '0',
+                    checks.echo ? '1' : '0',
+                    checks.dog ? '1' : '0',
+                    checks.transcription_verified ? '1' : '0'
+                ].join(',');
+                
+                const rating = review.rating || '';
+                const greenFlags = review.greenFlags ? `"${review.greenFlags.replace(/"/g, '""')}"` : '';
+                const redFlags = review.redFlags ? `"${review.redFlags.replace(/"/g, '""')}"` : '';
+                const analysisIdeas = review.analysisIdeas ? `"${review.analysisIdeas.replace(/"/g, '""')}"` : '';
+                const questionsToClarity = review.questionsToClarity ? `"${review.questionsToClarity.replace(/"/g, '""')}"` : '';
+                const transcription = review.transcription ? `"${review.transcription.replace(/"/g, '""')}"` : '';
+                
+                if (pidnAnnotations.length === 0) {
+                    // If no annotations, still export review and binary checks
+                    csv += `${pidn},${rating},${greenFlags},${redFlags},${analysisIdeas},${questionsToClarity},${transcription},${binaryColumns},,,,,\n`;
+                } else {
+                    // Export each annotation with review and binary checks
+                    pidnAnnotations.forEach(ann => {
+                        csv += `${pidn},${rating},${greenFlags},${redFlags},${analysisIdeas},${questionsToClarity},${transcription},${binaryColumns},${ann.start},${ann.end},${ann.label},${ann.type},${ann.timestamp}\n`;
+                    });
+                }
+            }
+            
+            // Create filename with full timestamp
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[:.]/g, '-').split('T');
+            const dateStr = timestamp[0]; // YYYY-MM-DD
+            const timeStr = timestamp[1].split('Z')[0]; // HH-MM-SS-mmm
+            const filename = `annotations_${dateStr}_${timeStr}.csv`;
+            
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            const totalReviews = Object.keys(allReviews).length;
+            const totalAnnotations = Object.values(allAnnotations).reduce((sum, anns) => sum + anns.length, 0);
+            console.log(`Exported ${totalReviews} reviews and ${totalAnnotations} annotations from ${allPIDNs.size} files to ${filename}`);
+        }
+    </script>
+</body>
+</html>
