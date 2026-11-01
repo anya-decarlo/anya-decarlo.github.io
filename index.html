@@ -5,41 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anya DeCarlo — Portfolio</title>
   <meta name="description" content="Selected work by Anya DeCarlo.">
-  <style>
-    :root { --bg:#fafaf8; --fg:#1a1a1a; --muted:#6b6b6b; --line:#e4e4e0; --accent:#0d4464; }
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
-    .wrap { max-width:1100px; margin:0 auto; padding:72px 24px; }
-    header h1 { font-size:2.6rem; font-weight:700; letter-spacing:-0.02em; }
-    header p { color:var(--muted); font-size:1.1rem; margin-top:8px; max-width:600px; }
-    header nav { margin-top:20px; display:flex; gap:20px; }
-    header nav a { color:var(--accent); text-decoration:none; font-weight:500; }
-    header nav a:hover { text-decoration:underline; }
-    h2 { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); margin:64px 0 24px; padding-bottom:12px; border-bottom:1px solid var(--line); }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:28px; }
-    .card { display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; transition:transform .15s, box-shadow .15s; }
-    .card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.08); }
-    .thumb { position:relative; height:200px; overflow:hidden; background:#f0f0ec; border-bottom:1px solid var(--line); }
-    .thumb iframe { width:400%; height:400%; transform:scale(.25); transform-origin:0 0; border:0; pointer-events:none; }
-    .meta { padding:16px 18px 20px; }
-    .meta h3 { font-size:1.05rem; }
-    .meta p { color:var(--muted); font-size:.92rem; margin-top:4px; }
-    .filters { display:flex; flex-direction:column; gap:12px; margin-bottom:28px; }
-    .filter-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-    .filter-row .label { font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); width:90px; }
-    .chip { font:inherit; font-size:.88rem; padding:5px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--fg); cursor:pointer; transition:all .12s; }
-    .chip:hover { border-color:var(--accent); }
-    .chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-    .count { color:var(--muted); font-size:.85rem; margin-bottom:16px; }
-    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-    .tag { font-size:.75rem; padding:2px 9px; border-radius:999px; background:#f0f0ec; color:#444; }
-    .tag.lang { background:#e6eef3; color:var(--accent); }
-    .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-    .thumb.file { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:var(--accent); font-weight:600; }
-    .thumb.file span { font-size:.8rem; color:var(--muted); font-weight:400; }
-    .empty { color:var(--muted); font-style:italic; }
-    footer { margin-top:80px; color:var(--muted); font-size:.85rem; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="wrap">
@@ -50,6 +16,7 @@
         <a href="#work">Work</a>
         <a href="#creative">Creative</a>
         <a href="#education">Education</a>
+        <a href="#projects">Projects</a>
         <a href="https://github.com/anya-decarlo">GitHub</a>
       </nav>
     </header>
@@ -65,128 +32,19 @@
     <h2 id="education">Education</h2>
     <div class="grid" id="education-grid"></div>
 
+    <h2 id="projects">Projects</h2>
+    <div class="grid" id="projects-grid"></div>
+
     <footer>&copy; <span id="year"></span> Anya DeCarlo</footer>
   </div>
 
+  <script src="data.js"></script>
+  <script src="site.js"></script>
   <script>
-    // Add a project: put the file in /work and add an entry here.
-    // languages and topics can each list several tags; filter buttons are built from them.
-    const projects = [
-      // { title: "Project name", description: "One-line description.", file: "work/project-name.html",
-      //   languages: ["R", "SQL"], topics: ["Dementia Research"] },
-    ];
-
-    // Fun / creative HTMLs: put the file in /creative and add an entry here (no tags needed).
-    const creative = [
-      // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
-    ];
-
-    // Educational HTMLs and slide decks: put the file in /education and add an entry here.
-    // Slides: PDFs open in the browser, .pptx/.key files download. Optional thumbnail: "education/talk-name.png".
-    const education = [
-      // { title: "Talk name", description: "One-line description.", file: "education/talk-name.pdf" },
-    ];
-
-    const groups = [
-      { key: "languages", label: "Language" },
-      { key: "topics", label: "Topic" },
-    ];
-    const selected = { languages: new Set(), topics: new Set() };
-
-    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-    const grid = document.getElementById("grid");
-    const filtersEl = document.getElementById("filters");
-    const countEl = document.getElementById("count");
-
-    function buildFilters() {
-      for (const g of groups) {
-        const values = [...new Set(projects.flatMap(p => p[g.key] || []))].sort();
-        if (!values.length) continue;
-        const row = document.createElement("div");
-        row.className = "filter-row";
-        row.innerHTML = `<span class="label">${g.label}</span>`;
-        const all = document.createElement("button");
-        all.className = "chip active";
-        all.textContent = "All";
-        row.appendChild(all);
-        const chips = values.map(v => {
-          const b = document.createElement("button");
-          b.className = "chip";
-          b.textContent = v;
-          b.onclick = () => {
-            selected[g.key].has(v) ? selected[g.key].delete(v) : selected[g.key].add(v);
-            b.classList.toggle("active");
-            all.classList.toggle("active", selected[g.key].size === 0);
-            render();
-          };
-          row.appendChild(b);
-          return b;
-        });
-        all.onclick = () => {
-          selected[g.key].clear();
-          chips.forEach(c => c.classList.remove("active"));
-          all.classList.add("active");
-          render();
-        };
-        filtersEl.appendChild(row);
-      }
-    }
-
-    function matches(p) {
-      return groups.every(g => {
-        const sel = selected[g.key];
-        return sel.size === 0 || (p[g.key] || []).some(v => sel.has(v));
-      });
-    }
-
-    function render() {
-      grid.innerHTML = "";
-      if (!projects.length) {
-        grid.innerHTML = '<p class="empty">Projects coming soon.</p>';
-        return;
-      }
-      const shown = projects.filter(matches);
-      countEl.textContent = `Showing ${shown.length} of ${projects.length} projects`;
-      if (!shown.length) grid.innerHTML = '<p class="empty">No projects match these filters.</p>';
-      for (const p of shown) {
-        const tags = [
-          ...(p.languages || []).map(t => `<span class="tag lang">${esc(t)}</span>`),
-          ...(p.topics || []).map(t => `<span class="tag">${esc(t)}</span>`),
-        ].join("");
-        grid.appendChild(card(p, tags));
-      }
-    }
-
-    function card(p, tags = "") {
-      const a = document.createElement("a");
-      a.className = "card";
-      a.href = p.file;
-      const ext = p.file.split(".").pop().toLowerCase();
-      if (["pptx", "ppt", "key"].includes(ext)) a.setAttribute("download", "");
-      else if (ext === "pdf") a.target = "_blank";
-      const label = ext === "pdf" ? "PDF &middot; opens in browser" : `.${esc(ext)} &middot; download`;
-      const thumb = p.thumbnail
-        ? `<div class="thumb"><img src="${esc(p.thumbnail)}" alt="" loading="lazy"></div>`
-        : ext === "html"
-          ? `<div class="thumb"><iframe src="${esc(p.file)}" loading="lazy" tabindex="-1" title="${esc(p.title)}"></iframe></div>`
-          : `<div class="thumb file">Slides<span>${label}</span></div>`;
-      a.innerHTML = `
-        ${thumb}
-        <div class="meta"><h3>${esc(p.title)}</h3><p>${esc(p.description || "")}</p>${tags ? `<div class="tags">${tags}</div>` : ""}</div>`;
-      return a;
-    }
-
-    function renderSimple(id, items) {
-      const el = document.getElementById(id);
-      if (!items.length) el.innerHTML = '<p class="empty">Coming soon.</p>';
-      for (const p of items) el.appendChild(card(p));
-    }
-
-    buildFilters();
-    render();
+    renderWork();
     renderSimple("creative-grid", creative);
     renderSimple("education-grid", education);
-    document.getElementById("year").textContent = new Date().getFullYear();
+    renderProjects();
   </script>
 </body>
 </html>
