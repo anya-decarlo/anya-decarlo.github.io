@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple SVG Generator</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 40px;
+            background: #000;
+            color: #0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-family: monospace;
+        }
+        button:hover {
+            background: #0c0;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+        }
+        #status {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        #preview {
+            margin-top: 20px;
+            background: #000;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #preview svg {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple SVG Generator</h1>
+        <p>Upload CSV with x,y,hex columns</p>
+        
+        <input type="file" id="csvFile" accept=".csv">
+        <br>
+        <button onclick="generateSVG()">Generate SVG</button>
+        <button id="downloadBtn" onclick="downloadSVG()" style="display:none;">Download SVG</button>
+        
+        <div id="status"></div>
+        <div id="preview"></div>
+    </div>
+
+    <script>
+        let svgContent = '';
+        let pixelData = [];
+
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const lines = text.trim().split('\n');
+                
+                pixelData = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const parts = lines[i].split(',');
+                    if (parts.length < 3) continue;
+                    
+                    const x = parseInt(parts[0]);
+                    const y = parseInt(parts[1]);
+                    let hex = parts[parts.length - 1].trim(); // Last column is hex
+                    
+                    if (!hex.startsWith('#')) hex = '#' + hex;
+                    
+                    pixelData.push({ x, y, hex });
+                }
+                
+                document.getElementById('status').textContent = `Loaded ${pixelData.length.toLocaleString()} pixels`;
+            };
+            
+            reader.readAsText(file);
+        });
+
+        function generateSVG() {
+            if (pixelData.length === 0) {
+                alert('Please upload a CSV file first!');
+                return;
+            }
+
+            document.getElementById('status').textContent = 'Generating SVG...';
+
+            // Find dimensions
+            let maxX = 0, maxY = 0;
+            pixelData.forEach(p => {
+                if (p.x > maxX) maxX = p.x;
+                if (p.y > maxY) maxY = p.y;
+            });
+
+            const width = maxX + 1;
+            const height = maxY + 1;
+
+            // Generate SVG
+            let svg = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+            svg += `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n`;
+            
+            // Group by color for efficiency
+            const colorGroups = new Map();
+            pixelData.forEach(p => {
+                if (!colorGroups.has(p.hex)) {
+                    colorGroups.set(p.hex, []);
+                }
+                colorGroups.get(p.hex).push(p);
+            });
+
+            colorGroups.forEach((pixels, hex) => {
+                svg += `  <g fill="${hex}">\n`;
+                pixels.forEach(p => {
+                    svg += `    <rect x="${p.x}" y="${p.y}" width="1" height="1"/>\n`;
+                });
+                svg += `  </g>\n`;
+            });
+            
+            svg += `</svg>`;
+
+            svgContent = svg;
+
+            // Show preview
+            document.getElementById('preview').innerHTML = svg;
+            document.getElementById('downloadBtn').style.display = 'inline-block';
+            document.getElementById('status').textContent = `SVG Generated! ${width}x${height} - ${pixelData.length.toLocaleString()} pixels`;
+        }
+
+        function downloadSVG() {
+            if (!svgContent) {
+                alert('Please generate SVG first!');
+                return;
+            }
+
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'output.svg';
+            link.click();
+            URL.revokeObjectURL(url);
+
+            document.getElementById('status').textContent = 'Downloaded!';
+        }
+    </script>
+</body>
+</html>

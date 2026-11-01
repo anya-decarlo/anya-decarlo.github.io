@@ -34,3 +34,5 @@ h2 { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.12em; color:v
 .pages { font-size:.8rem; color:var(--muted); margin-top:8px; }
 .empty { color:var(--muted); font-style:italic; }
 footer { margin-top:80px; color:var(--muted); font-size:.85rem; }
+.try-text { color:var(--muted); max-width:720px; margin-bottom:14px; }
+a.chip { text-decoration:none; display:inline-block; }

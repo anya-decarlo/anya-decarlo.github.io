@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Tool</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; background: #111; color: white; text-align: center; }
+        #preview { max-height: 70vh; max-width: 80%; border: 3px solid #0f0; margin-top: 20px; }
+        #status { color: #0f0; margin-top: 20px; font-size: 20px; }
+        #resolution { color: #FFD700; margin-top: 10px; font-size: 18px; }
+        button { font-size: 20px; padding: 15px 30px; margin: 10px; cursor: pointer; border: none; border-radius: 8px; }
+        #extractBtn { background: #FFD700; color: #000; display: none; }
+        #progress { color: #0f0; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Face Tool</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <div id="status"></div>
+    <div id="resolution"></div>
+    <div style="margin: 20px 0;">
+        <label for="csvName" style="color: #FFD700; font-size: 16px;">CSV Filename: </label>
+        <input type="text" id="csvName" placeholder="my-font-pixels" style="font-size: 16px; padding: 8px; width: 300px; border-radius: 4px;">
+        <span style="color: #FFD700;">.csv</span>
+    </div>
+    <button id="extractBtn">📊 Extract All Pixels to CSV</button>
+    <div id="progress"></div>
+    <br>
+    <img id="preview">
+    
+    <script>
+        const preview = document.getElementById('preview');
+        let currentImageBase64 = null;
+        let sampleCanvas = document.createElement('canvas');
+        let sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentImageBase64 = event.target.result;
+                    preview.src = currentImageBase64;
+                    document.getElementById('status').textContent = '✅ Image loaded as Base64!';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        preview.onload = function() {
+            // Set canvas to NATIVE resolution - THE MAGIC!
+            sampleCanvas.width = preview.naturalWidth;
+            sampleCanvas.height = preview.naturalHeight;
+            sampleCtx.drawImage(preview, 0, 0);
+            
+            const totalPixels = preview.naturalWidth * preview.naturalHeight;
+            document.getElementById('resolution').textContent = 
+                '📐 Native Resolution: ' + preview.naturalWidth + ' × ' + preview.naturalHeight + 
+                ' = ' + totalPixels.toLocaleString() + ' pixels!';
+            document.getElementById('extractBtn').style.display = 'inline-block';
+        };
+
+        document.getElementById('extractBtn').addEventListener('click', function() {
+            const width = sampleCanvas.width;
+            const height = sampleCanvas.height;
+            const imageData = sampleCtx.getImageData(0, 0, width, height).data;
+            
+            document.getElementById('progress').textContent = '⏳ Extracting pixels...';
+            
+            setTimeout(function() {
+                // Calculate center point for spatial coordinates
+                const centerX = width / 2;
+                const centerY = height / 2;
+                
+                let csv = 'x,y,gridX,gridY,distance_from_center,quadrant,hex\n';
+                
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const i = (y * width + x) * 4;
+                        const hex = '#' + [imageData[i], imageData[i+1], imageData[i+2]]
+                            .map(v => v.toString(16).padStart(2, '0'))
+                            .join('')
+                            .toUpperCase();
+                        
+                        // Grid coordinates (100 pixels per grid square)
+                        const gridX = Math.floor(x / 100);
+                        const gridY = Math.floor(y / 100);
+                        
+                        // Distance from center
+                        const dx = x - centerX;
+                        const dy = y - centerY;
+                        const distance = Math.sqrt(dx * dx + dy * dy).toFixed(2);
+                        
+                        // Granular Quadrant System (8x8 = 64 quadrants for statistical analysis)
+                        const quadrantGridSize = 8;
+                        const quadrantWidth = width / quadrantGridSize;
+                        const quadrantHeight = height / quadrantGridSize;
+                        const quadrantX = Math.floor(x / quadrantWidth);
+                        const quadrantY = Math.floor(y / quadrantHeight);
+                        const quadrant = quadrantY * quadrantGridSize + quadrantX;
+                        
+                        csv += x + ',' + y + ',' + gridX + ',' + gridY + ',' + distance + ',' + quadrant + ',' + hex + '\n';
+                    }
+                }
+                
+                const blob = new Blob([csv], {type: 'text/csv'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                
+                // Get custom filename or use default
+                let filename = document.getElementById('csvName').value.trim();
+                if (!filename) {
+                    filename = 'face-pixels';
+                }
+                // Remove .csv extension if user added it
+                filename = filename.replace(/\.csv$/i, '');
+                a.download = filename + '.csv';
+                a.click();
+                
+                document.getElementById('progress').textContent = '✅ CSV downloaded! ' + (width * height).toLocaleString() + ' pixels extracted!';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

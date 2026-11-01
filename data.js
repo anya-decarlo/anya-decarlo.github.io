@@ -18,6 +18,28 @@ const analysisTools = [
 
 // PROJECTS — multi-page projects. Files go in /projects/<id>/. Each card opens project.html?p=<id>.
 const projects = [
+  { id: "computer-vision", title: "Computer Vision: Pixel Extraction & Reconstruction",
+    description: "A browser-based pipeline that breaks an image down to every individual pixel and builds it back up. Step 1 exports each pixel's coordinates, 8×8 quadrant, distance from center, and hex color to CSV; the other tools analyze that data to find where text or glyphs live, rebuild the image from only the colors and quadrants you choose, and trace the result into an SVG. I built it to reverse-engineer display fonts and lift handwriting off scanned notebook pages.",
+    tryIt: {
+      text: "Download the sample image (or use your own), open Extract Pixels to turn it into a CSV, then load that CSV into any of the analysis and reconstruction tools.",
+      downloads: [
+        { label: "Sample image (PNG)", file: "projects/computer-vision/sample-image.png" },
+      ],
+    },
+    pages: [
+      { title: "1. Extract Pixels", file: "projects/computer-vision/1-extract-pixels.html",
+        description: "Upload any image and export every pixel at native resolution to CSV: x, y, grid position, 8×8 quadrant, distance from center, and hex color." },
+      { title: "2. Quadrant Hex Analyzer", file: "projects/computer-vision/2-quadrant-hex-analyzer.html",
+        description: "Profiles color diversity per quadrant to flag where the text or font sits and which dominant background colors to exclude." },
+      { title: "3. Font Pixel Analyzer", file: "projects/computer-vision/3-font-pixel-analyzer.html",
+        description: "Breaks a font or text image down by color, with pixel counts and the exact coordinates of every pixel in each color." },
+      { title: "4. Quadrant Hex Reconstructor", file: "projects/computer-vision/4-quadrant-hex-reconstructor.html",
+        description: "Rebuilds the image quadrant by quadrant, with global and per-quadrant color selection, and exports the result as SVG." },
+      { title: "5. Selective Reconstructor", file: "projects/computer-vision/5-selective-reconstructor.html",
+        description: "Reconstructs only the hex codes and quadrants you list, isolating text or shapes from the background." },
+      { title: "6. SVG Generator", file: "projects/computer-vision/6-svg-generator.html",
+        description: "Turns any x, y, hex CSV (like the filtered output of the reconstructors) into a vector SVG you can download." },
+    ] },
   // { id: "computer-vision", title: "Computer Vision", description: "One-line description.",
   //   pages: [
   //     { title: "Step 1", description: "Optional.", file: "projects/computer-vision/step1.html" },

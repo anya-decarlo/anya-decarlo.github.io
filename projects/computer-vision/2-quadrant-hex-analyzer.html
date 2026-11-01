@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant Hex Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-box {
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .quadrant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .quadrant-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+        }
+        .quadrant-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .hex-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .hex-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+        .hex-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+        .reconstruction-hints {
+            margin-top: 40px;
+            padding: 30px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+        .reconstruction-hints h2 {
+            color: #856404;
+            margin-bottom: 20px;
+        }
+        .hint-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+        }
+        .hint-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .hint-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        #downloadBtn {
+            background: #28a745;
+        }
+        #downloadBtn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Quadrant Hex Analyzer</h1>
+        
+        <div class="upload-section">
+            <p><strong>Upload CSV from face-tool</strong></p>
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Expected format: x,y,gridX,gridY,distance_from_center,quadrant,hex</p>
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="analyzeCSV()">Analyze Quadrants</button>
+            <button id="downloadBtn" onclick="downloadReport()" style="display:none;">Download Report</button>
+        </div>
+
+        <div id="stats" class="stats"></div>
+        <div id="quadrantReport" class="quadrant-grid"></div>
+        <div id="reconstructionHints" class="reconstruction-hints" style="display:none;"></div>
+    </div>
+
+    <script>
+        let analysisData = null;
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function analyzeCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.trim().split('\n');
+                
+                const quadrantMap = new Map();
+                let totalPixels = 0;
+                let allHexCodes = new Set();
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const parts = lines[i].split(',');
+                    if (parts.length < 7) continue;
+                    
+                    const quadrant = parseInt(parts[5]);
+                    const hex = parts[6].trim();
+                    
+                    if (!quadrantMap.has(quadrant)) {
+                        quadrantMap.set(quadrant, {
+                            hexCounts: new Map(),
+                            totalPixels: 0
+                        });
+                    }
+                    
+                    const qData = quadrantMap.get(quadrant);
+                    qData.totalPixels++;
+                    qData.hexCounts.set(hex, (qData.hexCounts.get(hex) || 0) + 1);
+                    allHexCodes.add(hex);
+                    totalPixels++;
+                }
+
+                analysisData = {
+                    totalPixels,
+                    uniqueColors: allHexCodes.size,
+                    quadrantMap,
+                    allHexCodes
+                };
+
+                displayResults(analysisData);
+                generateReconstructionHints(analysisData);
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function displayResults(data) {
+            const statsDiv = document.getElementById('stats');
+            const quadrantReportDiv = document.getElementById('quadrantReport');
+            
+            statsDiv.innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">Total Pixels</div>
+                    <div class="stat-value">${data.totalPixels.toLocaleString()}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Unique Colors</div>
+                    <div class="stat-value">${data.uniqueColors}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Quadrants</div>
+                    <div class="stat-value">${data.quadrantMap.size}</div>
+                </div>
+            `;
+
+            const sortedQuadrants = Array.from(data.quadrantMap.entries())
+                .sort((a, b) => a[0] - b[0]);
+
+            let quadrantHTML = '';
+            
+            sortedQuadrants.forEach(([quadrant, qData]) => {
+                const quadrantName = getQuadrantName(quadrant);
+                const sortedHexes = Array.from(qData.hexCounts.entries())
+                    .sort((a, b) => b[1] - a[1]);
+                
+                quadrantHTML += `
+                    <div class="quadrant-card">
+                        <div class="quadrant-header">
+                            Quadrant ${quadrant} (${quadrantName})
+                        </div>
+                        <div style="margin-bottom: 10px; color: #666; font-size: 14px;">
+                            ${qData.totalPixels.toLocaleString()} pixels | ${qData.hexCounts.size} unique colors
+                        </div>
+                        <div class="hex-list">
+                            ${sortedHexes.slice(0, 20).map(([hex, count]) => {
+                                const rgb = hexToRgb(hex);
+                                const rgbStr = rgb ? `RGB(${rgb.r},${rgb.g},${rgb.b})` : '';
+                                return `
+                                    <div class="hex-item">
+                                        <div class="hex-swatch" style="background-color: ${hex}"></div>
+                                        <div style="flex: 1;">
+                                            <strong>${hex}</strong> ${rgbStr}<br>
+                                            <span style="color: #999;">${count.toLocaleString()} pixels (${((count/qData.totalPixels)*100).toFixed(1)}%)</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${qData.hexCounts.size > 20 ? `<div style="margin-top: 10px; color: #999;">... and ${qData.hexCounts.size - 20} more colors</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            quadrantReportDiv.innerHTML = quadrantHTML;
+            document.getElementById('downloadBtn').style.display = 'inline-block';
+        }
+
+        function getQuadrantName(q) {
+            const names = {
+                0: 'Center',
+                1: 'NE',
+                2: 'NW',
+                3: 'SW',
+                4: 'SE'
+            };
+            return names[q] || 'Unknown';
+        }
+
+        function generateReconstructionHints(data) {
+            const hintsDiv = document.getElementById('reconstructionHints');
+            
+            // Find quadrants with most color diversity (likely font areas)
+            const diversityScores = Array.from(data.quadrantMap.entries())
+                .map(([q, qData]) => ({
+                    quadrant: q,
+                    diversity: qData.hexCounts.size,
+                    pixels: qData.totalPixels,
+                    dominantColor: Array.from(qData.hexCounts.entries()).sort((a,b) => b[1] - a[1])[0]
+                }))
+                .sort((a, b) => b.diversity - a.diversity);
+
+            // Find likely background color (most common across all quadrants)
+            const globalColorCounts = new Map();
+            data.quadrantMap.forEach(qData => {
+                qData.hexCounts.forEach((count, hex) => {
+                    globalColorCounts.set(hex, (globalColorCounts.get(hex) || 0) + count);
+                });
+            });
+            const likelyBackground = Array.from(globalColorCounts.entries())
+                .sort((a, b) => b[1] - a[1])[0];
+
+            hintsDiv.style.display = 'block';
+            hintsDiv.innerHTML = `
+                <h2>🎯 Reconstruction Hints</h2>
+                
+                <div class="hint-item">
+                    <div class="hint-title">Likely Background Color</div>
+                    <div class="hint-desc">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <div class="hex-swatch" style="background-color: ${likelyBackground[0]}; width: 30px; height: 30px;"></div>
+                            <strong>${likelyBackground[0]}</strong> - ${likelyBackground[1].toLocaleString()} pixels (${((likelyBackground[1]/data.totalPixels)*100).toFixed(1)}%)
+                        </div>
+                        <p style="margin-top: 10px;">This color appears most frequently. Consider excluding it to isolate the font.</p>
+                    </div>
+                </div>
+
+                <div class="hint-item">
+                    <div class="hint-title">Most Diverse Quadrants (Likely Font Areas)</div>
+                    <div class="hint-desc">
+                        ${diversityScores.slice(0, 3).map((item, idx) => `
+                            <div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                                <strong>${idx + 1}. Quadrant ${item.quadrant} (${getQuadrantName(item.quadrant)})</strong><br>
+                                ${item.diversity} unique colors | ${item.pixels.toLocaleString()} pixels<br>
+                                Dominant: <span style="color: ${item.dominantColor[0]}">${item.dominantColor[0]}</span>
+                            </div>
+                        `).join('')}
+                        <p style="margin-top: 10px;">Quadrants with more color diversity likely contain the font/text.</p>
+                    </div>
+                </div>
+
+                <div class="hint-item">
+                    <div class="hint-title">Reconstruction Strategy</div>
+                    <div class="hint-desc">
+                        <ol style="margin-left: 20px; line-height: 1.8;">
+                            <li>Exclude background color (${likelyBackground[0]}) from reconstruction</li>
+                            <li>Focus on quadrants ${diversityScores.slice(0, 3).map(s => s.quadrant).join(', ')} for font data</li>
+                            <li>Look for dark colors (likely ink) vs light colors (likely background)</li>
+                            <li>Use distance_from_center to isolate central text area</li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+        }
+
+        function downloadReport() {
+            if (!analysisData) return;
+
+            // Generate TXT report
+            let report = 'QUADRANT HEX ANALYSIS REPORT\n';
+            report += '='.repeat(80) + '\n\n';
+            report += `Total Pixels: ${analysisData.totalPixels.toLocaleString()}\n`;
+            report += `Unique Colors: ${analysisData.uniqueColors}\n`;
+            report += `Quadrants: ${analysisData.quadrantMap.size}\n\n`;
+            report += '='.repeat(80) + '\n\n';
+
+            const sortedQuadrants = Array.from(analysisData.quadrantMap.entries())
+                .sort((a, b) => a[0] - b[0]);
+
+            sortedQuadrants.forEach(([quadrant, qData]) => {
+                report += `QUADRANT ${quadrant} (${getQuadrantName(quadrant)})\n`;
+                report += `Total Pixels: ${qData.totalPixels.toLocaleString()}\n`;
+                report += `Unique Colors: ${qData.hexCounts.size}\n\n`;
+                
+                const sortedHexes = Array.from(qData.hexCounts.entries())
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedHexes.forEach(([hex, count]) => {
+                    const rgb = hexToRgb(hex);
+                    const rgbStr = rgb ? `RGB(${rgb.r}, ${rgb.g}, ${rgb.b})` : '';
+                    const pct = ((count / qData.totalPixels) * 100).toFixed(2);
+                    report += `  ${hex} ${rgbStr} - ${count.toLocaleString()} pixels (${pct}%)\n`;
+                });
+                
+                report += '\n' + '-'.repeat(80) + '\n\n';
+            });
+
+            const txtBlob = new Blob([report], { type: 'text/plain' });
+            const txtUrl = URL.createObjectURL(txtBlob);
+            const txtLink = document.createElement('a');
+            txtLink.href = txtUrl;
+            txtLink.download = 'quadrant-hex-analysis-report.txt';
+            txtLink.click();
+            URL.revokeObjectURL(txtUrl);
+
+            // Generate CSV report
+            let csv = 'quadrant,quadrant_name,hex,r,g,b,pixel_count,percentage\n';
+            
+            sortedQuadrants.forEach(([quadrant, qData]) => {
+                const sortedHexes = Array.from(qData.hexCounts.entries())
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedHexes.forEach(([hex, count]) => {
+                    const rgb = hexToRgb(hex);
+                    const pct = ((count / qData.totalPixels) * 100).toFixed(2);
+                    csv += `${quadrant},${getQuadrantName(quadrant)},${hex},${rgb.r},${rgb.g},${rgb.b},${count},${pct}\n`;
+                });
+            });
+
+            const csvBlob = new Blob([csv], { type: 'text/csv' });
+            const csvUrl = URL.createObjectURL(csvBlob);
+            const csvLink = document.createElement('a');
+            csvLink.href = csvUrl;
+            csvLink.download = 'quadrant-hex-analysis.csv';
+            csvLink.click();
+            URL.revokeObjectURL(csvUrl);
+
+            alert('Downloaded both TXT report and CSV file!');
+        }
+    </script>
+</body>
+</html>

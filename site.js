@@ -112,6 +112,14 @@ function renderProjectPage() {
   document.title = `${p.title} — Anya DeCarlo`;
   document.getElementById("title").textContent = p.title;
   document.getElementById("desc").textContent = p.description || "";
+  if (p.tryIt) {
+    const links = (p.tryIt.downloads || [])
+      .map(d => `<a class="chip" href="${esc(d.file)}" download>${esc(d.label)}</a>`).join("");
+    document.getElementById("try").innerHTML = `
+      <h2>Try it</h2>
+      <p class="try-text">${esc(p.tryIt.text || "")}</p>
+      <div class="filter-row">${links}</div>`;
+  }
   renderSimple("pages-grid", p.pages);
 }
 
