@@ -24,6 +24,16 @@
     .meta { padding:16px 18px 20px; }
     .meta h3 { font-size:1.05rem; }
     .meta p { color:var(--muted); font-size:.92rem; margin-top:4px; }
+    .filters { display:flex; flex-direction:column; gap:12px; margin-bottom:28px; }
+    .filter-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .filter-row .label { font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); width:90px; }
+    .chip { font:inherit; font-size:.88rem; padding:5px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--fg); cursor:pointer; transition:all .12s; }
+    .chip:hover { border-color:var(--accent); }
+    .chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .count { color:var(--muted); font-size:.85rem; margin-bottom:16px; }
+    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .tag { font-size:.75rem; padding:2px 9px; border-radius:999px; background:#f0f0ec; color:#444; }
+    .tag.lang { background:#e6eef3; color:var(--accent); }
     .empty { color:var(--muted); font-style:italic; }
     footer { margin-top:80px; color:var(--muted); font-size:.85rem; }
   </style>
@@ -39,30 +49,99 @@
     </header>
 
     <h2>Work</h2>
+    <div class="filters" id="filters"></div>
+    <p class="count" id="count"></p>
     <div class="grid" id="grid"></div>
 
     <footer>&copy; <span id="year"></span> Anya DeCarlo</footer>
   </div>
 
   <script>
-    // Add a project: drop the file in /work and add an entry here.
+    // Add a project: put the file in /work and add an entry here.
+    // languages and topics can each list several tags; filter buttons are built from them.
     const projects = [
-      // { title: "Project name", description: "One-line description.", file: "work/project-name.html" },
+      // { title: "Project name", description: "One-line description.", file: "work/project-name.html",
+      //   languages: ["R", "SQL"], topics: ["Dementia Research"] },
     ];
 
+    const groups = [
+      { key: "languages", label: "Language" },
+      { key: "topics", label: "Topic" },
+    ];
+    const selected = { languages: new Set(), topics: new Set() };
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
     const grid = document.getElementById("grid");
-    if (!projects.length) {
-      grid.innerHTML = '<p class="empty">Projects coming soon.</p>';
+    const filtersEl = document.getElementById("filters");
+    const countEl = document.getElementById("count");
+
+    function buildFilters() {
+      for (const g of groups) {
+        const values = [...new Set(projects.flatMap(p => p[g.key] || []))].sort();
+        if (!values.length) continue;
+        const row = document.createElement("div");
+        row.className = "filter-row";
+        row.innerHTML = `<span class="label">${g.label}</span>`;
+        const all = document.createElement("button");
+        all.className = "chip active";
+        all.textContent = "All";
+        row.appendChild(all);
+        const chips = values.map(v => {
+          const b = document.createElement("button");
+          b.className = "chip";
+          b.textContent = v;
+          b.onclick = () => {
+            selected[g.key].has(v) ? selected[g.key].delete(v) : selected[g.key].add(v);
+            b.classList.toggle("active");
+            all.classList.toggle("active", selected[g.key].size === 0);
+            render();
+          };
+          row.appendChild(b);
+          return b;
+        });
+        all.onclick = () => {
+          selected[g.key].clear();
+          chips.forEach(c => c.classList.remove("active"));
+          all.classList.add("active");
+          render();
+        };
+        filtersEl.appendChild(row);
+      }
     }
-    for (const p of projects) {
-      const a = document.createElement("a");
-      a.className = "card";
-      a.href = p.file;
-      a.innerHTML = `
-        <div class="thumb"><iframe src="${p.file}" loading="lazy" tabindex="-1" title="${p.title}"></iframe></div>
-        <div class="meta"><h3>${p.title}</h3><p>${p.description || ""}</p></div>`;
-      grid.appendChild(a);
+
+    function matches(p) {
+      return groups.every(g => {
+        const sel = selected[g.key];
+        return sel.size === 0 || (p[g.key] || []).some(v => sel.has(v));
+      });
     }
+
+    function render() {
+      grid.innerHTML = "";
+      if (!projects.length) {
+        grid.innerHTML = '<p class="empty">Projects coming soon.</p>';
+        return;
+      }
+      const shown = projects.filter(matches);
+      countEl.textContent = `Showing ${shown.length} of ${projects.length} projects`;
+      if (!shown.length) grid.innerHTML = '<p class="empty">No projects match these filters.</p>';
+      for (const p of shown) {
+        const tags = [
+          ...(p.languages || []).map(t => `<span class="tag lang">${esc(t)}</span>`),
+          ...(p.topics || []).map(t => `<span class="tag">${esc(t)}</span>`),
+        ].join("");
+        const a = document.createElement("a");
+        a.className = "card";
+        a.href = p.file;
+        a.innerHTML = `
+          <div class="thumb"><iframe src="${esc(p.file)}" loading="lazy" tabindex="-1" title="${esc(p.title)}"></iframe></div>
+          <div class="meta"><h3>${esc(p.title)}</h3><p>${esc(p.description || "")}</p><div class="tags">${tags}</div></div>`;
+        grid.appendChild(a);
+      }
+    }
+
+    buildFilters();
+    render();
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
