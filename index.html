@@ -34,6 +34,9 @@
     .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
     .tag { font-size:.75rem; padding:2px 9px; border-radius:999px; background:#f0f0ec; color:#444; }
     .tag.lang { background:#e6eef3; color:var(--accent); }
+    .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .thumb.file { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:var(--accent); font-weight:600; }
+    .thumb.file span { font-size:.8rem; color:var(--muted); font-weight:400; }
     .empty { color:var(--muted); font-style:italic; }
     footer { margin-top:80px; color:var(--muted); font-size:.85rem; }
   </style>
@@ -46,6 +49,7 @@
       <nav>
         <a href="#work">Work</a>
         <a href="#creative">Creative</a>
+        <a href="#education">Education</a>
         <a href="https://github.com/anya-decarlo">GitHub</a>
       </nav>
     </header>
@@ -57,6 +61,9 @@
 
     <h2 id="creative">Creative</h2>
     <div class="grid" id="creative-grid"></div>
+
+    <h2 id="education">Education</h2>
+    <div class="grid" id="education-grid"></div>
 
     <footer>&copy; <span id="year"></span> Anya DeCarlo</footer>
   </div>
@@ -72,6 +79,12 @@
     // Fun / creative HTMLs: put the file in /creative and add an entry here (no tags needed).
     const creative = [
       // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
+    ];
+
+    // Educational HTMLs and slide decks: put the file in /education and add an entry here.
+    // Slides: PDFs open in the browser, .pptx/.key files download. Optional thumbnail: "education/talk-name.png".
+    const education = [
+      // { title: "Talk name", description: "One-line description.", file: "education/talk-name.pdf" },
     ];
 
     const groups = [
@@ -148,21 +161,31 @@
       const a = document.createElement("a");
       a.className = "card";
       a.href = p.file;
+      const ext = p.file.split(".").pop().toLowerCase();
+      if (["pptx", "ppt", "key"].includes(ext)) a.setAttribute("download", "");
+      else if (ext === "pdf") a.target = "_blank";
+      const label = ext === "pdf" ? "PDF &middot; opens in browser" : `.${esc(ext)} &middot; download`;
+      const thumb = p.thumbnail
+        ? `<div class="thumb"><img src="${esc(p.thumbnail)}" alt="" loading="lazy"></div>`
+        : ext === "html"
+          ? `<div class="thumb"><iframe src="${esc(p.file)}" loading="lazy" tabindex="-1" title="${esc(p.title)}"></iframe></div>`
+          : `<div class="thumb file">Slides<span>${label}</span></div>`;
       a.innerHTML = `
-        <div class="thumb"><iframe src="${esc(p.file)}" loading="lazy" tabindex="-1" title="${esc(p.title)}"></iframe></div>
+        ${thumb}
         <div class="meta"><h3>${esc(p.title)}</h3><p>${esc(p.description || "")}</p>${tags ? `<div class="tags">${tags}</div>` : ""}</div>`;
       return a;
     }
 
-    function renderCreative() {
-      const el = document.getElementById("creative-grid");
-      if (!creative.length) el.innerHTML = '<p class="empty">Coming soon.</p>';
-      for (const p of creative) el.appendChild(card(p));
+    function renderSimple(id, items) {
+      const el = document.getElementById(id);
+      if (!items.length) el.innerHTML = '<p class="empty">Coming soon.</p>';
+      for (const p of items) el.appendChild(card(p));
     }
 
     buildFilters();
     render();
-    renderCreative();
+    renderSimple("creative-grid", creative);
+    renderSimple("education-grid", education);
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
