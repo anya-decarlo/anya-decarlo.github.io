@@ -11,3 +11,4 @@ All content is listed in `data.js`. To add something, drop the file(s) in the ma
 | Projects | `projects/<id>/` | `projects` | Multi-page projects; each card opens `project.html?p=<id>` listing its `pages`. |
 | Creative | `creative/` | `creative` | Fun HTMLs, no tags. |
 | Education | `education/` | `education` | HTMLs and slides. PDFs open in the browser; .pptx/.key download. Optional `thumbnail` image. |
+| Presentations | `presentations/<id>/` | `presentations` | Slide decks exported to PDF (`slides.pdf`) plus a `cover.png` of slide 1; each card opens `slideshow.html?deck=<id>`. |

@@ -94,6 +94,13 @@ function renderFiltered(prefix, items) {
   render();
 }
 
+function renderPresentations() {
+  renderSimple("presentations-grid", presentations, p => ({
+    href: `slideshow.html?deck=${encodeURIComponent(p.id)}`,
+    extra: '<div class="pages">Slideshow</div>',
+  }));
+}
+
 function renderProjects() {
   const items = projects.map(p => ({ ...p, file: p.file || (p.pages[0] || {}).file || "" }));
   renderSimple("projects-grid", items, p => ({

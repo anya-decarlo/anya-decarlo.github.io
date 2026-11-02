@@ -4,6 +4,10 @@
 const work = [
   // { title: "Project name", description: "One-line description.", file: "work/project-name.html",
   //   languages: ["R", "SQL"], topics: ["Dementia Research"] },
+  { title: "Biostatistics 208 Final",
+    description: "My regression final in R, worked on real study data. Tests for a linear trend between physical activity and HDL cholesterol in the HERS trial and whether age and BMI confound it; diagnoses non-normal residuals and influential points (Cook's distance, DFBETAS) in a birth-weight model; and uses logistic regression on the Western Collaborative Group Study to estimate how smoking, measured as yes/no, cigarettes per day, and packs per day, raises the odds of coronary heart disease.",
+    file: "work/biostats-208-final/final.pdf", thumbnail: "work/biostats-208-final/cover.png",
+    languages: ["R"], topics: ["Health Data", "Cardiovascular Research"] },
 ];
 
 // ANALYSIS TOOLS — interactive tools, filterable like Work. Files go in /analysis-tools.
@@ -70,6 +74,11 @@ const creative = [
 
 // EDUCATION — teaching HTMLs and slides. Files go in /education.
 // PDFs open in the browser, .pptx/.key download. Optional thumbnail: "education/talk-name.png".
+const presentations = [
+  // { id: "talk-name", title: "Talk name", description: "What it covers.",
+  //   file: "presentations/talk-name/slides.pdf", thumbnail: "presentations/talk-name/cover.png" },
+];
+
 const education = [
   // { title: "Talk name", description: "One-line description.", file: "education/talk-name.pdf" },
 ];
