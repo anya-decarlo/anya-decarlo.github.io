@@ -119,5 +119,8 @@ const presentations = [
 ];
 
 const education = [
+  { title: "Posterior Precision Visualizer",
+    description: "An interactive lesson on why Bayesian posteriors get more certain. Sliders set the prior SD (τ₀), the observation SD (σ) and the sample size (n), and the page updates the formula 1/τₙ² = 1/τ₀² + n/σ² live: prior, data and posterior precision side by side, plus how precision grows with n, how it falls as data get noisier, and a 3D surface of both at once. The point it makes visible: precision adds up, so more or cleaner data always shrinks the posterior.",
+    file: "education/posterior-precision-visualizer.html" },
   // { title: "Talk name", description: "One-line description.", file: "education/talk-name.pdf" },
 ];
