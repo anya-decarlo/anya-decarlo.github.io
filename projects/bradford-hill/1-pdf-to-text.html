@@ -17,7 +17,7 @@
   <div id="results"></div>
   <div class="card">
     <h2>Saved in this browser</h2>
-    <p class="muted">The next steps will open these directly, or you can load the downloaded .txt.</p>
+    <p class="muted">The Coordinate System opens these directly, or you can load the downloaded .txt there.</p>
     <table id="saved"></table>
   </div>
 </main>
@@ -74,7 +74,7 @@ async function handle(files) {
       const card = document.createElement("div"); card.className = "card";
       card.innerHTML = `<h2>${BH.esc(name)}</h2>
         <p class="muted">${pages} pages · ${lines.toLocaleString()} lines · ${words.toLocaleString()} words · saved in this browser${words < 50 * pages ? " · <b>Very little text found: this PDF may be a scan without a text layer.</b>" : ""}</p>
-        <div class="row" style="margin-bottom:10px"><button class="dl">Download .txt</button></div>
+        <div class="row" style="margin-bottom:10px"><button class="dl">Download .txt</button><a class="btn" href="2-coordinate-system.html?doc=${encodeURIComponent(name)}">Open in Coordinate System →</a></div>
         <pre></pre>`;
       card.querySelector("pre").textContent = text.replace(/\f/g, "\n──────── page break ────────\n").slice(0, 20000);
       card.querySelector(".dl").onclick = () => BH.download(name, text);
