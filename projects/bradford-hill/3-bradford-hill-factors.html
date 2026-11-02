@@ -3,8 +3,9 @@
 <title>3. Bradford Hill Factors · Bradford Hill Evidence Pipeline</title>
 <link rel="stylesheet" href="common.css">
 <script src="store.js"></script>
+<script src="hill-temporal.js"></script>
 <style>
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:18px;align-items:start}
 @media(max-width:900px){.layout{grid-template-columns:1fr}}
 #text{max-height:72vh;overflow:auto;background:#fbfaf7;border:1px solid #e6e1d3;border-radius:8px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
 .ln{display:flex;white-space:pre-wrap}.ln .n{flex:0 0 58px;text-align:right;padding-right:10px;color:#9aa3b8;user-select:none;cursor:pointer;border-right:1px solid #e6e1d3}
@@ -12,7 +13,14 @@
 .pb{padding:4px 10px;background:#ece8dc;color:#6b7286;font-size:12px;user-select:none}
 aside .card{position:sticky;top:12px;max-height:94vh;overflow:auto}#cite{font-size:15px;display:block;margin:8px 0;padding:6px 8px;white-space:normal;word-break:break-all}
 #quote{max-height:140px;overflow:auto;font-size:13px;color:#444;border-left:3px solid #c8c2b0;padding-left:8px;white-space:pre-wrap}
-.factor{border-top:1px solid #e6e1d3;padding:7px 0;font-size:14px}.factor summary{cursor:pointer}.factor .count{float:right;background:#eef1f8;border-radius:10px;padding:0 8px;font-size:12px;color:#1f2a44}.factor .empty{padding:6px 0 2px 22px}#hits{max-height:220px;overflow:auto;font-size:13px}#hits div{cursor:pointer;padding:3px 0;border-bottom:1px solid #eee}
+.factor{border-top:1px solid #e6e1d3;padding:7px 0;font-size:14px}.factor summary{cursor:pointer}.factor .count{float:right;background:#eef1f8;border-radius:10px;padding:0 8px;font-size:12px;color:#1f2a44}.factor .empty{padding:6px 0 2px 22px}
+.fbody{padding:8px 0 4px}.verdict{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px}
+.verdict.good{background:#dcefdc;color:#1e5e22}.verdict.mid{background:#fbecc8;color:#7a5200}.verdict.bad{background:#f7d9d6;color:#8a1f15}.verdict.none{background:#eceae4;color:#555}
+.check{width:100%;font-size:13px;margin:8px 0}.check td{padding:3px 4px;border-bottom:1px solid #eee}.check .st{width:22px;text-align:center;font-weight:700}
+.st.good{color:#1e7a2a}.st.bad{color:#b02a1c}.st.none{color:#aaa}
+.hit{border-left:3px solid #ccc;padding:5px 8px;margin:6px 0;font-size:13px;background:#fbfaf7;cursor:pointer}.hit.good{border-color:#3c9a46}.hit.bad{border-color:#c9473a}.hit.none{border-color:#bbb}
+.hit .meta{font-size:12px;color:#6b7286;margin-bottom:2px}.tag{display:inline-block;font-size:11px;border-radius:8px;padding:0 6px;margin:2px 3px 0 0;background:#eef1f8}.tag.bad{background:#f7d9d6}.tag.good{background:#dcefdc}
+.ln.ev-good .n{border-right:3px solid #3c9a46}.ln.ev-bad .n{border-right:3px solid #c9473a}#hits{max-height:220px;overflow:auto;font-size:13px}#hits div{cursor:pointer;padding:3px 0;border-bottom:1px solid #eee}
 </style>
 </head><body>
 <header><h1>3. Bradford Hill Factors</h1><p>The coordinate view of an article, side by side with the nine Hill factors experts use to judge whether a study supports causal inference. Each factor will be filled in from the text, one at a time.</p></header>
@@ -58,7 +66,7 @@ function load(n, text) {
     html += `<div class="ln" data-i="${i + 1}"><span class="n">${i + 1}</span><span class="t">${BH.esc(l.replace(/\f/g, ""))}</span></div>`;
   });
   $("csv").disabled = false;
-  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show();
+  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show(); runScanners();
 }
 function setSel(a, b) { sel = [Math.min(a, b), Math.max(a, b)]; show(); }
 function show() {
@@ -101,7 +109,49 @@ $("q").oninput = () => {
 $("copy").onclick = () => navigator.clipboard.writeText($("cite").textContent).then(() => { $("copy").textContent = "Copied"; setTimeout(() => $("copy").textContent = "Copy", 1200); });
 const FACTORS = ["Temporal relationship", "Strength of association", "Dose-response relationship", "Replication of findings",
   "Biological plausibility", "Consideration of alternative explanations", "Cessation of exposure", "Specificity of association", "Consistency with other knowledge"];
-$("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor"><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="muted empty">Nothing yet.</div></details>`).join("");
+$("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor" id="f${k + 1}" ${k === 0 ? "open" : ""}><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="fbody"><div class="muted empty">${k === 0 ? "Load a document to scan." : "Nothing yet."}</div></div></details>`).join("");
+const tone = w => (w > 0 ? "good" : w < 0 ? "bad" : "none");
+function markText(text, matches) {
+  const spans = matches.map(m => [m.start, m.end]).sort((a, b) => a[0] - b[0]);
+  let out = "", pos = 0;
+  for (const [a, b] of spans) { if (a < pos) continue; out += BH.esc(text.slice(pos, a)) + "<mark>" + BH.esc(text.slice(a, b)) + "</mark>"; pos = b; }
+  return out + BH.esc(text.slice(pos));
+}
+let temporal = null;
+function runScanners() {
+  document.querySelectorAll(".ln.ev-good,.ln.ev-bad").forEach(e => e.classList.remove("ev-good", "ev-bad"));
+  temporal = TEMPORAL.scan(BH.sentences(lines));
+  const r = temporal, f = $("f1");
+  f.querySelector(".count").textContent = r.hits.length;
+  const cite = h => `<span class="cite">${BH.esc(BH.cite(name, h.a, h.b))}</span>`;
+  const rows = TEMPORAL.cats.map(([id, label]) => {
+    const c = r.cat[id], net = c.pos + c.neg, top = c.items[0];
+    const st = !c.items.length ? "none" : net > 0 ? "good" : net < 0 ? "bad" : "none";
+    return `<tr><td class="st ${st}">${st === "good" ? "✓" : st === "bad" ? "✗" : "–"}</td><td><b>${label}</b><br><span class="muted">${top ? c.items.slice(0, 3).map(i => BH.esc(i.label)).join(" · ") : "Not found"}</span></td>
+      <td style="text-align:right">${top ? `<a href="#" data-a="${top.s.a}" data-b="${top.s.b}" class="cite">${BH.esc(BH.cite(name, top.s.a, top.s.b))}</a>` : ""}</td></tr>`;
+  }).join("");
+  const hitsHtml = r.hits.map((h, k) => {
+    const t = tone(h.score);
+    h.matches.length && t !== "none" && (() => { for (let i = h.a; i <= h.b; i++) document.querySelector(`.ln[data-i="${i}"]`)?.classList.add("ev-" + t); })();
+    return `<div class="hit ${t}" data-a="${h.a}" data-b="${h.b}"><div class="meta">${cite(h)} · ${h.section}${h.others ? " · may describe other studies" : ""}</div>
+      ${markText(h.text.length > 600 ? h.text.slice(0, 600) + "…" : h.text, h.matches.filter(m => m.end <= 600))}
+      <div>${h.matches.map(m => `<span class="tag ${tone(m.w)}">${BH.esc(m.label)}</span>`).join("")}</div></div>`;
+  }).join("");
+  f.querySelector(".fbody").innerHTML = `
+    <div class="row"><span class="verdict ${r.tone}">${r.verdict}</span>${r.followup ? `<span class="muted">Follow-up: “${BH.esc(r.followup)}”</span>` : ""}</div>
+    <table class="check">${rows}</table>
+    <div class="row" style="margin-bottom:6px"><span class="muted">${r.hits.length} passages flagged, strongest first. Green supports exposure before outcome; red weakens it. Click one to see it in the text.</span>
+      <button class="ghost" id="t-csv">Download (.csv)</button></div>
+    ${hitsHtml || '<div class="muted empty">No temporal evidence found.</div>'}`;
+  f.querySelectorAll("[data-a]").forEach(el => el.onclick = e => { e.preventDefault(); jump(+el.dataset.a, +el.dataset.b); });
+  $("t-csv").onclick = () => {
+    const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const out = ["coordinate,page,section,direction,score,evidence,sentence"].concat(r.hits.map(h =>
+      [q(BH.cite(name, h.a, h.b)), pages[h.a - 1], q(h.section), tone(h.score) === "good" ? "supports" : tone(h.score) === "bad" ? "weakens" : "neutral",
+       h.score.toFixed(2), q(h.matches.map(m => m.label).join("; ")), q(h.text)].join(",")));
+    BH.download(name.replace(/\.txt$/i, "") + "-temporal.csv", out.join("\n") + "\n", "text/csv");
+  };
+}
 // One row per line: the coordinate table the parser works from.
 $("csv").onclick = () => {
   const q = v => '"' + v.replace(/"/g, '""') + '"';
