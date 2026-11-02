@@ -30,10 +30,12 @@ const BH = {
   },
   sentences(lines) {
     const clean = lines.map(l => l.replace(/\f/g, "")), secOf = [], brk = new Set(), out = [];
-    let sec = "Front matter";
+    let sec = "Front matter", body = sec, tableLeft = 0;
     clean.forEach((l, i) => {
       const m = l.trim().length < 60 && l.match(this.SECTION_RE);
-      if (m) { sec = this.sectionName(m[1]); brk.add(i); }
+      if (m) { sec = body = this.sectionName(m[1]); tableLeft = 0; brk.add(i); }
+      else if (/^\s*(?:Table|TABLE)\s+S?\d+\b/.test(l) && body !== "References") { sec = "Tables & appendix"; tableLeft = 40; brk.add(i); }
+      else if (tableLeft && (!l.trim() || --tableLeft === 0)) { sec = body; tableLeft = 0; }
       if (!l.trim()) brk.add(i);
       secOf[i] = sec;
     });

@@ -2,8 +2,8 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>3. Bradford Hill Factors · Bradford Hill Evidence Pipeline</title>
 <link rel="stylesheet" href="common.css">
-<script src="store.js?v=3"></script>
-<script src="hill-temporal.js?v=3"></script>
+<script src="store.js?v=4"></script>
+<script src="hill-temporal.js?v=4"></script><script src="hill-strength.js?v=4"></script>
 <style>
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:18px;align-items:start}
 @media(max-width:900px){.layout{grid-template-columns:1fr}}
@@ -22,12 +22,17 @@ aside .card{position:sticky;top:12px;max-height:94vh;overflow:auto}#cite{font-si
 .hit .meta{font-size:12px;color:#6b7286;margin-bottom:2px}.tag{display:inline-block;font-size:11px;border-radius:8px;padding:0 6px;margin:2px 3px 0 0;background:#eef1f8}.tag.bad{background:#f7d9d6}.tag.good{background:#dcefdc}
 .ln.ev-good .n{border-right:3px solid #3c9a46}.ln.ev-bad .n{border-right:3px solid #c9473a}#hits{max-height:220px;overflow:auto;font-size:13px}#hits div{cursor:pointer;padding:3px 0;border-bottom:1px solid #eee}
 .steps{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:14px}button.scan{background:#c58b2b;font-weight:600}button.scan:disabled{opacity:.5}
+.focus label{display:flex;gap:6px;align-items:center}.focus input{width:220px}
+.ln.ev-est .n{border-right:3px solid #3b6fd1}.est{border:1px solid #d9dce6;border-radius:6px;padding:8px 10px;margin:8px 0;background:#fbfaf7}
+.est .big{font-size:17px;font-weight:600}.est ul{margin:6px 0 0 18px;padding:0;font-size:13px}.est li{margin:3px 0}
+table.ests{width:100%;border-collapse:collapse;font-size:12.5px}table.ests td,table.ests th{border-bottom:1px solid #eee;padding:4px 3px;text-align:left;vertical-align:top}table.ests tr[data-a]{cursor:pointer}table.ests tr[data-a]:hover{background:#f3f1ea}
+.note{font-size:11.5px;color:#6b7286;margin-top:8px}
 </style>
 </head><body>
 <header><h1>3. Bradford Hill Factors</h1><p>The coordinate view of an article, side by side with the nine Hill factors experts use to judge whether a study supports causal inference. Each factor will be filled in from the text, one at a time.</p></header>
 <nav></nav>
 <main>
-  <div class="card steps"><b>How to use:</b> <span>① Choose a saved document or load a .txt</span> <span>② Click <b>Scan for factors</b></span> <span>③ Read the results in the factor panels on the right; click any passage to jump to it in the text</span></div>
+  <div class="card steps"><b>How to use:</b> <span>① Choose a saved document or load a .txt</span> <span>② Optional: type the exposure and outcome you care about</span> <span>③ Click <b>Scan for factors</b></span> <span>④ Read the results in the factor panels on the right; click any passage to jump to it in the text</span></div>
   <div class="card row">
     <select id="pick"></select>
     <label class="btn">Load .txt file<input type="file" id="file" accept=".txt,text/plain" hidden></label>
@@ -35,6 +40,12 @@ aside .card{position:sticky;top:12px;max-height:94vh;overflow:auto}#cite{font-si
     <input type="text" id="go" placeholder="Jump to: 170-173 or [article.txt:170]" style="flex:1;min-width:220px">
     <button class="ghost" id="csv" disabled>Download coordinates (.csv)</button>
     <input type="text" id="q" placeholder="Search text" style="width:200px">
+  </div>
+  <div class="card row focus">
+    <b>Focus</b>
+    <label>Exposure <input type="text" id="fx" placeholder="e.g. talc, talcum powder"></label>
+    <label>Outcome <input type="text" id="fo" placeholder="e.g. ovarian cancer"></label>
+    <span class="muted">Optional. Separate synonyms with commas. Used to rank the estimates in Strength of association.</span>
   </div>
   <div class="layout">
     <div id="text"><p class="muted" style="padding:16px">Choose a document saved in step 1, or load a .txt.</p></div>
@@ -69,7 +80,7 @@ function load(n, text) {
     html += `<div class="ln" data-i="${i + 1}"><span class="n">${i + 1}</span><span class="t">${BH.esc(l.replace(/\f/g, ""))}</span></div>`;
   });
   $("csv").disabled = false;
-  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show(); $("scan").disabled = false; $("scan").textContent = "Scan for factors"; resetFactors();
+  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show(); $("scan").disabled = false; $("scan").textContent = "Scan for factors"; const fc = focusStore()[n] || {}; $("fx").value = fc.exposure || ""; $("fo").value = fc.outcome || ""; resetFactors();
 }
 function setSel(a, b) { sel = [Math.min(a, b), Math.max(a, b)]; show(); }
 function show() {
@@ -113,13 +124,20 @@ $("copy").onclick = () => navigator.clipboard.writeText($("cite").textContent).t
 const FACTORS = ["Temporal relationship", "Strength of association", "Dose-response relationship", "Replication of findings",
   "Biological plausibility", "Consideration of alternative explanations", "Cessation of exposure", "Specificity of association", "Consistency with other knowledge"];
 function resetFactors() {
-  document.querySelectorAll(".ln.ev-good,.ln.ev-bad").forEach(e => e.classList.remove("ev-good", "ev-bad"));
-  $("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor" id="f${k + 1}" ${k === 0 ? "open" : ""}><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="fbody"><div class="muted empty">${k === 0 ? (lines.length ? "Click “Scan for factors” above." : "Choose a document, then click “Scan for factors”.") : "Coming soon: this factor isn't built yet."}</div></div></details>`).join("");
+  document.querySelectorAll(".ln.ev-good,.ln.ev-bad,.ln.ev-est").forEach(e => e.classList.remove("ev-good", "ev-bad", "ev-est"));
+  $("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor" id="f${k + 1}" ${k === 0 ? "open" : ""}><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="fbody"><div class="muted empty">${k <= 1 ? (lines.length ? "Click “Scan for factors” above." : "Choose a document, then click “Scan for factors”.") : "Coming soon: this factor isn't built yet."}</div></div></details>`).join("");
 }
 resetFactors();
+function focusStore() { try { return JSON.parse(localStorage.getItem("bradfordHill.focus")) || {}; } catch { return {}; } }
 $("scan").onclick = () => {
-  try { runScanners(); $("scan").textContent = "Scan again"; $("f1").open = true; $("f1").scrollIntoView({ block: "start", behavior: "smooth" }); }
-  catch (err) { $("f1").querySelector(".fbody").innerHTML = `<div class="muted empty">The scan failed: ${BH.esc(String(err.message || err))}</div>`; }
+  const fs = focusStore(); fs[name] = { exposure: $("fx").value, outcome: $("fo").value };
+  try { localStorage.setItem("bradfordHill.focus", JSON.stringify(fs)); } catch {}
+  resetFactors();
+  for (const [id, fn] of [["f1", renderTemporal], ["f2", renderStrength]]) {
+    try { fn(); $(id).open = true; }
+    catch (err) { $(id).querySelector(".fbody").innerHTML = `<div class="muted empty">The scan failed: ${BH.esc(String(err.message || err))}</div>`; }
+  }
+  $("scan").textContent = "Scan again"; $("f1").scrollIntoView({ block: "start", behavior: "smooth" });
 };
 const tone = w => (w > 0 ? "good" : w < 0 ? "bad" : "none");
 function markText(text, matches) {
@@ -129,8 +147,7 @@ function markText(text, matches) {
   return out + BH.esc(text.slice(pos));
 }
 let temporal = null;
-function runScanners() {
-  document.querySelectorAll(".ln.ev-good,.ln.ev-bad").forEach(e => e.classList.remove("ev-good", "ev-bad"));
+function renderTemporal() {
   temporal = TEMPORAL.scan(BH.sentences(lines));
   const r = temporal, f = $("f1");
   f.querySelector(".count").textContent = r.hits.length;
@@ -161,6 +178,63 @@ function runScanners() {
       [q(BH.cite(name, h.a, h.b)), pages[h.a - 1], q(h.section), tone(h.score) === "good" ? "supports" : tone(h.score) === "bad" ? "weakens" : "neutral",
        h.score.toFixed(2), q(h.matches.map(m => m.label).join("; ")), q(h.text)].join(",")));
     BH.download(name.replace(/\.txt$/i, "") + "-temporal.csv", out.join("\n") + "\n", "text/csv");
+  };
+}
+let strength = null;
+const fmt = v => (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2));
+function estTags(e) {
+  return [e.adjusted && "adjusted", e.crude && "crude", e.subgroup && "subgroup", e.others && "may be another study", e.inherited && "focus terms in nearby text",
+    e.measure.startsWith("Ratio") && "check table header"].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join("");
+}
+function renderStrength() {
+  const fx = $("fx").value, fo = $("fo").value;
+  strength = STRENGTH.scan(BH.sentences(lines), { exposure: fx, outcome: fo });
+  const r = strength, f = $("f2"), p = r.primary;
+  f.querySelector(".count").textContent = r.ests.length;
+  for (const e of r.ests) for (let i = e.a; i <= e.b; i++) { const el = document.querySelector(`.ln[data-i="${i}"]`); if (el && !el.classList.contains("ev-good") && !el.classList.contains("ev-bad")) el.classList.add("ev-est"); }
+  const cl = e => `<a href="#" class="cite" data-a="${e.a}" data-b="${e.b}">${BH.esc(BH.cite(name, e.a, e.b))}</a>`;
+  const focusLine = r.focused ? `Focus: <b>${BH.esc(fx || "any exposure")}</b> → <b>${BH.esc(fo || "any outcome")}</b>` : "No focus set, so every estimate in the article is listed. Type an exposure and outcome above to rank the ones that matter.";
+  let primaryHtml = "";
+  if (p) {
+    const g = p.g, inv = p.est < 1;
+    const prec = g.ciRatio < 2 ? "narrow" : g.ciRatio <= 4 ? "moderate width" : "wide";
+    const commonNote = p.measure === "OR" || p.measure === "HR" ? " This assumes the outcome is rare (under ~15%); for a common outcome the " + p.measure + " overstates the risk ratio and the E-value should be computed on √" + p.measure + "." : "";
+    primaryHtml = `<div class="est"><div class="meta muted">Primary estimate · ${cl(p)} (p. ${pages[p.a - 1]}) · ${BH.esc(p.section)}</div>
+      <div class="big">${p.measure} ${fmt(p.est)} (${p.level}% CI ${fmt(p.lo)}–${fmt(p.hi)})${p.p ? `, p ${BH.esc(p.p)}` : ""}</div><div>${estTags(p)}</div>
+      <div class="muted" style="font-size:13px;margin-top:4px">“${markText(p.text.length > 500 ? p.text.slice(0, 500) + "…" : p.text, p.end <= 500 ? [p] : [])}”</div>
+      <ul>
+        <li><b>Magnitude:</b> ${g.size}. ${inv ? `${Math.round((1 - p.est) * 100)}% lower ${p.measure === "OR" ? "odds" : "risk"} (1/${p.measure} = ${fmt(g.r)})` : `${fmt(p.est)} times the ${p.measure === "OR" ? "odds" : p.measure === "HR" ? "hazard" : "risk"} in the exposed`}.</li>
+        <li><b>Statistical significance:</b> ${g.sig ? `the ${p.level}% CI excludes 1.0` : `the ${p.level}% CI includes 1.0, so chance cannot be excluded`}.</li>
+        <li><b>Precision:</b> upper/lower CI ratio ${fmt(g.ciRatio)} (${prec}).</li>
+        ${inv ? "" : `<li><b>Doubling of risk:</b> ${g.doublingLo ? "the point estimate and the entire CI are at or above 2.0" : g.doubling ? `the point estimate is ≥ 2.0, but the lower CI bound (${fmt(p.lo)}) is below 2.0` : "the point estimate is below 2.0"}.</li>`}
+        <li><b>Robustness to unmeasured confounding (E-value):</b> ${fmt(g.ev)} for the estimate${g.sig ? `, ${fmt(g.evCI)} for the CI bound` : ""}. An unmeasured confounder would need a risk ratio of at least ${fmt(g.ev)} with both the exposure and the outcome to fully explain away this estimate${g.sig ? `, and ${fmt(g.evCI)} to make the CI include 1.0` : ""}.${commonNote}</li>
+      </ul></div>`;
+  }
+  const s = r.sum;
+  const sumLine = r.ests.length ? `${s.n} estimate${s.n === 1 ? "" : "s"} for this ${r.focused ? "focus" : "article"} (excluding the introduction and other studies): ${s.up} significantly increased, ${s.down} significantly decreased, ${s.nul} not significant.` : "";
+  const row = e => `<tr data-a="${e.a}" data-b="${e.b}"><td>${BH.esc(BH.cite(name, e.a, e.b))}<br><span class="muted">${BH.esc(e.section)}</span></td>
+    <td><b>${e.measure} ${fmt(e.est)}</b> (${fmt(e.lo)}–${fmt(e.hi)})${e.p ? `<br>p ${BH.esc(e.p)}` : ""}</td>
+    <td class="st ${e.g.sig ? (e.est > 1 ? "good" : "bad") : "none"}">${e.g.sig ? e.g.size : "Not sig."}</td><td>${fmt(e.g.ev)}</td>
+    <td><span class="muted">${BH.esc(e.context.slice(-110))}</span><br>${estTags(e)}</td></tr>`;
+  const table = list => `<table class="ests"><tr><th>Coordinate</th><th>Estimate</th><th>Grade</th><th>E-value</th><th>Context</th></tr>${list.map(row).join("")}</table>`;
+  const stm = r.stmts.map(x => `<div class="hit ${x.w > 0 ? "good" : x.w < 0 ? "bad" : "none"}" data-a="${x.a}" data-b="${x.b}"><div class="meta">${BH.esc(BH.cite(name, x.a, x.b))} · ${x.section}${x.others ? " · may describe other studies" : ""}</div>
+    ${markText(x.text.length > 400 ? x.text.slice(0, 400) + "…" : x.text, x.end <= 400 ? [x] : [])}<div><span class="tag ${x.w > 0 ? "good" : x.w < 0 ? "bad" : ""}">${BH.esc(x.label)}</span></div></div>`).join("");
+  f.querySelector(".fbody").innerHTML = `
+    <div class="row"><span class="verdict ${r.tone}">${BH.esc(r.verdict)}</span></div>
+    <p class="muted" style="font-size:13px">${focusLine}</p>
+    ${primaryHtml}
+    <div class="row" style="margin:6px 0"><span class="muted">${sumLine}</span><button class="ghost" id="s-csv">Download (.csv)</button></div>
+    ${r.ests.length ? table(r.ests) : `<div class="muted empty">${r.focused ? "No ratio estimates mention this exposure and outcome. Try synonyms, or clear the focus." : "No ratio estimates (HR, RR, OR, IRR, SMR) with confidence intervals were found."}</div>`}
+    ${stm ? `<h3 style="font-size:14px;margin:12px 0 4px">Authors' characterizations</h3>${stm}` : ""}
+    ${r.rest.length ? `<details style="margin-top:10px"><summary class="muted">Other estimates in the article (${r.rest.length})</summary>${table(r.rest)}</details>` : ""}
+    <div class="note">Magnitude bands (rule of thumb): under 1.5 weak, 1.5–2 moderate, 2–5 strong, 5+ very strong; inverse estimates are graded by 1/ratio. E-value: VanderWeele &amp; Ding, Ann Intern Med 2017. The primary estimate is chosen automatically, preferring adjusted results in Results/Abstract that mention the focus terms. Confirm it against the source.</div>`;
+  f.querySelectorAll("[data-a]").forEach(el => el.onclick = e => { e.preventDefault(); jump(+el.dataset.a, +el.dataset.b); });
+  $("s-csv").onclick = () => {
+    const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+    const all = r.ests.map(e => [e, "focus"]).concat(r.rest.map(e => [e, "other"]));
+    const out = ["coordinate,page,section,group,measure,estimate,ci_lower,ci_upper,ci_level,p,adjusted,crude,subgroup,other_study,grade,significant,e_value,e_value_ci,context,sentence"].concat(all.map(([e, grp]) =>
+      [q(BH.cite(name, e.a, e.b)), pages[e.a - 1], q(e.section), grp, q(e.measure), e.est, e.lo, e.hi, e.level, q(e.p), e.adjusted, e.crude, e.subgroup, e.others, q(e.g.size), e.g.sig, e.g.ev.toFixed(2), e.g.evCI.toFixed(2), q(e.context), q(e.text)].join(",")));
+    BH.download(name.replace(/\.txt$/i, "") + "-strength.csv", out.join("\n") + "\n", "text/csv");
   };
 }
 // One row per line: the coordinate table the parser works from.
