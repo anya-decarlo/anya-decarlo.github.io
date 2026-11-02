@@ -114,6 +114,9 @@ const creative = [
 // EDUCATION — teaching HTMLs and slides. Files go in /education.
 // PDFs open in the browser, .pptx/.key download. Optional thumbnail: "education/talk-name.png".
 const presentations = [
+  { id: "feature-engineering", title: "Feature Engineering",
+    description: "A walkthrough of the feature-selection pipeline for BHR-CLASP speech data (798 participants, 2,540 features): recoding hidden missing-value codes, dropping variables over 10% missing, IQR outlier detection, a variance filter, and PCA/VIF covariance reduction down to 32 linguistic and acoustic features. Along the way it works out by hand why an outlier in x flattens an OLS slope (2 → 1.69 → 0.83), why a zero-variance variable carries no signal, and how PCA cut the condition number from 6.5×10¹⁷ to 346. Ends with the regression results and a 16 vs 44.1 kHz recording comparison.",
+    file: "presentations/feature-engineering/slides.pdf", thumbnail: "presentations/feature-engineering/cover.png" },
   // { id: "talk-name", title: "Talk name", description: "What it covers.",
   //   file: "presentations/talk-name/slides.pdf", thumbnail: "presentations/talk-name/cover.png" },
 ];
