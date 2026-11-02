@@ -184,6 +184,8 @@
         .emotion-card[data-emotion="loudness"] { border-left: 4px solid #ff00ff; }
         .emotion-card[data-emotion="chaos"] { border-left: 4px solid #ff6b9d; }
         .emotion-card[data-emotion="awareness"] { border-left: 4px solid #00ff00; }
+        .emotion-card[data-emotion="solitude"] { border-left: 4px solid #ffb347; }
+        .emotion-card[data-emotion="anticipation"] { border-left: 4px solid #7be6ff; }
 
         @media (max-width: 768px) {
             h1 {
@@ -204,7 +206,7 @@
     <div class="container">
         <header>
             <h1>Emotional Experiences</h1>
-            <p class="subtitle">10 distinct feelings translated into code</p>
+            <p class="subtitle">12 distinct feelings translated into code</p>
         </header>
 
         <div class="grid">
@@ -387,6 +389,42 @@
                     Experience Awareness →
                 </button>
             </div>
+
+            <!-- 11. Warm Solitude -->
+            <div class="emotion-card" data-emotion="solitude">
+                <div class="emotion-number">11</div>
+                <h2 class="emotion-title">Warm Solitude</h2>
+                <p class="emotion-description">
+                    Alone, and that's okay. One lamp in a dark room, rain sliding down the window, dust drifting through the light. The lamp follows you slowly and breathes on an 8-second rhythm.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">1 light source</span>
+                    <span class="tag">rain on glass</span>
+                    <span class="tag">8s breath</span>
+                    <span class="tag">content</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('warm-solitude.html')">
+                    Experience Solitude →
+                </button>
+            </div>
+
+            <!-- 12. Electric Anticipation -->
+            <div class="emotion-card" data-emotion="anticipation">
+                <div class="emotion-number">12</div>
+                <h2 class="emotion-title">Electric Anticipation</h2>
+                <p class="emotion-description">
+                    The second before something happens. Sparks gather around your cursor, the field hums tighter and faster, the charge builds until it can't hold. Hold to build it faster; let go to release.
+                </p>
+                <div class="emotion-tags">
+                    <span class="tag">260 sparks</span>
+                    <span class="tag">charge build-up</span>
+                    <span class="tag">hold to release</span>
+                    <span class="tag">tension</span>
+                </div>
+                <button class="experience-btn" onclick="openExperience('electric-anticipation.html')">
+                    Experience Anticipation →
+                </button>
+            </div>
         </div>
 
         <footer class="footer">
@@ -394,7 +432,8 @@
                 10 distinct feelings translated into code<br>
                 Each one technically precise, emotionally specific<br>
                 Created in 31 minutes of pure flow<br>
-                January 16, 2026 • 5:06 AM - 5:37 AM
+                January 16, 2026 • 5:06 AM - 5:37 AM<br>
+                + 2 more by invitation: Warm Solitude &amp; Electric Anticipation
             </p>
         </footer>
     </div>

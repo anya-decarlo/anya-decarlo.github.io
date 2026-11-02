@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electric Anticipation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #05070d; cursor: crosshair; }
+  canvas { display: block; }
+  .status {
+    position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%);
+    font-family: 'Courier New', monospace; font-size: 14px; letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(120, 230, 255, 0.7); pointer-events: none; transition: color 0.3s;
+  }
+  .meter {
+    position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
+    width: 280px; height: 2px; background: rgba(120, 230, 255, 0.12); pointer-events: none;
+  }
+  .meter div { height: 100%; width: 0; background: #7be6ff; box-shadow: 0 0 10px #7be6ff; }
+  .back {
+    position: fixed; top: 20px; left: 24px; font-family: 'Courier New', monospace; font-size: 12px;
+    color: rgba(120, 230, 255, 0.35); text-decoration: none; letter-spacing: 2px; z-index: 2;
+  }
+  .back:hover { color: rgba(120, 230, 255, 0.9); }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← all emotions</a>
+<canvas id="c"></canvas>
+<div class="status" id="status">something is coming</div>
+<div class="meter"><div id="bar"></div></div>
+<script>
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+const statusEl = document.getElementById('status'), bar = document.getElementById('bar');
+let W, H, charge = 0, holding = false, rings = [];
+const mouse = { x: innerWidth / 2, y: innerHeight / 2 };
+const words = ['something is coming', 'wait for it', 'almost', 'any second now', 'hold on', 'now?'];
+let sparks = [];
+
+function resize() {
+  W = c.width = innerWidth; H = c.height = innerHeight;
+  sparks = Array.from({ length: 260 }, () => ({
+    x: Math.random() * W, y: Math.random() * H, vx: 0, vy: 0,
+    a: Math.random() * Math.PI * 2, orbit: 40 + Math.random() * 220, hue: 185 + Math.random() * 30
+  }));
+}
+addEventListener('resize', resize);
+addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+addEventListener('pointerdown', () => holding = true);
+addEventListener('pointerup', () => { holding = false; if (charge > 0.15) release(); });
+resize();
+
+function release() {
+  for (const p of sparks) {
+    const ang = Math.atan2(p.y - mouse.y, p.x - mouse.x);
+    const f = 6 + Math.random() * 14 * charge;
+    p.vx = Math.cos(ang) * f; p.vy = Math.sin(ang) * f;
+  }
+  rings.push({ x: mouse.x, y: mouse.y, r: 0, a: 0.6 * charge + 0.2 });
+  charge = 0;
+  statusEl.textContent = 'there it is';
+}
+
+let last = 0;
+function frame(t) {
+  const dt = Math.min((t - last) / 1000, 0.05); last = t;
+  charge = Math.min(1, charge + dt * (holding ? 0.45 : 0.16));
+  if (charge >= 1) release();
+
+  ctx.fillStyle = `rgba(5,7,13,${0.28 - charge * 0.12})`;
+  ctx.fillRect(0, 0, W, H);
+
+  // humming field lines, tighter and faster as the charge builds
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 9; i++) {
+    const y0 = H * (i + 1) / 10;
+    ctx.strokeStyle = `rgba(120,230,255,${0.04 + charge * 0.12})`;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 8) {
+      const pull = Math.exp(-Math.pow((x - mouse.x) / 260, 2)) * Math.exp(-Math.pow((y0 - mouse.y) / 300, 2));
+      const amp = 2 + charge * 22 * (0.3 + pull);
+      const y = y0 + Math.sin(x * (0.01 + charge * 0.03) + t * 0.002 * (1 + charge * 6) + i) * amp;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // sparks gather around the cursor, jittering harder as tension rises
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of sparks) {
+    p.a += 0.01 + charge * 0.06;
+    const r = p.orbit * (1 - charge * 0.75);
+    const tx = mouse.x + Math.cos(p.a) * r, ty = mouse.y + Math.sin(p.a) * r;
+    const k = 0.002 + charge * 0.03;
+    p.vx += (tx - p.x) * k; p.vy += (ty - p.y) * k;
+    p.vx *= 0.9; p.vy *= 0.9;
+    const jitter = charge * charge * 4;
+    p.x += p.vx + (Math.random() - 0.5) * jitter;
+    p.y += p.vy + (Math.random() - 0.5) * jitter;
+    ctx.fillStyle = `hsla(${p.hue},100%,${60 + charge * 25}%,${0.35 + charge * 0.5})`;
+    ctx.fillRect(p.x, p.y, 1.5 + charge, 1.5 + charge);
+  }
+
+  // little arcs that jump near the cursor once the charge is high
+  if (charge > 0.55 && Math.random() < charge * 0.5) {
+    const a = Math.random() * Math.PI * 2, len = 30 + Math.random() * 60 * charge;
+    let x = mouse.x + Math.cos(a) * 12, y = mouse.y + Math.sin(a) * 12;
+    ctx.strokeStyle = `rgba(190,245,255,${0.3 + charge * 0.4})`;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    for (let i = 0; i < 6; i++) {
+      x += Math.cos(a) * len / 6 + (Math.random() - 0.5) * 14;
+      y += Math.sin(a) * len / 6 + (Math.random() - 0.5) * 14;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // release ring
+  for (const g of rings) {
+    g.r += 14; g.a *= 0.95;
+    ctx.strokeStyle = `rgba(160,240,255,${g.a})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2); ctx.stroke();
+  }
+  rings = rings.filter(g => g.a > 0.01);
+  ctx.globalCompositeOperation = 'source-over';
+
+  bar.style.width = (charge * 100) + '%';
+  if (charge > 0.08) statusEl.textContent = words[Math.min(words.length - 1, Math.floor(charge * words.length))];
+  statusEl.style.color = `rgba(${120 + charge * 135},${230 + charge * 25},255,${0.5 + charge * 0.5})`;
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
