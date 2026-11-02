@@ -8,6 +8,22 @@ const work = [
     description: "My regression final in R, worked on real study data. Tests for a linear trend between physical activity and HDL cholesterol in the HERS trial and whether age and BMI confound it; diagnoses non-normal residuals and influential points (Cook's distance, DFBETAS) in a birth-weight model; and uses logistic regression on the Western Collaborative Group Study to estimate how smoking, measured as yes/no, cigarettes per day, and packs per day, raises the odds of coronary heart disease.",
     file: "work/biostats-208-final/final.pdf", thumbnail: "work/biostats-208-final/cover.png",
     languages: ["R"], topics: ["Health Data", "Cardiovascular Research"] },
+  { title: "Predicting Blood Pressure: Linear, Polynomial and Kernel Regression",
+    description: "Predicts systolic from diastolic blood pressure in NHANES, training on the 2009–10 survey and testing on 2011–12. I compare linear, quadratic and cubic fits with ANOVA, try kernel smoothing at three bandwidths, then check which model actually wins on test-set mean squared error.",
+    file: "work/ml/nhanes-blood-pressure-regression.html",
+    languages: ["R"], topics: ["Machine Learning", "Health Data"] },
+  { title: "Classifying Diabetes and Dementia: Logistic Regression, LDA and Lasso",
+    description: "Predicts diabetes in NHANES from blood pressure and age with logistic regression and linear discriminant analysis, comparing confusion matrices, sensitivity and specificity, ROC curves and thresholds (multi-predictor AUC 0.81), and shows how changing LDA's prior probabilities shifts what it catches. Then uses cross-validated lasso to classify dementia and pick out which predictors survive the penalty.",
+    file: "work/ml/diabetes-dementia-classification.html",
+    languages: ["R"], topics: ["Machine Learning", "Health Data", "Dementia Research"] },
+  { title: "SVMs, Random Forests and Gradient Boosting on Dementia MRI and Prostate Cancer Genes",
+    description: "Builds a maximum-margin classifier by hand to show which new points do and don't move the decision boundary, then trains a radial SVM to tell dementia subtypes apart from structural MRI brain-loss measures (67% test accuracy vs 29% by chance). On a 12,000-gene prostate cancer dataset, compares a tuned random forest with XGBoost by AUC and finds which gene each model ranks most important, using SHAP values for the boosted trees.",
+    file: "work/ml/svm-random-forest-boosting.html",
+    languages: ["R"], topics: ["Machine Learning", "Dementia Research", "Cancer Research"] },
+  { title: "Gradient Boosting and K-means on the I-SPY Breast Cancer Trial",
+    description: "Predicts final tumor diameter on MRI in the I-SPY breast cancer trial from earlier timepoints. I hand-build site-wise cross-validation (holding out whole sites, not random rows) to tune a gradient boosted model's trees and depth; it explains 53% of the variance on held-out sites. Then clusters patients with K-means, choosing k by silhouette, and compares tumor outcomes across the clusters.",
+    file: "work/ml/ispy-boosting-kmeans.html",
+    languages: ["R"], topics: ["Machine Learning", "Cancer Research"] },
 ];
 
 // ANALYSIS TOOLS — interactive tools, filterable like Work. Files go in /analysis-tools.
