@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1. PDF to Text · Bradford Hill Evidence Pipeline</title>
+<link rel="stylesheet" href="common.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="store.js"></script>
+<style>pre{white-space:pre-wrap;max-height:420px;overflow:auto;background:#fbfaf7;border:1px solid #e6e1d3;border-radius:8px;padding:12px;margin:0}</style>
+</head><body>
+<header><h1>1. PDF to Text</h1><p>Turn each article into a fixed plain-text file. That .txt becomes the source every citation points to, so it is never edited afterward.</p></header>
+<nav></nav>
+<main>
+  <div class="card">
+    <div class="drop" id="drop">Drop PDF articles here or click to choose<br><span class="muted">Multiple files OK. Everything runs in your browser; nothing is uploaded.</span></div>
+    <input type="file" id="file" accept="application/pdf" multiple hidden>
+    <p class="muted" id="status"></p>
+  </div>
+  <div id="results"></div>
+  <div class="card">
+    <h2>Saved in this browser</h2>
+    <p class="muted">The next steps will open these directly, or you can load the downloaded .txt.</p>
+    <table id="saved"></table>
+  </div>
+</main>
+<script>
+BH.nav(1);
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const drop = document.getElementById("drop"), input = document.getElementById("file"), status = document.getElementById("status");
+drop.onclick = () => input.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); handle([...e.dataTransfer.files]); };
+input.onchange = () => handle([...input.files]);
+
+// Rebuild reading lines from positioned text items: group by baseline, order left to right.
+function pageToText(content) {
+  const rows = [];
+  for (const it of content.items) {
+    if (!it.str || !it.str.trim()) continue;
+    const x = it.transform[4], y = it.transform[5], h = Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10;
+    let row = rows.find(r => Math.abs(r.y - y) < h * 0.5);
+    if (!row) rows.push(row = { y, items: [] });
+    row.items.push({ x, w: it.width, h, s: it.str });
+  }
+  rows.sort((a, b) => b.y - a.y);
+  return rows.map(r => {
+    r.items.sort((a, b) => a.x - b.x);
+    let out = "", end = null;
+    for (const i of r.items) {
+      if (end !== null && i.x - end > i.h * 0.2 && !out.endsWith(" ") && !i.s.startsWith(" ")) out += " ";
+      out += i.s; end = i.x + i.w;
+    }
+    return out.replace(/\s+$/, "");
+  }).join("\n");
+}
+
+async function convert(file) {
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    status.textContent = `${file.name}: page ${p} of ${pdf.numPages}`;
+    pages.push(pageToText(await (await pdf.getPage(p)).getTextContent()));
+  }
+  // pdftotext convention: each page ends with "\n\f", so line numbers are stable and pages are countable.
+  return { text: pages.map(t => t + "\n\f").join(""), pages: pdf.numPages };
+}
+
+async function handle(files) {
+  for (const f of files.filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name))) {
+    try {
+      const { text, pages } = await convert(f);
+      const name = f.name.replace(/\.pdf$/i, "") + ".txt";
+      const lines = BH.lines(text).length, words = (text.match(/\S+/g) || []).length;
+      BH.save(name, text, { pages, source: f.name });
+      const card = document.createElement("div"); card.className = "card";
+      card.innerHTML = `<h2>${BH.esc(name)}</h2>
+        <p class="muted">${pages} pages · ${lines.toLocaleString()} lines · ${words.toLocaleString()} words · saved in this browser${words < 50 * pages ? " · <b>Very little text found: this PDF may be a scan without a text layer.</b>" : ""}</p>
+        <div class="row" style="margin-bottom:10px"><button class="dl">Download .txt</button></div>
+        <pre></pre>`;
+      card.querySelector("pre").textContent = text.replace(/\f/g, "\n──────── page break ────────\n").slice(0, 20000);
+      card.querySelector(".dl").onclick = () => BH.download(name, text);
+      document.getElementById("results").prepend(card);
+    } catch (e) { alert(`Could not read ${f.name}: ${e.message}`); }
+  }
+  status.textContent = ""; input.value = ""; renderSaved();
+}
+
+function renderSaved() {
+  const d = BH.all(), names = Object.keys(d);
+  document.getElementById("saved").innerHTML = names.length ? "<tr><th>File</th><th>Pages</th><th>Saved</th><th></th></tr>" + names.map(n =>
+    `<tr><td class="mono">${BH.esc(n)}</td><td>${d[n].pages || "–"}</td><td>${new Date(d[n].saved).toLocaleString()}</td>
+     <td style="text-align:right"><button class="ghost" data-dl="${BH.esc(n)}">Download</button> <button class="ghost" data-rm="${BH.esc(n)}">Remove</button></td></tr>`).join("")
+    : '<tr><td class="muted">Nothing saved yet.</td></tr>';
+  document.querySelectorAll("[data-dl]").forEach(b => b.onclick = () => BH.download(b.dataset.dl, BH.all()[b.dataset.dl].text));
+  document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { if (confirm(`Remove ${b.dataset.rm}?`)) { BH.remove(b.dataset.rm); renderSaved(); } });
+}
+renderSaved();
+</script>
+</body></html>

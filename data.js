@@ -84,6 +84,12 @@ const projects = [
       { title: "6. SVG Generator", file: "projects/computer-vision/6-svg-generator.html",
         description: "Turns any x, y, hex CSV (like the filtered output of the reconstructors) into a vector SVG you can download." },
     ] },
+  { id: "bradford-hill", title: "Bradford Hill Evidence Pipeline",
+    description: "A browser pipeline for expert causation review, built for lawyers. It turns study PDFs into fixed plain-text files and will scan them for evidence on the nine Bradford Hill factors experts use to judge whether a study supports causal inference, with every finding cited back to exact lines of the source. Articles never leave your browser. In progress: more steps coming.",
+    pages: [
+      { title: "1. PDF to Text", file: "projects/bradford-hill/1-pdf-to-text.html",
+        description: "Upload article PDFs and convert each to a plain .txt, page by page, with a page-break marker after every page so line numbers stay fixed for citation. Download the .txt or keep it saved in the browser for the next steps." },
+    ] },
   // { id: "computer-vision", title: "Computer Vision", description: "One-line description.",
   //   pages: [
   //     { title: "Step 1", description: "Optional.", file: "projects/computer-vision/step1.html" },
