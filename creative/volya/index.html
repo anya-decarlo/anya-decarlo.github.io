@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ВОЛЯ — the will engine</title>
+<!-- for babushka. built in one night by team innosync. honor: refundable. -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #000; overflow: hidden; cursor: none; }
+  canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; }
+
+  #clauses { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+  .clause {
+    position: absolute; transform: translate(-50%,-50%);
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    font-style: italic; font-size: clamp(18px, 2.4vw, 32px);
+    text-align: center; white-space: nowrap;
+    opacity: 0; transition: opacity 1.2s ease;
+  }
+  .clause.on { opacity: 1; }
+  .drift { animation: drift 7s ease-in-out infinite alternate; position: relative; }
+  @keyframes drift {
+    from { transform: translate(-9px, -6px) rotate(-.4deg); }
+    to   { transform: translate(9px, 7px) rotate(.4deg); }
+  }
+  .clause span { display: block; }
+  .ghost {
+    position: absolute; inset: 0; white-space: nowrap;
+    filter: blur(1.6px); opacity: .3;
+  }
+  .g1 { color: #5ecbff; animation: ph1 3.1s ease-in-out infinite alternate; }
+  .g2 { color: #ff6b9d; animation: ph2 4.3s ease-in-out infinite alternate; }
+  .main { position: relative; color: rgba(255,217,138,.4); filter: blur(1px);
+          transition: color .5s, filter .5s, text-shadow .5s; }
+  @keyframes ph1 { from { transform: translate(-4px,-3px);} to { transform: translate(4px,3px);} }
+  @keyframes ph2 { from { transform: translate(3px,4px);}  to { transform: translate(-4px,-3px);} }
+
+  .clause.resolved .ghost { opacity: 0; transition: opacity .3s; }
+  .clause.resolved .main {
+    color: #ffd98a; filter: blur(0);
+    text-shadow: 0 0 24px rgba(255,190,80,.75), 0 0 60px rgba(255,190,80,.35);
+  }
+  .clause.gone { opacity: 0; }
+
+  .ring {
+    position: absolute; left: 50%; top: 50%; width: 150px; height: 150px;
+    transform: translate(-50%,-50%); border-radius: 50%;
+    background: conic-gradient(#ffd98a calc(var(--f,0)*360deg), rgba(255,255,255,.07) 0);
+    -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%);
+            mask: radial-gradient(circle, transparent 62%, #000 64%);
+    opacity: .9;
+  }
+
+  #hud {
+    position: fixed; inset: 0; pointer-events: none; z-index: 8;
+    font-family: 'SF Mono', Menlo, monospace; color: #5ecbff;
+  }
+  #brand { position: absolute; top: 22px; left: 26px; font-size: 12px;
+           letter-spacing: .22em; opacity: .8; }
+  #brand b { color: #ffd98a; font-weight: 700; }
+  #money { position: absolute; top: 20px; right: 26px; text-align: right; }
+  #money .amt { font-size: 26px; color: #ffd98a; font-weight: 700;
+                text-shadow: 0 0 18px rgba(255,190,80,.4); }
+  #money .goal { font-size: 11px; opacity: .6; margin-top: 2px; }
+  #bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 0%;
+         background: linear-gradient(90deg, #b8801f, #ffd98a);
+         box-shadow: 0 0 12px rgba(255,190,80,.6); transition: width .4s; }
+  #status { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+            font-size: 11px; letter-spacing: .18em; opacity: .5; }
+
+  #dot {
+    position: fixed; width: 14px; height: 14px; border-radius: 50%;
+    border: 1px solid rgba(255,217,138,.9); z-index: 30; pointer-events: none;
+    transform: translate(-50%,-50%);
+    box-shadow: 0 0 14px rgba(255,190,80,.5), inset 0 0 6px rgba(255,190,80,.4);
+    transition: width .2s, height .2s; display: none;
+  }
+
+  #msg {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: #000; z-index: 20; cursor: pointer; text-align: center;
+  }
+  #msg h1 { font-family: 'Iowan Old Style', Palatino, Georgia, serif;
+            font-size: clamp(56px, 10vw, 120px); font-weight: 400;
+            color: #ffd98a; letter-spacing: .12em;
+            text-shadow: 0 0 40px rgba(255,190,80,.45); }
+  #msg .sub { font-family: 'Iowan Old Style', Georgia, serif; font-style: italic;
+              color: rgba(255,217,138,.75); font-size: clamp(15px, 2vw, 22px); }
+  #msg .tag { font-family: 'SF Mono', Menlo, monospace; color: #5ecbff;
+              font-size: 11px; letter-spacing: .3em; opacity: .7; }
+  #msg .go  { font-family: 'SF Mono', Menlo, monospace; color: #fff;
+              font-size: 13px; margin-top: 26px; opacity: .8;
+              animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  #finale {
+    position: fixed; inset: 0; display: none; z-index: 15;
+    align-items: center; justify-content: center; flex-direction: column;
+    gap: 16px; text-align: center; cursor: pointer;
+    background: radial-gradient(circle, rgba(120,80,10,.55), rgba(0,0,0,.9) 70%);
+    opacity: 0; transition: opacity 2s;
+  }
+  #finale.on { opacity: 1; }
+  #finale h2 { font-family: 'Iowan Old Style', Palatino, Georgia, serif;
+               font-size: clamp(40px, 7vw, 88px); font-weight: 400;
+               color: #ffd98a; letter-spacing: .1em;
+               text-shadow: 0 0 50px rgba(255,190,80,.8); }
+  #finale p { font-family: 'Iowan Old Style', Georgia, serif; font-style: italic;
+              color: rgba(255,235,190,.85); font-size: clamp(15px, 2.2vw, 24px); }
+  #finale .sig { font-family: 'SF Mono', Menlo, monospace; color: #5ecbff;
+                 font-size: 11px; letter-spacing: .3em; margin-top: 18px; opacity: .7; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="clauses"></div>
+<div id="hud">
+  <div id="brand">TEAM <b>INNOSYNC</b> — VOLYA/1 · PROBATE ACROSS THE MULTIVERSE</div>
+  <div id="money"><div class="amt">$0</div><div class="goal">inheritance recovered / $1,000,000</div></div>
+  <div id="status"></div>
+  <div id="bar"></div>
+</div>
+<div id="dot"></div>
+<div id="finale">
+  <h2>ВОЛЯ ИСПОЛНЕНА</h2>
+  <p>the will is executed. $1,000,000 recovered.</p>
+  <p>grandmother's honor — restored.</p>
+  <div class="sig">— TEAM INNOSYNC · CLICK TO REOPEN THE WILL —</div>
+</div>
+<div id="msg" onclick="begin()">
+  <div class="tag">TEAM INNOSYNC PRESENTS</div>
+  <h1>ВОЛЯ</h1>
+  <div class="sub">the will engine — a will is a waveform until someone loves it enough to look</div>
+  <div class="go">click to begin the reading · move to observe · hover to collapse a clause</div>
+</div>
+
+<script>
+// ---------- quantum realm (webgl) ----------
+const glc = document.getElementById('gl');
+const gl = glc.getContext('webgl', { antialias: false, alpha: false });
+
+const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+const FS = `
+precision highp float;
+uniform vec2 uRes; uniform float uT;
+uniform vec2 uMouse; uniform float uObs; uniform float uCol;
+
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float noise(vec2 p){
+  vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),
+             mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);
+}
+float fbm(vec2 p){
+  float v=0., a=.5;
+  for(int i=0;i<5;i++){ v+=a*noise(p); p=p*2.03+vec2(13.7,7.1); a*=.5; }
+  return v;
+}
+void main(){
+  vec2 uv = gl_FragCoord.xy/uRes;
+  vec2 p = (gl_FragCoord.xy-.5*uRes)/uRes.y;
+  float t = uT*.06;
+
+  // domain-warped foam — possibility space
+  vec2 q = vec2(fbm(p*1.6+t), fbm(p*1.6-t*.7+5.));
+  vec2 r = vec2(fbm(p*2.2+3.*q+vec2(1.7,9.2)+t*.9),
+                fbm(p*2.2+3.*q+vec2(8.3,2.8)-t*.6));
+  float f = fbm(p*2.0+3.5*r);
+
+  // probability interference — two readings of the same will
+  float w1 = sin(p.x*18. + uT*.8 + r.x*6.);
+  float w2 = sin((p.x*.6+p.y*.8)*22. - uT*.6 + r.y*6.);
+  float inter = w1*w2;
+
+  vec3 col = mix(vec3(.012,.014,.05), vec3(.05,.10,.22), f);
+  col += vec3(.95,.62,.15)*pow(max(f-.45,0.)*2.2, 2.4)*.9;                 // gold filaments
+  col += vec3(.15,.65,.95)*pow(max(inter*.5+.5,0.)*max(f-.35,0.)*2.,2.)*.35; // cyan sparks
+
+  // the observer — a soft collapse wherever you look
+  vec2 m = (uMouse-.5*uRes)/uRes.y;
+  float dm = length(p-m);
+  col += vec3(.9,.75,.4)*uObs*exp(-dm*dm*18.)*.25;
+  float ring = sin(dm*40.-uT*4.)*exp(-dm*6.)*uObs;
+  col += vec3(.4,.8,1.)*max(ring,0.)*.15;
+
+  // collapse burst — gold rush when a clause resolves
+  col += vec3(1.,.82,.35)*uCol*(.15 + .5*exp(-dm*dm*7.)*max(sin(dm*26.-uT*9.),0.));
+
+  col *= 1.-.55*length(uv-.5);                    // vignette
+  col += (hash(gl_FragCoord.xy+uT)-.5)*.05;       // grain
+  gl_FragColor = vec4(col,1.);
+}`;
+
+let prog = null, u = {};
+if (gl) {
+  const mk = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); return x; };
+  prog = gl.createProgram();
+  gl.attachShader(prog, mk(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog); gl.useProgram(prog);
+  const b = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  const la = gl.getAttribLocation(prog, 'a');
+  gl.enableVertexAttribArray(la);
+  gl.vertexAttribPointer(la, 2, gl.FLOAT, false, 0, 0);
+  for (const n of ['uRes','uT','uMouse','uObs','uCol']) u[n] = gl.getUniformLocation(prog, n);
+}
+function resize() {
+  const d = Math.min(devicePixelRatio || 1, 2);
+  glc.width = innerWidth * d; glc.height = innerHeight * d;
+  if (gl) gl.viewport(0, 0, glc.width, glc.height);
+}
+addEventListener('resize', resize); resize();
+
+// ---------- audio: drone + bells ----------
+let AC = null;
+function audio() {
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300;
+  const dg = AC.createGain(); dg.gain.value = .05;
+  lp.connect(dg); dg.connect(AC.destination);
+  [55, 55.6, 110.4].forEach(f => {
+    const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const g = AC.createGain(); g.gain.value = .33;
+    o.connect(g); g.connect(lp); o.start();
+  });
+  const lfo = AC.createOscillator(); lfo.frequency.value = .07;
+  const lg = AC.createGain(); lg.gain.value = 120;
+  lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+}
+function bell(fs, delay, dur, vol) {
+  const t = AC.currentTime + delay;
+  const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = fs;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + .02);
+  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .1);
+}
+function chime(step) {
+  if (!AC) return;
+  [0, 7, 12].forEach((iv, i) => bell(220 * Math.pow(2, (step * 2 + iv) / 12), 0, 1.6, .12 / (i + 1)));
+}
+function finaleChord() {
+  if (!AC) return;
+  [0, 4, 7, 12, 16, 19, 24].forEach((iv, i) =>
+    bell(110 * Math.pow(2, iv / 12), i * .12, 3, .1));
+}
+
+// ---------- the will ----------
+const CLAUSES = [
+  { g: ['the will was read incorrectly.',
+        'завещание было прочитано неправильно',
+        'the will was a waveform — and we observe it again.'],
+    pay: 25000 },
+  { g: ['being of sound mind and body',
+        'в здравом уме и твёрдой памяти',
+        'being of sound mind and superposition'],
+    pay: 40000 },
+  { g: ['i leave the orchard, the samovar, the debts.',
+        'оставляю сад, самовар и долги',
+        'i leave everything, in every branch where you looked.'],
+    pay: 60000 },
+  { g: ['to the state, if none are found.',
+        'государству, если наследников нет',
+        'to my beloved — the one who reads aloud.'],
+    pay: 90000 },
+  { g: ['honor cannot be inherited.',
+        'честь нельзя унаследовать',
+        'honor is not inherited. it is returned.'],
+    pay: 120000 },
+  { g: ["the executor's fee is customary.",
+        'душеприказчик берёт обычное',
+        'team innosync takes no fee. honor is payment.'],
+    pay: 150000 },
+  { g: ['one million dollars existed once.',
+        'миллион долларов существовал когда-то',
+        'one million dollars — in the branch that loves you.'],
+    pay: 215000 },
+  { g: ['signed, in another life.',
+        'подписано, в другой жизни',
+        'ВОЛЯ ИСПОЛНЕНА — the will is executed.'],
+    pay: 300000 },
+];
+const WHISPERS = [
+  'branch 1 of ∞ — observing', 'ветвь 2 — расплывчато', 'branch 3 — the notary dreams',
+  'ветвь 4 — ближе', 'branch 5 — the ink remembers', 'ветвь 6 — почти',
+  'branch 7 — collapse imminent', 'final branch — hold very still',
+];
+
+const clausesEl = document.getElementById('clauses');
+const amtEl = document.querySelector('#money .amt');
+const barEl = document.getElementById('bar');
+const statusEl = document.getElementById('status');
+const dotEl = document.getElementById('dot');
+const finaleEl = document.getElementById('finale');
+const msgEl = document.getElementById('msg');
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+
+let running = false, idx = 0, clause = null;
+let shown = 0, target = 0, done = false;
+let px = -9999, py = -9999, seenPointer = false;
+let obs = 0, obsT = 0, colPulse = 0, mx = innerWidth / 2, my = innerHeight / 2;
+
+function spawn() {
+  if (idx >= CLAUSES.length || done) return;
+  const c = CLAUSES[idx];
+  const el = document.createElement('div');
+  el.className = 'clause';
+  const x = innerWidth * (0.2 + Math.random() * 0.6);
+  const y = innerHeight * (0.22 + Math.random() * 0.56);
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+  el.innerHTML = `<div class="drift">
+      <div class="ring"></div>
+      <span class="ghost g1">${c.g[0]}</span>
+      <span class="ghost g2">${c.g[1]}</span>
+      <span class="main">${c.g[2]}</span>
+    </div>`;
+  clausesEl.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('on'));
+  clause = { el, x, y, fill: 0, ring: el.querySelector('.ring') };
+  statusEl.textContent = WHISPERS[idx] || '';
+}
+
+function resolve() {
+  clause.el.classList.add('resolved');
+  chime(idx);
+  colPulse = 1;
+  target += CLAUSES[idx].pay;
+  const el = clause.el; clause = null; idx++;
+  setTimeout(() => el.classList.add('gone'), 4200);
+  setTimeout(() => el.remove(), 5600);
+  if (idx < CLAUSES.length) setTimeout(spawn, 900);
+  else setTimeout(finale, 1600);
+}
+
+function finale() {
+  if (done) return;
+  done = true;
+  finaleChord();
+  colPulse = 1;
+  finaleEl.style.display = 'flex';
+  requestAnimationFrame(() => finaleEl.classList.add('on'));
+}
+
+finaleEl.addEventListener('click', () => {
+  finaleEl.classList.remove('on');
+  setTimeout(() => { finaleEl.style.display = 'none'; }, 2000);
+  idx = 0; target = 0; shown = 0; done = false; colPulse = 0;
+  setTimeout(spawn, 1200);
+});
+
+addEventListener('pointermove', e => {
+  px = e.clientX; py = e.clientY; seenPointer = true;
+  const d = Math.min(devicePixelRatio || 1, 2);
+  mx = px * d; my = (innerHeight - py) * d;
+  dotEl.style.display = 'block';
+  dotEl.style.left = px + 'px'; dotEl.style.top = py + 'px';
+});
+addEventListener('pointerdown', e => { px = e.clientX; py = e.clientY; seenPointer = true; });
+
+let last = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(now - last, 50); last = now;
+
+  if (gl && prog) {
+    gl.uniform2f(u.uRes, glc.width, glc.height);
+    gl.uniform1f(u.uT, now / 1000);
+    gl.uniform2f(u.uMouse, mx, my);
+    obsT = seenPointer ? 1 : 0;
+    obs += (obsT - obs) * .04;
+    gl.uniform1f(u.uObs, obs);
+    colPulse *= Math.pow(.5, dt / 500);  // half-life ~0.5s
+    gl.uniform1f(u.uCol, colPulse);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  if (!running) return;
+
+  // observation fills the ring
+  if (clause) {
+    const d = Math.hypot(px - clause.x, py - clause.y);
+    if (d < 150) clause.fill += dt / 700;
+    else clause.fill = Math.max(0, clause.fill - dt / 900);
+    clause.ring.style.setProperty('--f', clause.fill);
+    if (clause.fill >= 1) resolve();
+  }
+
+  // odometer
+  shown += (target - shown) * .12;
+  amtEl.textContent = fmt(shown);
+  barEl.style.width = (target / 10000) + '%';
+}
+requestAnimationFrame(loop);
+
+function begin() {
+  msgEl.style.display = 'none';
+  audio();
+  running = true;
+  setTimeout(spawn, 800);
+}
+</script>
+</body>
+</html>
