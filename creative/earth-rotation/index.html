@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth Rotation Orientation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 10;
+            max-width: 300px;
+        }
+        
+        h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .data-row {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .label {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .value {
+            color: #0ff;
+            font-weight: bold;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="info">
+        <h1>🌍 Earth Rotation Data</h1>
+        <div class="data-row">
+            <div class="label">Your Location</div>
+            <div class="value" id="location">Getting GPS...</div>
+        </div>
+        <div class="data-row">
+            <div class="label">Current Rotation Angle</div>
+            <div class="value" id="rotation">0°</div>
+        </div>
+        <div class="data-row">
+            <div class="label">Earth's Axis Tilt</div>
+            <div class="value">23.44°</div>
+        </div>
+        <div class="data-row">
+            <div class="label">Your Speed (rotation)</div>
+            <div class="value" id="speed">Calculating...</div>
+        </div>
+        <div class="data-row">
+            <div class="label">Time to Complete Rotation</div>
+            <div class="value" id="timeLeft">23h 56m 4s</div>
+        </div>
+        <div class="data-row" style="margin-top: 15px;">
+            <button id="starGazeBtn" style="width: 100%; padding: 10px; background: #0ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                🌟 Star Gazing Mode
+            </button>
+        </div>
+        <div id="orientationFeedback" style="display: none; margin-top: 15px; padding: 15px; border-radius: 10px; text-align: center; transition: all 0.3s;">
+            <div style="font-size: 24px; margin-bottom: 10px;" id="feedbackIcon">🧭</div>
+            <div style="font-weight: bold; font-size: 16px;" id="feedbackText">Align your device...</div>
+            <div style="font-size: 12px; margin-top: 5px; color: #aaa;" id="orientationData">
+                Heading: 0° | Tilt: 0°
+            </div>
+        </div>
+    </div>
+    <div id="loading">Loading Earth...</div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, earth, starField, userMarker, controls;
+        let userLat = 0, userLon = 0;
+        let starGazingMode = false;
+        let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+        let isAligned = false;
+        
+        // Earth rotation constants
+        const EARTH_RADIUS = 6371; // km
+        const SIDEREAL_DAY = 86164.0905; // seconds (23h 56m 4s)
+        const ROTATION_SPEED = (2 * Math.PI) / SIDEREAL_DAY; // radians per second
+        const SPEED_MULTIPLIER = 60; // Speed up visualization (60x real-time)
+        
+        init();
+        animate();
+        getLocation();
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+            camera.position.set(0, 0, 15);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Create starfield
+            createStarField();
+            
+            // Create Earth
+            createEarth();
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(50, 0, 50);
+            scene.add(sunLight);
+            
+            // Handle resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Star gazing mode button
+            document.getElementById('starGazeBtn').addEventListener('click', toggleStarGazingMode);
+            
+            // Request device orientation permission (iOS 13+)
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ requires permission
+                document.getElementById('starGazeBtn').addEventListener('click', requestOrientationPermission, { once: true });
+            } else {
+                // Non-iOS or older iOS
+                startOrientationTracking();
+            }
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function requestOrientationPermission() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            startOrientationTracking();
+                        } else {
+                            alert('Device orientation permission denied. Please enable in settings.');
+                        }
+                    })
+                    .catch(console.error);
+            }
+        }
+        
+        function startOrientationTracking() {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+        }
+        
+        function handleOrientation(event) {
+            deviceOrientation.alpha = event.alpha || 0; // Compass direction (0-360)
+            deviceOrientation.beta = event.beta || 0;   // Front-to-back tilt (-180 to 180)
+            deviceOrientation.gamma = event.gamma || 0; // Left-to-right tilt (-90 to 90)
+            
+            updateOrientationFeedback();
+        }
+        
+        function createStarField() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 10000;
+            const positions = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i += 3) {
+                const radius = 1000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                
+                positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i + 2] = radius * Math.cos(phi);
+            }
+            
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 2,
+                sizeAttenuation: false
+            });
+            
+            starField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starField);
+        }
+        
+        function createEarth() {
+            const geometry = new THREE.SphereGeometry(5, 64, 64);
+            
+            // Create Earth texture with simple gradient
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Ocean blue
+            ctx.fillStyle = '#1a4d7a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Simple continents approximation
+            ctx.fillStyle = '#2d5a2d';
+            // Americas
+            ctx.fillRect(150, 150, 200, 250);
+            // Europe/Africa
+            ctx.fillRect(450, 100, 150, 300);
+            // Asia
+            ctx.fillRect(650, 80, 250, 200);
+            
+            // Grid lines for latitude/longitude
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += canvas.width / 24) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += canvas.height / 12) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const material = new THREE.MeshPhongMaterial({
+                map: texture,
+                shininess: 5
+            });
+            
+            earth = new THREE.Mesh(geometry, material);
+            earth.rotation.z = THREE.MathUtils.degToRad(23.44); // Earth's axial tilt
+            scene.add(earth);
+        }
+        
+        function createUserMarker(lat, lon) {
+            if (userMarker) {
+                scene.remove(userMarker);
+            }
+            
+            // Convert lat/lon to 3D position on sphere
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            
+            const radius = 5.2;
+            const x = -radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            
+            // Create marker
+            const markerGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            userMarker = new THREE.Mesh(markerGeometry, markerMaterial);
+            userMarker.position.set(x, y, z);
+            
+            // Add a glowing effect
+            const glowGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            userMarker.add(glow);
+            
+            earth.add(userMarker);
+        }
+        
+        function getLocation() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLat = position.coords.latitude;
+                        userLon = position.coords.longitude;
+                        
+                        document.getElementById('location').textContent = 
+                            `${userLat.toFixed(2)}°, ${userLon.toFixed(2)}°`;
+                        
+                        // Calculate rotation speed at user's latitude
+                        const speed = Math.cos(userLat * Math.PI / 180) * 
+                                     (2 * Math.PI * EARTH_RADIUS) / (SIDEREAL_DAY / 3600);
+                        document.getElementById('speed').textContent = 
+                            `${speed.toFixed(0)} km/h`;
+                        
+                        createUserMarker(userLat, userLon);
+                    },
+                    (error) => {
+                        document.getElementById('location').textContent = 'Location denied';
+                        // Default to equator
+                        createUserMarker(0, 0);
+                    }
+                );
+            } else {
+                document.getElementById('location').textContent = 'GPS not available';
+                createUserMarker(0, 0);
+            }
+        }
+        
+        function updateOrientationFeedback() {
+            if (!starGazingMode) return;
+            
+            const feedbackPanel = document.getElementById('orientationFeedback');
+            const feedbackIcon = document.getElementById('feedbackIcon');
+            const feedbackText = document.getElementById('feedbackText');
+            const orientationData = document.getElementById('orientationData');
+            
+            // Calculate ideal orientation for star-gazing
+            // User should be lying down (beta ~0 to -90) facing up
+            // Heading should point roughly north (alpha ~0 or ~360)
+            
+            const heading = deviceOrientation.alpha;
+            const tilt = deviceOrientation.beta;
+            const roll = deviceOrientation.gamma;
+            
+            // Check if lying down looking up (beta between -90 and 0, ideally around -45 to -90)
+            const isLyingDown = tilt < 0 && tilt > -100;
+            
+            // Check if pointing roughly north (within 45 degrees of north)
+            const northAlignment = Math.min(
+                Math.abs(heading),
+                Math.abs(heading - 360)
+            );
+            const isPointingNorth = northAlignment < 45;
+            
+            // Check if level (not tilted left/right too much)
+            const isLevel = Math.abs(roll) < 30;
+            
+            isAligned = isLyingDown && isPointingNorth && isLevel;
+            
+            // Update display
+            orientationData.textContent = `Heading: ${Math.round(heading)}° | Tilt: ${Math.round(tilt)}° | Roll: ${Math.round(roll)}°`;
+            
+            if (isAligned) {
+                feedbackPanel.style.background = 'rgba(0, 255, 0, 0.3)';
+                feedbackPanel.style.border = '2px solid #0f0';
+                feedbackIcon.textContent = '✅';
+                feedbackText.textContent = 'Perfect! Stars moving right to left';
+            } else if (isLyingDown && isLevel) {
+                feedbackPanel.style.background = 'rgba(255, 255, 0, 0.3)';
+                feedbackPanel.style.border = '2px solid #ff0';
+                feedbackIcon.textContent = '🧭';
+                feedbackText.textContent = 'Rotate towards North';
+            } else if (isLyingDown) {
+                feedbackPanel.style.background = 'rgba(255, 165, 0, 0.3)';
+                feedbackPanel.style.border = '2px solid #ffa500';
+                feedbackIcon.textContent = '↔️';
+                feedbackText.textContent = 'Keep device level';
+            } else {
+                feedbackPanel.style.background = 'rgba(255, 0, 0, 0.3)';
+                feedbackPanel.style.border = '2px solid #f00';
+                feedbackIcon.textContent = '⚠️';
+                feedbackText.textContent = 'Lie down, look up at sky';
+            }
+        }
+        
+        function toggleStarGazingMode() {
+            starGazingMode = !starGazingMode;
+            const btn = document.getElementById('starGazeBtn');
+            const feedbackPanel = document.getElementById('orientationFeedback');
+            
+            if (starGazingMode) {
+                btn.textContent = '🌍 Earth View';
+                btn.style.background = '#ff6b6b';
+                feedbackPanel.style.display = 'block';
+                alignCameraToUserPosition();
+            } else {
+                btn.textContent = '🌟 Star Gazing Mode';
+                btn.style.background = '#0ff';
+                feedbackPanel.style.display = 'none';
+                // Reset to default view
+                camera.position.set(0, 0, 15);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
+        }
+        
+        function alignCameraToUserPosition() {
+            // Convert user's lat/lon to position on Earth's surface
+            const phi = (90 - userLat) * (Math.PI / 180);
+            const theta = (userLon + 180) * (Math.PI / 180);
+            
+            const radius = 5.5; // Just above Earth's surface
+            const x = -radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            
+            // Position camera at user's location
+            camera.position.set(x, y, z);
+            
+            // Calculate "up" direction (zenith) - pointing away from Earth's center
+            const up = new THREE.Vector3(x, y, z).normalize();
+            camera.up.copy(up);
+            
+            // Look towards the north celestial pole
+            // The north direction on Earth's surface
+            const northPhi = (90 - (userLat + 0.1)) * (Math.PI / 180);
+            const northTheta = (userLon + 180) * (Math.PI / 180);
+            const northX = -radius * Math.sin(northPhi) * Math.cos(northTheta);
+            const northY = radius * Math.cos(northPhi);
+            const northZ = radius * Math.sin(northPhi) * Math.sin(northTheta);
+            
+            controls.target.set(northX, northY, northZ);
+            controls.update();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate Earth
+            const rotationDelta = ROTATION_SPEED * SPEED_MULTIPLIER * (1/60); // Assuming 60fps
+            earth.rotation.y += rotationDelta;
+            
+            // If in star-gazing mode, keep camera aligned with user's position
+            if (starGazingMode) {
+                alignCameraToUserPosition();
+            }
+            
+            // Update rotation angle display
+            const degrees = ((earth.rotation.y * 180 / Math.PI) % 360).toFixed(1);
+            document.getElementById('rotation').textContent = `${degrees}°`;
+            
+            // Calculate time until next complete rotation
+            const currentAngle = earth.rotation.y % (2 * Math.PI);
+            const remainingAngle = (2 * Math.PI) - currentAngle;
+            const remainingSeconds = remainingAngle / (ROTATION_SPEED * SPEED_MULTIPLIER);
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = Math.floor(remainingSeconds % 60);
+            document.getElementById('timeLeft').textContent = 
+                `${hours}h ${minutes}m ${seconds}s (sped up)`;
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

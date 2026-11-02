@@ -93,6 +93,9 @@ const creative = [
   { title: "Bite Counter",
     description: "A webcam bite counter. It tracks your mouth with MediaPipe's 478-point face mesh, measures how far your lips open relative to your face height, and counts each open-and-close as a bite or a chew depending on how wide it got. The live feed is overlaid with a grid that bends along the image's edges, contour lines traced from its brightness, and a scrolling trace of your mouth opening. Needs camera access; the video stays in your browser.",
     file: "creative/body-curves/index.html" },
+  { title: "Earth Rotation",
+    description: "A 3D Earth in three.js spinning at 60× real speed on its 23.44° tilt inside 10,000 stars. It drops a red marker at your GPS location and shows how fast the rotation is carrying you at your latitude (about 1,670 km/h at the equator). Star Gazing Mode puts the camera on your spot looking north, and on a phone it reads your compass and tilt to tell you when you're lying down, level, and facing north, so the stars move right to left overhead. Asks for your location; it stays in your browser.",
+    file: "creative/earth-rotation/index.html", thumbnail: "creative/earth-rotation/cover.png" },
   // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
 ];
 
