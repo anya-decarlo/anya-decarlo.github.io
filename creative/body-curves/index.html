@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>bite counter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #000; overflow: hidden; }
+  video, canvas { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  video { transform: scaleX(-1); filter: brightness(0.35); }
+  canvas { transform: scaleX(-1); }
+  #msg {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #5ecbff; font-family: monospace; font-size: 16px; cursor: pointer; z-index: 9;
+    background: #000;
+  }
+</style>
+</head>
+<body>
+<video id="cam" autoplay playsinline muted></video>
+<canvas id="overlay"></canvas>
+<canvas id="work" style="display:none"></canvas>
+<div id="msg" onclick="boot()">click to begin</div>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver }
+  from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+
+const video = document.getElementById('cam');
+const canvas = document.getElementById('overlay');
+const ctx = canvas.getContext('2d');
+const work = document.getElementById('work');
+const wctx = work.getContext('2d', { willReadFrequently: true });
+const msg = document.getElementById('msg');
+
+const W = 320, H = 240;         // analysis resolution
+const STEP = 34;                // grid spacing (screen px)
+const WARP = 18;                // max displacement in px
+const LEVELS = 6;               // isophote contour levels
+
+let I = null, gx = null, gy = null;   // intensity + gradient field
+let faceLM = null, face = null;       // face landmarks → mouth tracking
+
+// face landmark ids (MediaPipe 478-pt mesh)
+const F = { topHead: 10, chin: 152, templeL: 454, templeR: 234,
+            midBrow: 9,
+            upperLip: 13, lowerLip: 14, cornerL: 61, cornerR: 291 };
+
+// bite state machine
+let bites = 0, chews = 0;
+let mouthOpen = false, peakA = 0, lastEvent = 0;
+const OPEN_T = 0.05, CLOSE_T = 0.03, BITE_T = 0.12;  // aperture / face height
+const trace = [];                                     // aperture history
+
+window.boot = async () => {
+  try {
+    msg.textContent = 'loading…';
+    try {
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+      faceLM = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate: 'GPU'
+        },
+        runningMode: 'VIDEO', numFaces: 1
+      });
+    } catch (e) { faceLM = null; }
+    msg.textContent = 'camera…';
+    video.srcObject = await navigator.mediaDevices.getUserMedia(
+      { video: { width: 1280, height: 720 } });
+    await video.play();
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    work.width = W; work.height = H;
+    msg.style.display = 'none';
+    requestAnimationFrame(loop);
+  } catch (e) {
+    msg.textContent = 'error: ' + e.message + ' — click to retry';
+  }
+};
+
+// --- the math ---
+function analyze() {
+  wctx.drawImage(video, 0, 0, W, H);
+  const px = wctx.getImageData(0, 0, W, H).data;
+  const n = W * H;
+
+  // grayscale
+  const g = new Float32Array(n);
+  for (let i = 0; i < n; i++)
+    g[i] = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
+
+  // separable gaussian blur (sigma ~1.4), applied twice — kills sensor noise
+  const b = new Float32Array(n);
+  const k = [1, 4, 6, 4, 1], ks = 16;
+  for (let y = 0; y < H; y++)
+    for (let x = 2; x < W - 2; x++) {
+      const i = y * W + x;
+      b[i] = (k[0]*g[i-2] + k[1]*g[i-1] + k[2]*g[i] + k[3]*g[i+1] + k[4]*g[i+2]) / ks;
+    }
+  for (let y = 2; y < H - 2; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      I0[i] = (k[0]*b[i-2*W] + k[1]*b[i-W] + k[2]*b[i] + k[3]*b[i+W] + k[4]*b[i+2*W]) / ks;
+    }
+  // second pass for stronger smoothing
+  for (let y = 0; y < H; y++)
+    for (let x = 2; x < W - 2; x++) {
+      const i = y * W + x;
+      b[i] = (k[0]*I0[i-2] + k[1]*I0[i-1] + k[2]*I0[i] + k[3]*I0[i+1] + k[4]*I0[i+2]) / ks;
+    }
+  for (let y = 2; y < H - 2; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      I0[i] = (k[0]*b[i-2*W] + k[1]*b[i-W] + k[2]*b[i] + k[3]*b[i+W] + k[4]*b[i+2*W]) / ks;
+    }
+
+  // central-difference gradients
+  for (let y = 1; y < H - 1; y++)
+    for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x;
+      gx[i] = (I0[i+1] - I0[i-1]) * 0.5;
+      gy[i] = (I0[i+W] - I0[i-W]) * 0.5;
+    }
+  I = I0;
+}
+
+let I0 = new Float32Array(W * H);
+gx = new Float32Array(W * H);
+gy = new Float32Array(W * H);
+
+function sample(arr, x, y) {
+  x = Math.max(0, Math.min(W - 1.001, x));
+  y = Math.max(0, Math.min(H - 1.001, y));
+  const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0;
+  const i = y0 * W + x0;
+  return arr[i] * (1-fx)*(1-fy) + arr[i+1]*fx*(1-fy)
+       + arr[i+W]*(1-fx)*fy + arr[i+W+1]*fx*fy;
+}
+
+// grid vertex pulled along image gradient ∝ |∇I| → lines wrap edges
+// m normalized to ~0..1 (sobel on 0-255 range), displacement saturates at WARP px
+function warp(sx, sy) {
+  const dx = sx / canvas.width * W, dy = sy / canvas.height * H;
+  const gX = sample(gx, dx, dy) / 32, gY = sample(gy, dx, dy) / 32;
+  const m = Math.hypot(gX, gY);
+  const k = WARP * m / (1 + m);            // saturate: strong edges pull hard
+  return [sx - gX / (m || 1) * k, sy - gY / (m || 1) * k, m];
+}
+
+function grid(w, h) {
+  ctx.lineWidth = 1;
+  for (let y = 0; y <= h; y += STEP) {
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 6) {
+      const [px, py] = warp(x, y);
+      x === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = 'rgba(94,203,255,0.45)';
+    ctx.stroke();
+  }
+  for (let x = 0; x <= w; x += STEP) {
+    ctx.beginPath();
+    for (let y = 0; y <= h; y += 6) {
+      const [px, py] = warp(x, y);
+      y === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+}
+
+// marching squares on intensity — isophote curves (the image's own contour lines)
+const MS = {
+  1:[[3,0]],2:[[0,1]],3:[[3,1]],4:[[1,2]],5:[[3,0],[1,2]],6:[[0,2]],
+  7:[[3,2]],8:[[2,3]],9:[[0,2]],10:[[0,3],[1,2]],11:[[1,2]],12:[[1,3]],
+  13:[[1,0]],14:[[0,3]]
+};
+function contours(w, h) {
+  const cs = 4;
+  ctx.lineWidth = 1.2;
+  for (let li = 1; li <= LEVELS; li++) {
+    const t = li / (LEVELS + 1) * 255;
+    ctx.strokeStyle = `rgba(255,180,90,${0.15 + 0.45 * li / LEVELS})`;
+    for (let cy = 0; cy < H - cs; cy += cs) {
+      for (let cx = 0; cx < W - cs; cx += cs) {
+        const i = cy * W + cx;
+        const a = I[i], b = I[i + cs], c = I[i + cs*W + cs], d = I[i + cs*W];
+        let code = 0;
+        if (a > t) code |= 8; if (b > t) code |= 4;
+        if (c > t) code |= 2; if (d > t) code |= 1;
+        const segs = MS[code];
+        if (!segs) continue;
+        // only draw where there's a real edge (gradient above threshold)
+        const em = Math.hypot(gx[i], gy[i]);
+        if (em < 8) continue;
+        const sx = cx / W * w, sy = cy / H * h;
+        const ex = cs / W * w, ey = cs / H * h;
+        const f = (p, q) => (t - p) / ((q - p) || 1e-6);
+        const E = [
+          [sx + f(a,b)*ex, sy],
+          [sx + ex, sy + f(b,c)*ey],
+          [sx + f(d,c)*ex, sy + ey],
+          [sx, sy + f(a,d)*ey]
+        ];
+        for (const [e0, e1] of segs) {
+          ctx.beginPath();
+          ctx.moveTo(E[e0][0], E[e0][1]);
+          ctx.lineTo(E[e1][0], E[e1][1]);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+}
+
+// mouth aperture → bite/chew counter (open→close cycle, peak decides which)
+function trackMouth(w, h) {
+  if (!face) return;
+  const p = i => [face[i].x * w, face[i].y * h];
+  const top = p(F.topHead), chin = p(F.chin);
+  const up = p(F.upperLip), lo = p(F.lowerLip);
+  const cL = p(F.cornerL), cR = p(F.cornerR);
+
+  const faceH = Math.hypot(top[0] - chin[0], top[1] - chin[1]);
+  const a = Math.hypot(up[0] - lo[0], up[1] - lo[1]) / faceH;   // normalized aperture
+  const now = performance.now();
+
+  trace.push(a); if (trace.length > 180) trace.shift();
+
+  if (!mouthOpen && a > OPEN_T) { mouthOpen = true; peakA = a; }
+  if (mouthOpen) {
+    peakA = Math.max(peakA, a);
+    if (a < CLOSE_T && now - lastEvent > 250) {
+      mouthOpen = false; lastEvent = now;
+      if (peakA > BITE_T) bites++; else chews++;
+    }
+  }
+
+  // mouth ring + aperture bar
+  const mx = (up[0] + lo[0]) / 2, my = (up[1] + lo[1]) / 2;
+  const mw = Math.hypot(cR[0] - cL[0], cR[1] - cL[1]) / 2;
+  ctx.strokeStyle = mouthOpen ? '#7dffa8' : '#ff6b9d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(mx, my, mw * 1.15, Math.max(4, a * faceH * 1.3), 0, 0, 7);
+  ctx.stroke();
+
+  // counters
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 44px monospace';
+  ctx.fillText(`bites ${bites}`, 24, 60);
+  ctx.fillStyle = '#ffb45a';
+  ctx.font = '700 28px monospace';
+  ctx.fillText(`chews ${chews}`, 24, 100);
+
+  // scrolling aperture trace, bottom edge — normalized, threshold lines shown
+  const ty = h - 10, th = 70;
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  for (const t of [CLOSE_T, BITE_T]) {
+    const yy = ty - t * 300;
+    ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(w, yy); ctx.stroke();
+  }
+  ctx.strokeStyle = '#5ecbff'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < trace.length; i++) {
+    const x = w - (trace.length - i) / 180 * w;
+    const y = ty - Math.min(trace[i] * 300, th);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+  if (video.readyState < 2) return;
+  analyze();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  grid(canvas.width, canvas.height);
+  contours(canvas.width, canvas.height);
+  if (faceLM) {
+    const r = faceLM.detectForVideo(video, performance.now());
+    face = (r.faceLandmarks && r.faceLandmarks.length) ? r.faceLandmarks[0] : null;
+    trackMouth(canvas.width, canvas.height);
+  }
+}
+</script>
+</body>
+</html>

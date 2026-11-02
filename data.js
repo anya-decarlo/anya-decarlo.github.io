@@ -62,6 +62,9 @@ const creative = [
   { title: "Emotional Experiences",
     description: "12 feelings translated into code. A menu of animated pages where each emotion is built from motion, color, and timing: Overwhelming Calm drifts like bioluminescence underwater on 60-second cycles, Aggressive Joy attacks with confetti and screen shake, Infinite Depth dives through 10 parallax layers that follow your mouse, and Silent Loudness flickers moiré patterns so fast it feels loud with no sound. Also: Nostalgic Future, Organic Machine, Melting Reality, Crystalline Precision, Comfortable Chaos, Hyper-Awareness, plus two newer ones: Warm Solitude and Electric Anticipation. Contains rapid flashing.",
     file: "creative/emotional-experiences/index.html" },
+  { title: "Bite Counter",
+    description: "A webcam bite counter. It tracks your mouth with MediaPipe's 478-point face mesh, measures how far your lips open relative to your face height, and counts each open-and-close as a bite or a chew depending on how wide it got. The live feed is overlaid with a grid that bends along the image's edges, contour lines traced from its brightness, and a scrolling trace of your mouth opening. Needs camera access; the video stays in your browser.",
+    file: "creative/body-curves/index.html" },
   // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
 ];
 
