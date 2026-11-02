@@ -19,7 +19,7 @@ const BH = {
   },
   readFile(file) { return new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsText(file); }); },
   nav(step) {
-    const s = [["1-pdf-to-text.html", "1. PDF to Text"], ["2-coordinate-system.html", "2. Coordinate System"]];
+    const s = [["1-pdf-to-text.html", "1. PDF to Text"], ["2-coordinate-system.html", "2. Coordinate System"], ["3-bradford-hill-factors.html", "3. Bradford Hill Factors"]];
     document.querySelector("nav").innerHTML = s.map(([f, t], i) => `<a href="${f}" class="${i + 1 === step ? "on" : ""}">${t}</a>`).join("") +
       `<a href="../../project.html?p=bradford-hill" style="margin-left:auto">← Project</a>`;
   },

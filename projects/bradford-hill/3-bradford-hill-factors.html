@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3. Bradford Hill Factors · Bradford Hill Evidence Pipeline</title>
+<link rel="stylesheet" href="common.css">
+<script src="store.js"></script>
+<style>
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+#text{max-height:72vh;overflow:auto;background:#fbfaf7;border:1px solid #e6e1d3;border-radius:8px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.ln{display:flex;white-space:pre-wrap}.ln .n{flex:0 0 58px;text-align:right;padding-right:10px;color:#9aa3b8;user-select:none;cursor:pointer;border-right:1px solid #e6e1d3}
+.ln .t{padding-left:10px;flex:1;min-height:1.4em}.ln.sel{background:#dfe6f7}.ln.hit .t{background:#fff3c4}
+.pb{padding:4px 10px;background:#ece8dc;color:#6b7286;font-size:12px;user-select:none}
+aside .card{position:sticky;top:12px;max-height:94vh;overflow:auto}#cite{font-size:15px;display:block;margin:8px 0;padding:6px 8px;white-space:normal;word-break:break-all}
+#quote{max-height:140px;overflow:auto;font-size:13px;color:#444;border-left:3px solid #c8c2b0;padding-left:8px;white-space:pre-wrap}
+.factor{border-top:1px solid #e6e1d3;padding:7px 0;font-size:14px}.factor summary{cursor:pointer}.factor .count{float:right;background:#eef1f8;border-radius:10px;padding:0 8px;font-size:12px;color:#1f2a44}.factor .empty{padding:6px 0 2px 22px}#hits{max-height:220px;overflow:auto;font-size:13px}#hits div{cursor:pointer;padding:3px 0;border-bottom:1px solid #eee}
+</style>
+</head><body>
+<header><h1>3. Bradford Hill Factors</h1><p>The coordinate view of an article, side by side with the nine Hill factors experts use to judge whether a study supports causal inference. Each factor will be filled in from the text, one at a time.</p></header>
+<nav></nav>
+<main>
+  <div class="card row">
+    <select id="pick"></select>
+    <label class="btn">Load .txt file<input type="file" id="file" accept=".txt,text/plain" hidden></label>
+    <input type="text" id="go" placeholder="Jump to: 170-173 or [article.txt:170]" style="flex:1;min-width:220px">
+    <button class="ghost" id="csv" disabled>Download coordinates (.csv)</button>
+    <input type="text" id="q" placeholder="Search text" style="width:200px">
+  </div>
+  <div class="layout">
+    <div id="text"><p class="muted" style="padding:16px">Choose a document saved in step 1, or load a .txt.</p></div>
+    <aside><div class="card">
+      <h2>Citation</h2>
+      <p class="muted">Click a line number, shift-click another to extend, or select text with the mouse.</p>
+      <span class="cite" id="cite">–</span>
+      <div id="quote"></div>
+      <div class="row" style="margin:10px 0"><button id="copy" disabled>Copy</button></div>
+      <div id="hitsBox" hidden><h2 style="margin-top:14px">Search results</h2><div id="hits"></div></div>
+      <h2 style="margin-top:14px">Bradford Hill factors</h2>
+      <div id="factors"></div>
+    </div></aside>
+  </div>
+</main>
+<script>
+BH.nav(3);
+let name = null, lines = [], pages = [], sel = null, anchor = null;
+const $ = id => document.getElementById(id);
+
+function fillPicker(selected) {
+  const d = BH.all();
+  $("pick").innerHTML = `<option value="">Saved documents (${Object.keys(d).length})</option>` +
+    Object.keys(d).map(n => `<option ${n === selected ? "selected" : ""}>${BH.esc(n)}</option>`).join("");
+}
+function load(n, text) {
+  name = n; lines = BH.lines(text); pages = BH.pages(lines); sel = null; anchor = null;
+  let html = "";
+  lines.forEach((l, i) => {
+    if (l.includes("\f") && i < lines.length - 1) html += `<div class="pb">page ${pages[i]}</div>`;
+    if (i === lines.length - 1 && !l.replace(/\f/g, "")) return;
+    html += `<div class="ln" data-i="${i + 1}"><span class="n">${i + 1}</span><span class="t">${BH.esc(l.replace(/\f/g, ""))}</span></div>`;
+  });
+  $("csv").disabled = false;
+  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show();
+}
+function setSel(a, b) { sel = [Math.min(a, b), Math.max(a, b)]; show(); }
+function show() {
+  document.querySelectorAll(".ln.sel").forEach(e => e.classList.remove("sel"));
+  if (!sel) { $("cite").textContent = "–"; $("quote").textContent = ""; $("copy").disabled = true; return; }
+  for (let i = sel[0]; i <= sel[1]; i++) document.querySelector(`.ln[data-i="${i}"]`)?.classList.add("sel");
+  const p1 = pages[sel[0] - 1], p2 = pages[sel[1] - 1];
+  $("cite").textContent = `${BH.cite(name, sel[0], sel[1])} (p. ${p1 === p2 ? p1 : p1 + "–" + p2})`;
+  $("quote").textContent = lines.slice(sel[0] - 1, sel[1]).join("\n").replace(/\f/g, "");
+  $("copy").disabled = false;
+}
+const lineOf = node => (node?.nodeType === 3 ? node.parentElement : node)?.closest?.(".ln");
+$("text").addEventListener("mouseup", e => {
+  const s = getSelection();
+  if (!s.isCollapsed) {
+    const a = lineOf(s.anchorNode), b = lineOf(s.focusNode);
+    if (a && b) { setSel(+a.dataset.i, +b.dataset.i); anchor = sel[0]; return; }
+  }
+  const ln = lineOf(e.target); if (!ln) return;
+  const i = +ln.dataset.i;
+  if (e.shiftKey && anchor) { setSel(anchor, i); getSelection().removeAllRanges(); } else { anchor = i; setSel(i, i); }
+});
+function jump(a, b) { setSel(a, b || a); document.querySelector(`.ln[data-i="${a}"]`)?.scrollIntoView({ block: "center" }); }
+$("go").onkeydown = e => {
+  if (e.key !== "Enter") return;
+  const m = $("go").value.match(/(?:\[?([^\[\]:]+):)?\s*(\d+)\s*(?:[-–]\s*(\d+))?/);
+  if (!m) return;
+  if (m[1] && m[1].trim() !== name) { const d = BH.all()[m[1].trim()]; if (d) { fillPicker(m[1].trim()); load(m[1].trim(), d.text); } }
+  jump(+m[2], m[3] ? +m[3] : null);
+};
+$("q").oninput = () => {
+  document.querySelectorAll(".ln.hit").forEach(e => e.classList.remove("hit"));
+  const q = $("q").value.trim().toLowerCase(); $("hitsBox").hidden = !q || !name; if (!q || !name) return;
+  const hits = []; lines.forEach((l, i) => { if (l.toLowerCase().includes(q)) hits.push(i + 1); });
+  hits.forEach(i => document.querySelector(`.ln[data-i="${i}"]`)?.classList.add("hit"));
+  $("hits").innerHTML = (hits.length ? "" : '<span class="muted">No matches</span>') + hits.slice(0, 300).map(i =>
+    `<div data-j="${i}"><span class="cite">${BH.esc(BH.cite(name, i))}</span> ${BH.esc(lines[i - 1].replace(/\f/g, "").trim().slice(0, 90))}</div>`).join("");
+  $("hits").querySelectorAll("[data-j]").forEach(d => d.onclick = () => jump(+d.dataset.j));
+};
+$("copy").onclick = () => navigator.clipboard.writeText($("cite").textContent).then(() => { $("copy").textContent = "Copied"; setTimeout(() => $("copy").textContent = "Copy", 1200); });
+const FACTORS = ["Temporal relationship", "Strength of association", "Dose-response relationship", "Replication of findings",
+  "Biological plausibility", "Consideration of alternative explanations", "Cessation of exposure", "Specificity of association", "Consistency with other knowledge"];
+$("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor"><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="muted empty">Nothing yet.</div></details>`).join("");
+// One row per line: the coordinate table the parser works from.
+$("csv").onclick = () => {
+  const q = v => '"' + v.replace(/"/g, '""') + '"';
+  const rows = lines.map((l, i) => [i + 1, pages[i], q(BH.cite(name, i + 1)), q(l.replace(/\f/g, ""))].join(","));
+  BH.download(name.replace(/\.txt$/i, "") + "-coordinates.csv", "line,page,coordinate,text\n" + rows.join("\n") + "\n", "text/csv");
+};
+$("pick").onchange = () => { const n = $("pick").value; if (n) load(n, BH.all()[n].text); };
+$("file").onchange = async e => { const f = e.target.files[0]; if (f) { load(f.name, await BH.readFile(f)); fillPicker(); } e.target.value = ""; };
+
+const want = new URLSearchParams(location.search).get("doc"), saved = BH.all();
+fillPicker(want);
+if (want && saved[want]) load(want, saved[want].text);
+</script>
+</body></html>

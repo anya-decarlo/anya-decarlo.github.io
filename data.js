@@ -91,6 +91,8 @@ const projects = [
         description: "Upload article PDFs and convert each to a plain .txt, page by page, with a page-break marker after every page so line numbers stay fixed for citation. Download the .txt or keep it saved in the browser for the next steps." },
       { title: "2. Coordinate System", file: "projects/bradford-hill/2-coordinate-system.html",
         description: "Opens a .txt with every line numbered and page breaks marked. Click or select lines to get a citation like [article.txt:170-173] (p. 4), jump to any coordinate, search the text, collect citations into a list, and download the full line-by-line coordinate table as CSV for the parser." },
+      { title: "3. Bradford Hill Factors", file: "projects/bradford-hill/3-bradford-hill-factors.html",
+        description: "The same numbered coordinate view and search, side by side with a panel for each of the nine Hill factors, from temporal relationship to consistency with other knowledge. The panels start empty; each factor's evidence will be filled in from the text one criterion at a time." },
     ] },
   // { id: "computer-vision", title: "Computer Vision", description: "One-line description.",
   //   pages: [
