@@ -2,8 +2,8 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>3. Bradford Hill Factors · Bradford Hill Evidence Pipeline</title>
 <link rel="stylesheet" href="common.css">
-<script src="store.js"></script>
-<script src="hill-temporal.js"></script>
+<script src="store.js?v=3"></script>
+<script src="hill-temporal.js?v=3"></script>
 <style>
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:18px;align-items:start}
 @media(max-width:900px){.layout{grid-template-columns:1fr}}
@@ -21,14 +21,17 @@ aside .card{position:sticky;top:12px;max-height:94vh;overflow:auto}#cite{font-si
 .hit{border-left:3px solid #ccc;padding:5px 8px;margin:6px 0;font-size:13px;background:#fbfaf7;cursor:pointer}.hit.good{border-color:#3c9a46}.hit.bad{border-color:#c9473a}.hit.none{border-color:#bbb}
 .hit .meta{font-size:12px;color:#6b7286;margin-bottom:2px}.tag{display:inline-block;font-size:11px;border-radius:8px;padding:0 6px;margin:2px 3px 0 0;background:#eef1f8}.tag.bad{background:#f7d9d6}.tag.good{background:#dcefdc}
 .ln.ev-good .n{border-right:3px solid #3c9a46}.ln.ev-bad .n{border-right:3px solid #c9473a}#hits{max-height:220px;overflow:auto;font-size:13px}#hits div{cursor:pointer;padding:3px 0;border-bottom:1px solid #eee}
+.steps{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:14px}button.scan{background:#c58b2b;font-weight:600}button.scan:disabled{opacity:.5}
 </style>
 </head><body>
 <header><h1>3. Bradford Hill Factors</h1><p>The coordinate view of an article, side by side with the nine Hill factors experts use to judge whether a study supports causal inference. Each factor will be filled in from the text, one at a time.</p></header>
 <nav></nav>
 <main>
+  <div class="card steps"><b>How to use:</b> <span>① Choose a saved document or load a .txt</span> <span>② Click <b>Scan for factors</b></span> <span>③ Read the results in the factor panels on the right; click any passage to jump to it in the text</span></div>
   <div class="card row">
     <select id="pick"></select>
     <label class="btn">Load .txt file<input type="file" id="file" accept=".txt,text/plain" hidden></label>
+    <button id="scan" class="scan" disabled>Scan for factors</button>
     <input type="text" id="go" placeholder="Jump to: 170-173 or [article.txt:170]" style="flex:1;min-width:220px">
     <button class="ghost" id="csv" disabled>Download coordinates (.csv)</button>
     <input type="text" id="q" placeholder="Search text" style="width:200px">
@@ -66,7 +69,7 @@ function load(n, text) {
     html += `<div class="ln" data-i="${i + 1}"><span class="n">${i + 1}</span><span class="t">${BH.esc(l.replace(/\f/g, ""))}</span></div>`;
   });
   $("csv").disabled = false;
-  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show(); runScanners();
+  $("text").innerHTML = html; $("text").scrollTop = 0; $("q").value = ""; $("hitsBox").hidden = true; show(); $("scan").disabled = false; $("scan").textContent = "Scan for factors"; resetFactors();
 }
 function setSel(a, b) { sel = [Math.min(a, b), Math.max(a, b)]; show(); }
 function show() {
@@ -109,7 +112,15 @@ $("q").oninput = () => {
 $("copy").onclick = () => navigator.clipboard.writeText($("cite").textContent).then(() => { $("copy").textContent = "Copied"; setTimeout(() => $("copy").textContent = "Copy", 1200); });
 const FACTORS = ["Temporal relationship", "Strength of association", "Dose-response relationship", "Replication of findings",
   "Biological plausibility", "Consideration of alternative explanations", "Cessation of exposure", "Specificity of association", "Consistency with other knowledge"];
-$("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor" id="f${k + 1}" ${k === 0 ? "open" : ""}><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="fbody"><div class="muted empty">${k === 0 ? "Load a document to scan." : "Nothing yet."}</div></div></details>`).join("");
+function resetFactors() {
+  document.querySelectorAll(".ln.ev-good,.ln.ev-bad").forEach(e => e.classList.remove("ev-good", "ev-bad"));
+  $("factors").innerHTML = FACTORS.map((f, k) => `<details class="factor" id="f${k + 1}" ${k === 0 ? "open" : ""}><summary><b>(${k + 1})</b> ${f} <span class="count">0</span></summary><div class="fbody"><div class="muted empty">${k === 0 ? (lines.length ? "Click “Scan for factors” above." : "Choose a document, then click “Scan for factors”.") : "Coming soon: this factor isn't built yet."}</div></div></details>`).join("");
+}
+resetFactors();
+$("scan").onclick = () => {
+  try { runScanners(); $("scan").textContent = "Scan again"; $("f1").open = true; $("f1").scrollIntoView({ block: "start", behavior: "smooth" }); }
+  catch (err) { $("f1").querySelector(".fbody").innerHTML = `<div class="muted empty">The scan failed: ${BH.esc(String(err.message || err))}</div>`; }
+};
 const tone = w => (w > 0 ? "good" : w < 0 ? "bad" : "none");
 function markText(text, matches) {
   const spans = matches.map(m => [m.start, m.end]).sort((a, b) => a[0] - b[0]);
