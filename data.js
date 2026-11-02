@@ -4,8 +4,8 @@
 const work = [
   // { title: "Project name", description: "One-line description.", file: "work/project-name.html",
   //   languages: ["R", "SQL"], topics: ["Dementia Research"] },
-  { title: "Biostatistics 208 Final",
-    description: "My regression final in R, worked on real study data. Tests for a linear trend between physical activity and HDL cholesterol in the HERS trial and whether age and BMI confound it; diagnoses non-normal residuals and influential points (Cook's distance, DFBETAS) in a birth-weight model; and uses logistic regression on the Western Collaborative Group Study to estimate how smoking, measured as yes/no, cigarettes per day, and packs per day, raises the odds of coronary heart disease.",
+  { title: "Heart Disease Risk: Linear and Logistic Regression on HERS and WCGS",
+    description: "Regression in R on real study data. Tests for a linear trend between physical activity and HDL cholesterol in the HERS trial and whether age and BMI confound it; diagnoses non-normal residuals and influential points (Cook's distance, DFBETAS) in a birth-weight model; and uses logistic regression on the Western Collaborative Group Study to estimate how smoking, measured as yes/no, cigarettes per day, and packs per day, raises the odds of coronary heart disease.",
     file: "work/biostats-208-final/final.pdf", thumbnail: "work/biostats-208-final/cover.png",
     languages: ["R"], topics: ["Health Data", "Cardiovascular Research"] },
   { title: "Predicting Blood Pressure: Linear, Polynomial and Kernel Regression",
