@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion Inventory v5 - True Color Sampling</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .camera-side {
+            flex: 6;
+            min-height: 0;
+            position: relative;
+            background: #000;
+        }
+        
+        #video {
+            display: none;
+        }
+        
+        #displayCanvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: translate(var(--panX, 0), var(--panY, 0)) scale(var(--zoom, 1));
+            transform-origin: center center;
+        }
+        
+        #gridCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+            z-index: 10;
+        }
+        
+        #magnifier {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 3px solid #FF1493;
+            border-radius: 10px;
+            pointer-events: auto;
+            display: none;
+            z-index: 100;
+            background: white;
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+            cursor: pointer;
+        }
+        
+        #magnifierInfo {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background: rgba(255, 20, 147, 0.9);
+            color: white;
+            padding: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 0 0 7px 7px;
+            pointer-events: none;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            max-width: 200px;
+            z-index: 20;
+        }
+        
+        .brightness-control {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .brightness-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .brightness-header label {
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .brightness-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            width: 60px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .brightness-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        #brightnessSlider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #444;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        #brightnessSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .grid-control {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .grid-header label {
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .grid-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            width: 60px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .grid-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .color-display {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            margin: 0 auto 8px;
+            border: 2px solid white;
+            background: #000;
+        }
+        
+        .hex-code {
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .form-side {
+            flex: 1;
+            min-height: 0;
+            background: white;
+            overflow: hidden;
+            padding: 8px 15px;
+        }
+        
+        .form-table {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            height: 100%;
+        }
+        
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .field label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+        
+        .field input,
+        .field textarea {
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 100%;
+        }
+        
+        .field input:focus,
+        .field textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .field textarea {
+            resize: none;
+            height: 100%;
+        }
+        
+        .submit-btn {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .submit-btn:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="camera-side">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="displayCanvas"></canvas>
+            <canvas id="gridCanvas"></canvas>
+            <div style="position: relative; display: inline-block;">
+                <canvas id="magnifier"></canvas>
+                <div id="magnifierInfo">Click to capture all colors!</div>
+            </div>
+            
+            <div class="camera-overlay">
+                <div class="brightness-control">
+                    <div class="brightness-header">
+                        <label>Brightness</label>
+                        <input type="number" id="brightnessValue" class="brightness-input" value="100" min="50" max="200">
+                    </div>
+                    <input type="range" id="brightnessSlider" min="50" max="200" value="100">
+                </div>
+                
+                <div class="grid-control">
+                    <div class="grid-header">
+                        <label>Grid Size</label>
+                        <input type="number" id="gridSize" class="grid-input" value="10" min="3" max="50">
+                    </div>
+                </div>
+                
+                <div class="brightness-control">
+                    <div class="brightness-header">
+                        <label>Zoom</label>
+                        <input type="number" id="zoomValue" class="brightness-input" value="100" min="100" max="1000">
+                    </div>
+                    <input type="range" id="zoomSlider" min="100" max="1000" value="100">
+                </div>
+                
+                <div class="brightness-control">
+                    <label style="font-size: 14px; margin-bottom: 8px; display: block;">Pan Camera</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; max-width: 150px;">
+                        <div></div>
+                        <button onclick="panCamera('up')" style="padding: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px; cursor: pointer;">▲</button>
+                        <div></div>
+                        <button onclick="panCamera('left')" style="padding: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px; cursor: pointer;">◄</button>
+                        <button onclick="resetPan()" style="padding: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px; cursor: pointer; font-size: 10px;">●</button>
+                        <button onclick="panCamera('right')" style="padding: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px; cursor: pointer;">►</button>
+                        <div></div>
+                        <button onclick="panCamera('down')" style="padding: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px; cursor: pointer;">▼</button>
+                        <div></div>
+                    </div>
+                </div>
+                
+                <div class="color-display">
+                    <div class="color-swatch" id="colorSwatch"></div>
+                    <div class="hex-code" id="hexCode">#000000</div>
+                    <button onclick="addCurrentColorToPalette()" style="margin-top: 10px; padding: 8px 15px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px; cursor: pointer; width: 100%; font-size: 12px;">Add to Palette (⌘A)</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-side">
+            <form id="inventoryForm" class="form-table">
+                <div class="field">
+                    <label>Clothing Category</label>
+                    <input type="text" id="category">
+                </div>
+                
+                <div class="field">
+                    <label>Brand</label>
+                    <input type="text" id="brands">
+                </div>
+                
+                <div class="field">
+                    <label>Size</label>
+                    <input type="text" id="size">
+                </div>
+                
+                <div class="field">
+                    <label>Color Palette</label>
+                    <div id="palettePreview" style="display: flex; gap: 2px; height: 30px; border: 1px solid #e0e0e0; border-radius: 4px; padding: 2px; background: white;"></div>
+                </div>
+                
+                <div class="field">
+                    <label>Material</label>
+                    <input type="text" id="material">
+                </div>
+                
+                <div class="field">
+                    <label>Place Produced</label>
+                    <input type="text" id="place_produced">
+                </div>
+                
+                <div class="field">
+                    <label>Price</label>
+                    <input type="text" id="price">
+                </div>
+                
+                <div class="field">
+                    <label>Purchased From</label>
+                    <input type="text" id="purchased_from">
+                </div>
+                
+                <div class="field">
+                    <label>Washing Instructions</label>
+                    <textarea id="washing_instructions"></textarea>
+                </div>
+                
+                <div class="field">
+                    <button type="submit" class="submit-btn">Add to Inventory</button>
+                </div>
+                
+                <div class="field">
+                    <button type="button" class="submit-btn" onclick="downloadCSV()" style="background: #28a745;">Download CSV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let inventory = JSON.parse(localStorage.getItem('fashionInventory') || '[]');
+        let currentPalette = [];
+        
+        const video = document.getElementById('video');
+        const displayCanvas = document.getElementById('displayCanvas');
+        const gridCanvas = document.getElementById('gridCanvas');
+        const magnifier = document.getElementById('magnifier');
+        const displayCtx = displayCanvas.getContext('2d');
+        const gridCtx = gridCanvas.getContext('2d');
+        const magCtx = magnifier.getContext('2d');
+        
+        let cameraStarted = false;
+        let brightness = 1.0;
+        let zoom = 1.0;
+        let panX = 0;
+        let panY = 0;
+        let animationFrameId = null;
+        
+        function startCamera() {
+            if (cameraStarted) return;
+            cameraStarted = true;
+            
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.addEventListener('loadedmetadata', () => {
+                        displayCanvas.width = video.videoWidth;
+                        displayCanvas.height = video.videoHeight;
+                        
+                        const rect = displayCanvas.getBoundingClientRect();
+                        gridCanvas.width = rect.width;
+                        gridCanvas.height = rect.height;
+                        
+                        renderVideo();
+                    });
+                })
+                .catch(err => console.error('Camera error:', err));
+        }
+        
+        function renderVideo() {
+            if (!cameraStarted) return;
+            
+            // Draw video to canvas
+            displayCtx.drawImage(video, 0, 0);
+            
+            // Apply brightness to the actual pixels
+            const imageData = displayCtx.getImageData(0, 0, displayCanvas.width, displayCanvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.min(255, data[i] * brightness);     // R
+                data[i + 1] = Math.min(255, data[i + 1] * brightness); // G
+                data[i + 2] = Math.min(255, data[i + 2] * brightness); // B
+            }
+            
+            displayCtx.putImageData(imageData, 0, 0);
+            
+            requestAnimationFrame(renderVideo);
+        }
+        
+        document.querySelector('.camera-side').addEventListener('click', () => {
+            startCamera();
+            setTimeout(() => drawLiveGrid(), 500);
+        }, { once: true });
+        
+        function drawLiveGrid() {
+            const rect = displayCanvas.getBoundingClientRect();
+            gridCanvas.width = rect.width;
+            gridCanvas.height = rect.height;
+            
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            
+            // TWO-LEVEL GRID SYSTEM
+            
+            // LEVEL 1: MAJOR GRID (GREEN) - 100 big squares (10x10)
+            const majorGridSize = 10; // 10x10 = 100 squares
+            const majorStepX = gridCanvas.width / majorGridSize;
+            const majorStepY = gridCanvas.height / majorGridSize;
+            
+            // Green major grid lines - thicker
+            gridCtx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
+            gridCtx.lineWidth = 2;
+            
+            for (let i = 0; i <= majorGridSize; i++) {
+                const x = i * majorStepX;
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, 0);
+                gridCtx.lineTo(x, gridCanvas.height);
+                gridCtx.stroke();
+            }
+            
+            for (let j = 0; j <= majorGridSize; j++) {
+                const y = j * majorStepY;
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y);
+                gridCtx.lineTo(gridCanvas.width, y);
+                gridCtx.stroke();
+            }
+            
+            // LEVEL 2: MINOR GRID (PINK) - 10px squares inside each major square
+            const minorSquareSize = 10; // pixels per square
+            const cols = Math.ceil(gridCanvas.width / minorSquareSize);
+            const rows = Math.ceil(gridCanvas.height / minorSquareSize);
+            
+            // Neon pink minor grid lines - thin
+            gridCtx.strokeStyle = 'rgba(255, 20, 147, 0.3)';
+            gridCtx.lineWidth = 1;
+            
+            for (let i = 0; i <= cols; i++) {
+                const x = i * minorSquareSize;
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, 0);
+                gridCtx.lineTo(x, gridCanvas.height);
+                gridCtx.stroke();
+            }
+            
+            for (let j = 0; j <= rows; j++) {
+                const y = j * minorSquareSize;
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y);
+                gridCtx.lineTo(gridCanvas.width, y);
+                gridCtx.stroke();
+            }
+            
+            // Draw tiny pink dots at minor grid intersections
+            gridCtx.fillStyle = 'rgba(255, 20, 147, 0.5)';
+            for (let i = 0; i <= cols; i++) {
+                for (let j = 0; j <= rows; j++) {
+                    const x = i * minorSquareSize;
+                    const y = j * minorSquareSize;
+                    gridCtx.beginPath();
+                    gridCtx.arc(x, y, 1, 0, Math.PI * 2);
+                    gridCtx.fill();
+                }
+            }
+            
+            // Add coordinate labels to green grid squares (A-J, 1-10)
+            gridCtx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+            gridCtx.font = 'bold 14px monospace';
+            gridCtx.textAlign = 'left';
+            gridCtx.textBaseline = 'top';
+            
+            const letters = 'ABCDEFGHIJ';
+            for (let i = 0; i < majorGridSize; i++) {
+                for (let j = 0; j < majorGridSize; j++) {
+                    const x = i * majorStepX + 5;
+                    const y = j * majorStepY + 5;
+                    const label = `${letters[i]}-${j + 1}`;
+                    
+                    // Draw background for label
+                    gridCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    const textWidth = gridCtx.measureText(label).width;
+                    gridCtx.fillRect(x - 2, y - 2, textWidth + 4, 18);
+                    
+                    // Draw label
+                    gridCtx.fillStyle = 'rgba(0, 255, 0, 1)';
+                    gridCtx.fillText(label, x, y);
+                }
+            }
+            
+            animationFrameId = requestAnimationFrame(drawLiveGrid);
+        }
+        
+        document.getElementById('gridSize').addEventListener('input', () => {});
+        
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+        
+        function updateBrightness(value) {
+            brightness = value / 100;
+            brightnessSlider.value = value;
+            brightnessValue.value = value;
+        }
+        
+        brightnessSlider.addEventListener('input', (e) => {
+            updateBrightness(e.target.value);
+        });
+        
+        brightnessValue.addEventListener('input', (e) => {
+            let value = parseInt(e.target.value) || 100;
+            value = Math.max(50, Math.min(200, value));
+            updateBrightness(value);
+        });
+        
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        
+        function updateZoom(value) {
+            zoom = value / 100;
+            displayCanvas.style.setProperty('--zoom', zoom);
+            zoomSlider.value = value;
+            zoomValue.value = value;
+        }
+        
+        zoomSlider.addEventListener('input', (e) => {
+            updateZoom(e.target.value);
+        });
+        
+        zoomValue.addEventListener('input', (e) => {
+            let value = parseInt(e.target.value) || 100;
+            value = Math.max(100, Math.min(1000, value));
+            updateZoom(value);
+        });
+        
+        function panCamera(direction) {
+            const step = 20;
+            switch(direction) {
+                case 'up':
+                    panY += step;
+                    break;
+                case 'down':
+                    panY -= step;
+                    break;
+                case 'left':
+                    panX += step;
+                    break;
+                case 'right':
+                    panX -= step;
+                    break;
+            }
+            updatePan();
+        }
+        
+        function resetPan() {
+            panX = 0;
+            panY = 0;
+            updatePan();
+        }
+        
+        function updatePan() {
+            displayCanvas.style.setProperty('--panX', panX + 'px');
+            displayCanvas.style.setProperty('--panY', panY + 'px');
+        }
+        
+        let lastSampledHex = '#000000';
+        let currentMagnifierArea = { x: 0, y: 0, size: 10 };
+        
+        // Magnifier functionality
+        gridCanvas.addEventListener('mousemove', (e) => {
+            const rect = displayCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Position magnifier near cursor
+            magnifier.style.left = (e.clientX + 20) + 'px';
+            magnifier.style.top = (e.clientY + 20) + 'px';
+            magnifier.style.display = 'block';
+            magnifier.parentElement.style.display = 'block';
+            magnifier.parentElement.style.position = 'absolute';
+            magnifier.parentElement.style.left = (e.clientX + 20) + 'px';
+            magnifier.parentElement.style.top = (e.clientY + 20) + 'px';
+            magnifier.parentElement.style.zIndex = '100';
+            
+            // Draw zoomed view
+            const zoomLevel = 20; // 20x zoom in magnifier
+            const sourceSize = 10; // 10px area to zoom
+            const sourceX = (mouseX * (displayCanvas.width / rect.width)) - sourceSize / 2;
+            const sourceY = (mouseY * (displayCanvas.height / rect.height)) - sourceSize / 2;
+            
+            // Store current area for click handler
+            currentMagnifierArea = { x: sourceX, y: sourceY, size: sourceSize };
+            
+            magCtx.imageSmoothingEnabled = false;
+            magCtx.drawImage(displayCanvas, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 200, 200);
+            
+            // Count unique colors in this area
+            const imageData = displayCtx.getImageData(sourceX, sourceY, sourceSize, sourceSize);
+            const uniqueColors = new Set();
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+                uniqueColors.add(`${r},${g},${b}`);
+            }
+            
+            // Calculate which green grid square we're in
+            const majorGridSize = 10;
+            const majorStepX = displayCanvas.width / majorGridSize;
+            const majorStepY = displayCanvas.height / majorGridSize;
+            const gridCol = Math.floor(sourceX / majorStepX);
+            const gridRow = Math.floor(sourceY / majorStepY);
+            const letters = 'ABCDEFGHIJ';
+            const gridCoord = `(${letters[gridCol]},${gridRow + 1})`;
+            
+            // Calculate pixel position WITHIN the green square (adaptive!)
+            // These coordinates reset to (0,0) when you enter a new green square
+            const greenSquareStartX = gridCol * majorStepX;
+            const greenSquareStartY = gridRow * majorStepY;
+            const pixelWithinSquareX = Math.floor((sourceX - greenSquareStartX) / 10);
+            const pixelWithinSquareY = Math.floor((sourceY - greenSquareStartY) / 10);
+            const pixelCoord = `(${pixelWithinSquareX},${pixelWithinSquareY})`;
+            
+            // Update info text with full coordinate
+            document.getElementById('magnifierInfo').textContent = 
+                `${gridCoord} ${pixelCoord}: ${uniqueColors.size} colors - Click!`;
+            
+            // Draw grid overlay on magnifier
+            magCtx.strokeStyle = 'rgba(255, 20, 147, 0.8)';
+            magCtx.lineWidth = 2;
+            const gridStep = 200 / sourceSize;
+            for (let i = 0; i <= sourceSize; i++) {
+                const pos = i * gridStep;
+                magCtx.beginPath();
+                magCtx.moveTo(pos, 0);
+                magCtx.lineTo(pos, 200);
+                magCtx.stroke();
+                magCtx.beginPath();
+                magCtx.moveTo(0, pos);
+                magCtx.lineTo(200, pos);
+                magCtx.stroke();
+            }
+            
+            // Add labels to each pink square in magnifier (ADAPTIVE coordinates!)
+            magCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            magCtx.font = 'bold 10px monospace';
+            magCtx.textAlign = 'center';
+            magCtx.textBaseline = 'middle';
+            
+            // Calculate offset within green square for labeling (reuse variables from above)
+            const basePixelX = Math.floor((sourceX - sourceSize/2 - greenSquareStartX) / 10);
+            const basePixelY = Math.floor((sourceY - sourceSize/2 - greenSquareStartY) / 10);
+            
+            for (let i = 0; i < sourceSize; i++) {
+                for (let j = 0; j < sourceSize; j++) {
+                    const x = (i + 0.5) * gridStep;
+                    const y = (j + 0.5) * gridStep;
+                    
+                    // Calculate adaptive coordinate for this pixel
+                    const adaptiveX = basePixelX + i;
+                    const adaptiveY = basePixelY + j;
+                    
+                    // Draw background for label
+                    magCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    magCtx.fillRect(x - 8, y - 6, 16, 12);
+                    
+                    // Draw coordinate label (relative to green square)
+                    magCtx.fillStyle = 'rgba(255, 255, 255, 1)';
+                    magCtx.fillText(`${adaptiveX},${adaptiveY}`, x, y);
+                }
+            }
+            
+            // Draw crosshair at center
+            magCtx.strokeStyle = '#FF1493';
+            magCtx.lineWidth = 3;
+            magCtx.beginPath();
+            magCtx.moveTo(100, 90);
+            magCtx.lineTo(100, 110);
+            magCtx.stroke();
+            magCtx.beginPath();
+            magCtx.moveTo(90, 100);
+            magCtx.lineTo(110, 100);
+            magCtx.stroke();
+        });
+        
+        gridCanvas.addEventListener('mouseleave', () => {
+            magnifier.style.display = 'none';
+            magnifier.parentElement.style.display = 'none';
+        });
+        
+        // Click magnifier to capture ALL colors in the grid area
+        magnifier.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            const { x, y, size } = currentMagnifierArea;
+            const imageData = displayCtx.getImageData(x, y, size, size);
+            const uniqueColors = new Map();
+            
+            // Extract all unique RGB values
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+                const key = `${r},${g},${b}`;
+                
+                if (!uniqueColors.has(key)) {
+                    const hex = '#' + [r, g, b].map(v => {
+                        const h = v.toString(16);
+                        return h.length === 1 ? '0' + h : h;
+                    }).join('').toUpperCase();
+                    uniqueColors.set(key, hex);
+                }
+            }
+            
+            // Add all unique colors to palette
+            let addedCount = 0;
+            uniqueColors.forEach(hex => {
+                if (!currentPalette.includes(hex)) {
+                    currentPalette.push(hex);
+                    addedCount++;
+                }
+            });
+            
+            updatePalettePreview();
+            
+            // Show feedback
+            alert(`Captured ${addedCount} new colors!\nTotal unique colors in area: ${uniqueColors.size}\nPalette now has ${currentPalette.length} colors!`);
+        });
+        
+        gridCanvas.addEventListener('click', (e) => {
+            const rect = displayCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (displayCanvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (displayCanvas.height / rect.height);
+            
+            // Sample from the displayed canvas (already has brightness applied)
+            const pixel = displayCtx.getImageData(x, y, 1, 1).data;
+            
+            const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => {
+                const h = v.toString(16);
+                return h.length === 1 ? '0' + h : h;
+            }).join('').toUpperCase();
+            
+            lastSampledHex = hex;
+            
+            document.getElementById('colorSwatch').style.backgroundColor = hex;
+            document.getElementById('hexCode').textContent = hex;
+            navigator.clipboard.writeText(hex);
+        });
+        
+        function addCurrentColorToPalette() {
+            if (lastSampledHex && !currentPalette.includes(lastSampledHex)) {
+                currentPalette.push(lastSampledHex);
+                updatePalettePreview();
+            }
+        }
+        
+        // Keyboard shortcut: Cmd+A to add to palette
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+                e.preventDefault();
+                addCurrentColorToPalette();
+            }
+        });
+        
+        function updatePalettePreview() {
+            const preview = document.getElementById('palettePreview');
+            preview.innerHTML = currentPalette.map(color => 
+                `<div style="flex: 1; background: ${color}; border-radius: 2px; cursor: pointer;" title="${color}" onclick="removeFromPalette('${color}')"></div>`
+            ).join('');
+        }
+        
+        function removeFromPalette(color) {
+            const index = currentPalette.indexOf(color);
+            if (index > -1) {
+                currentPalette.splice(index, 1);
+                updatePalettePreview();
+            }
+        }
+        
+        function downloadCSV() {
+            if (inventory.length === 0) {
+                alert('No items in inventory!');
+                return;
+            }
+            
+            const headers = ['category', 'brands', 'size', 'color_palette', 'material', 'place_produced', 'price', 'purchased_from', 'washing_instructions'];
+            const csvContent = [
+                headers.join(','),
+                ...inventory.map(item => 
+                    headers.map(header => {
+                        const value = item[header] || '';
+                        return `"${value.toString().replace(/"/g, '""')}"`;
+                    }).join(',')
+                )
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'fashion_inventory.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        document.getElementById('inventoryForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const item = {
+                category: document.getElementById('category').value,
+                brands: document.getElementById('brands').value,
+                size: document.getElementById('size').value,
+                color_palette: currentPalette.join(', '),
+                material: document.getElementById('material').value,
+                place_produced: document.getElementById('place_produced').value,
+                price: document.getElementById('price').value,
+                purchased_from: document.getElementById('purchased_from').value,
+                washing_instructions: document.getElementById('washing_instructions').value
+            };
+            
+            inventory.push(item);
+            localStorage.setItem('fashionInventory', JSON.stringify(inventory));
+            
+            alert('Item added with ' + currentPalette.length + ' colors!');
+            document.getElementById('inventoryForm').reset();
+            currentPalette = [];
+            updatePalettePreview();
+        });
+    </script>
+</body>
+</html>

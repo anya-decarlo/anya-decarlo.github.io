@@ -108,6 +108,9 @@ const creative = [
   { title: "Earth Rotation",
     description: "A 3D Earth in three.js spinning at 60× real speed on its 23.44° tilt inside 10,000 stars. It drops a red marker at your GPS location and shows how fast the rotation is carrying you at your latitude (about 1,670 km/h at the equator). Star Gazing Mode puts the camera on your spot looking north, and on a phone it reads your compass and tilt to tell you when you're lying down, level, and facing north, so the stars move right to left overhead. Asks for your location; it stays in your browser.",
     file: "creative/earth-rotation/index.html", thumbnail: "creative/earth-rotation/cover.png" },
+  { title: "Amazing Grid: Live Clothing Palettes",
+    description: "Point your camera at a piece of clothing and build its color palette live. The feed gets a lettered 10×10 grid (A-1 to J-10) over a fine pink 10-px grid, and hovering opens a magnifier on a 10×10-pixel patch with every pixel's coordinates labeled. Click to grab one pixel's hex (copied to your clipboard), or click the magnifier to capture every unique color in the patch. Brightness, zoom and pan tune the feed, and each palette is saved with the item's brand, size, material, origin, price and care instructions into a wardrobe inventory you can download as CSV. Needs camera access; the video stays in your browser.",
+    file: "creative/amazing-grid/index.html", thumbnail: "creative/amazing-grid/cover.png" },
   // { title: "Piece name", description: "One-line description.", file: "creative/piece-name.html" },
 ];
 
