@@ -109,7 +109,7 @@ function renderProjectPage() {
     document.getElementById("title").textContent = "Project not found";
     return;
   }
-  document.title = `${p.title} — Anya DeCarlo`;
+  document.title = `${p.title} — Anya`;
   document.getElementById("title").textContent = p.title;
   document.getElementById("desc").textContent = p.description || "";
   if (p.tryIt) {
