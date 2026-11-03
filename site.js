@@ -19,11 +19,16 @@ function card(p, { href = p.file, tags = "", extra = "" } = {}) {
   return a;
 }
 
+const tagsHtml = p => [
+  ...(p.languages || []).map(t => `<span class="tag lang">${esc(t)}</span>`),
+  ...(p.topics || []).map(t => `<span class="tag">${esc(t)}</span>`),
+].join("");
+
 function renderSimple(id, items, opts = () => ({})) {
   const el = document.getElementById(id);
   if (!el) return;
   if (!items.length) el.innerHTML = '<p class="empty">Coming soon.</p>';
-  for (const p of items) el.appendChild(card(p, opts(p)));
+  for (const p of items) el.appendChild(card(p, { tags: tagsHtml(p), ...opts(p) }));
 }
 
 function renderFiltered(prefix, items) {
@@ -84,11 +89,7 @@ function renderFiltered(prefix, items) {
     countEl.textContent = `Showing ${shown.length} of ${items.length}`;
     if (!shown.length) grid.innerHTML = '<p class="empty">No projects match these filters.</p>';
     for (const p of shown) {
-      const tags = [
-        ...(p.languages || []).map(t => `<span class="tag lang">${esc(t)}</span>`),
-        ...(p.topics || []).map(t => `<span class="tag">${esc(t)}</span>`),
-      ].join("");
-      grid.appendChild(card(p, { tags }));
+      grid.appendChild(card(p, { tags: tagsHtml(p) }));
     }
   }
   render();

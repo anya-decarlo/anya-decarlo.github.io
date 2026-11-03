@@ -143,5 +143,9 @@ const education = [
   { title: "Posterior Precision Visualizer",
     description: "An interactive lesson on why Bayesian posteriors get more certain. Sliders set the prior SD (τ₀), the observation SD (σ) and the sample size (n), and the page updates the formula 1/τₙ² = 1/τ₀² + n/σ² live: prior, data and posterior precision side by side, plus how precision grows with n, how it falls as data get noisier, and a 3D surface of both at once. The point it makes visible: precision adds up, so more or cleaner data always shrinks the posterior.",
     file: "education/posterior-precision-visualizer.html" },
+  { title: "18 Speech Features Linked to Cognitive Performance",
+    description: "A reference table of the 18 speech features that stayed significant after FDR correction (Benjamini-Hochberg, q < 0.05), each with its mathematical definition. It covers part-of-speech counts from spaCy (adjectives, nouns, pronouns, interjections like \"um\"), lexical diversity as a moving-average type-token ratio and phonemes per second, Praat timing measures (speaking time, mean pause length, pause rate, percent speech), and openSMILE eGeMAPS acoustics (unvoiced-segment variability, loudness peaks, spectral flux).",
+    topics: ["Dementia Research", "Linguistic", "Auditory"],
+    file: "education/speech-features-table.html" },
   // { title: "Talk name", description: "One-line description.", file: "education/talk-name.pdf" },
 ];
