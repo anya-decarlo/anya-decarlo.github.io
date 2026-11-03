@@ -94,6 +94,12 @@ const projects = [
       { title: "3. Bradford Hill Factors", file: "projects/bradford-hill/3-bradford-hill-factors.html",
         description: "The same numbered coordinate view and search, side by side with a panel for each of the nine Hill factors, from temporal relationship to consistency with other knowledge. Temporal relationship scans the whole article, skipping the reference list, for study design (prospective, cohort, randomized vs cross-sectional, case-control), exposure measured before the outcome, outcome-free baseline, follow-up length and latency, reverse-causation checks such as lag analyses, and the authors' own stated limits. It handles negation and down-weights the introduction and mentions of other studies, then gives a verdict, a six-point checklist and every flagged passage marked as supporting or weakening, each with its coordinate. Strength of association pulls every ratio estimate (HR, RR, OR, IRR, SMR) with its confidence interval and p-value, ranks them against an optional exposure and outcome you type in, and grades the primary estimate: magnitude, statistical significance, precision, whether it reaches a doubling of risk, and its E-value for unmeasured confounding, alongside the authors' own characterizations. The other factors are next." },
     ] },
+  { id: "ehr-billing-coding", title: "EHR Billing & Coding",
+    description: "Tools I'm building for medical billing and coding, starting with packet loss in EHR records: fields that get dropped or scrambled as data moves between systems. The idea is to give every field a fixed coordinate so it can always be retrieved exactly. In progress: more pages coming.",
+    pages: [
+      { title: "1. Coordinate-Based Data Retrieval", file: "projects/ehr-billing-coding/1-coordinate-data-retrieval.html",
+        description: "A minimal prototype: enter blood pressure, heart rate, temperature and oxygen saturation, and each value is stored under its field's fixed six-number coordinate. Retrieve vitals looks each field up by coordinate alone, a map shows every stored value with its coordinate, and an access log records each retrieval with a timestamp." },
+    ] },
   // { id: "computer-vision", title: "Computer Vision", description: "One-line description.",
   //   pages: [
   //     { title: "Step 1", description: "Optional.", file: "projects/computer-vision/step1.html" },

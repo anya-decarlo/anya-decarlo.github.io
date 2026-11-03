@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Retrieval System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            padding: 60px 40px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 18px;
+            font-weight: 400;
+            color: #666;
+            margin-bottom: 40px;
+            letter-spacing: 0.3px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+
+        .section {
+            border-top: 1px solid #e8e8e8;
+            padding-top: 20px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 400;
+            color: #999;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        .field {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 400;
+            color: #aaa;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 0;
+            border: none;
+            border-bottom: 1px solid #e8e8e8;
+            background: transparent;
+            font-size: 15px;
+            font-family: inherit;
+            color: #333;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-bottom-color: #ccc;
+        }
+
+        input[type="text"]::placeholder {
+            color: #ddd;
+        }
+
+        .action {
+            margin-top: 32px;
+            padding: 12px 0;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            font-weight: 400;
+            color: #999;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+            text-align: left;
+            width: 100%;
+        }
+
+        .action:hover {
+            color: #666;
+        }
+
+        .coordinate {
+            margin-top: 20px;
+            padding: 16px 0;
+            border-top: 1px solid #f0f0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #bbb;
+            display: none;
+        }
+
+        .coordinate.visible {
+            display: block;
+        }
+
+        .feedback {
+            margin-top: 16px;
+            padding: 12px 0;
+            font-size: 12px;
+            color: #aaa;
+            display: none;
+        }
+
+        .feedback.visible {
+            display: block;
+        }
+
+        .map {
+            border-top: 1px solid #e8e8e8;
+            padding-top: 40px;
+        }
+
+        .map-title {
+            font-size: 13px;
+            font-weight: 400;
+            color: #999;
+            margin-bottom: 32px;
+            letter-spacing: 0.5px;
+        }
+
+        .items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 32px;
+        }
+
+        .item {
+            padding: 20px 0;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .item-coord {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: #ccc;
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+
+        .item-data {
+            display: flex;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .item-label {
+            color: #999;
+        }
+
+        .item-value {
+            color: #666;
+        }
+
+        .log {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .log-title {
+            font-size: 13px;
+            font-weight: 400;
+            color: #999;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        .log-entries {
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 16px 0;
+            border-top: 1px solid #f5f5f5;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #bbb;
+        }
+
+        .empty {
+            color: #ddd;
+            font-size: 12px;
+            padding: 40px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Coordinate-Based Data Retrieval</h1>
+
+        <div class="grid">
+            <div class="section">
+                <div class="section-title">patient vitals</div>
+
+                <div class="field">
+                    <label>blood pressure</label>
+                    <input type="text" id="bp" placeholder="120/80">
+                </div>
+
+                <div class="field">
+                    <label>heart rate</label>
+                    <input type="text" id="hr" placeholder="72">
+                </div>
+
+                <div class="field">
+                    <label>temperature</label>
+                    <input type="text" id="temp" placeholder="98.6">
+                </div>
+
+                <div class="field">
+                    <label>oxygen saturation</label>
+                    <input type="text" id="o2" placeholder="98">
+                </div>
+
+                <div class="action" onclick="storeAll()">save vitals</div>
+
+                <div class="coordinate" id="coordDisplay"></div>
+                <div class="feedback" id="feedback"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">stored values</div>
+
+                <div class="field">
+                    <label>blood pressure</label>
+                    <input type="text" id="bp-display" readonly>
+                </div>
+
+                <div class="field">
+                    <label>heart rate</label>
+                    <input type="text" id="hr-display" readonly>
+                </div>
+
+                <div class="field">
+                    <label>temperature</label>
+                    <input type="text" id="temp-display" readonly>
+                </div>
+
+                <div class="field">
+                    <label>oxygen saturation</label>
+                    <input type="text" id="o2-display" readonly>
+                </div>
+
+                <div class="action" onclick="retrieveAll()">retrieve vitals</div>
+            </div>
+        </div>
+
+        <div class="map">
+            <div class="map-title">stored data</div>
+            <div class="items" id="items"></div>
+        </div>
+
+        <div class="log">
+            <div class="log-title">access log</div>
+            <div class="log-entries" id="logEntries"></div>
+        </div>
+    </div>
+
+    <script>
+        const coordinateGraph = new Map();
+        const accessLog = [];
+        let accessCount = 0;
+
+        // Pre-mapped field coordinates (system-defined, not user-entered)
+        const fieldCoordinates = {
+            'blood pressure': [142, 387, 901, 234, 56, 789],
+            'heart rate': [203, 512, 678, 891, 234, 456],
+            'temperature': [456, 789, 123, 567, 890, 234],
+            'oxygen saturation': [678, 234, 890, 345, 678, 901]
+        };
+
+        function coordToKey(coord) {
+            return JSON.stringify(coord);
+        }
+
+        function storeAll() {
+            const fields = [
+                { id: 'bp', label: 'blood pressure' },
+                { id: 'hr', label: 'heart rate' },
+                { id: 'temp', label: 'temperature' },
+                { id: 'o2', label: 'oxygen saturation' }
+            ];
+
+            let stored = 0;
+            let coords = [];
+
+            fields.forEach(field => {
+                const value = document.getElementById(field.id).value.trim();
+                if (value) {
+                    const coordinate = fieldCoordinates[field.label];
+                    const coordKey = coordToKey(coordinate);
+
+                    coordinateGraph.set(coordKey, {
+                        label: field.label,
+                        value: value,
+                        coordinate: coordinate,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    coords.push(`[${coordinate.join(', ')}]`);
+                    stored++;
+                }
+            });
+
+            if (stored > 0) {
+                document.getElementById('coordDisplay').textContent = coords.join('\n');
+                document.getElementById('coordDisplay').classList.add('visible');
+                document.getElementById('feedback').textContent = `${stored} field${stored > 1 ? 's' : ''} stored`;
+                document.getElementById('feedback').classList.add('visible');
+
+                setTimeout(() => {
+                    document.getElementById('feedback').classList.remove('visible');
+                }, 3000);
+            }
+
+            updateDisplay();
+        }
+
+        function retrieveAll() {
+            const fields = [
+                { id: 'bp-display', label: 'blood pressure' },
+                { id: 'hr-display', label: 'heart rate' },
+                { id: 'temp-display', label: 'temperature' },
+                { id: 'o2-display', label: 'oxygen saturation' }
+            ];
+
+            fields.forEach(field => {
+                const coordinate = fieldCoordinates[field.label];
+                const coordKey = coordToKey(coordinate);
+                const data = coordinateGraph.get(coordKey);
+
+                const displayEl = document.getElementById(field.id);
+                if (data) {
+                    displayEl.value = data.value;
+
+                    // Log access
+                    const accessEvent = {
+                        coordinate: coordinate,
+                        label: field.label,
+                        value: data.value,
+                        timestamp: new Date().toISOString(),
+                        accessId: ++accessCount
+                    };
+                    accessLog.unshift(accessEvent);
+                } else {
+                    displayEl.value = '';
+                }
+            });
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const itemsHTML = Array.from(coordinateGraph.values()).map(data => `
+                <div class="item">
+                    <div class="item-coord">[${data.coordinate.join(', ')}]</div>
+                    <div class="item-data">
+                        <div class="item-label">${data.label}</div>
+                        <div class="item-value">${data.value}</div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('items').innerHTML = itemsHTML || '<div class="empty">no data stored</div>';
+
+            const logHTML = accessLog.slice(0, 10).map(event => `
+                <div class="log-entry">
+                    ${event.timestamp} | [${event.coordinate.join(', ')}] | ${event.label} → ${event.value}
+                </div>
+            `).join('');
+            document.getElementById('logEntries').innerHTML = logHTML || '<div class="empty">no access events</div>';
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
