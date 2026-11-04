@@ -97,6 +97,15 @@
   .manual { color:var(--muted); text-decoration:line-through; text-decoration-color:#d0d5dd; }
   .tabs { display:flex; gap:4px; margin:8px 0 12px; border-bottom:1px solid var(--line); }
   .tabs button { font:inherit; border:0; background:none; padding:8px 12px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .part { font-size:12px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; color:var(--navy); margin:22px 0 10px; padding-bottom:6px; border-bottom:2px solid var(--navy); }
+  .kinds { display:grid; gap:10px; }
+  .kind { border:1px solid var(--line); border-radius:8px; padding:10px 14px; }
+  .kh { display:flex; gap:8px; align-items:baseline; } .kh b { font-size:15px; }
+  .kn { display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--navy); color:#fff; font-size:12px; font-weight:700; align-items:center; justify-content:center; }
+  .kflow { display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:6px 0; } .kflow .mini { width:auto; margin:2px 0; }
+  .kflow .ar { font-size:22px; color:var(--muted); }
+  .kfoot { font-size:12.5px; } .kfoot code { margin-right:4px; }
+  td.chg0 { background:#fff4e5; } td.lostrow { color:var(--muted); text-decoration:line-through; background:#fdecee; }
   .tabs button.on { color:var(--ink); border-color:var(--accent); font-weight:600; }
 </style>
 </head>
@@ -112,13 +121,13 @@
     <span><a href="https://github.com/anya-decarlo/anya-decarlo.github.io/actions/workflows/test-transformations.yml" target="_blank" rel="noopener"><img alt="CI status" style="vertical-align:middle" src="https://github.com/anya-decarlo/anya-decarlo.github.io/actions/workflows/test-transformations.yml/badge.svg"></a></span>
   </div>
   <nav class="sec">
-    <a href="#pipeline">1. Pipeline</a><a href="#transforms">2. What each transformation does</a><a href="#step">3. Step tests</a><a href="#review">4. Review a change</a><a href="#workflow">5. Repeatable workflow</a>
+    <a href="#what">1. What is a transformation?</a><a href="#transforms">2. The five transformations</a><a href="#pipeline">3. Testing them</a><a href="#step">4. Step tests</a><a href="#review">5. Review a change</a><a href="#workflow">6. Repeatable workflow</a>
   </nav>
 </header>
 <main>
   <div class="how"><b>How to use</b>
     <ol>
-      <li>Start with <b>What each transformation does</b>: each query script, the manual reporting task it replaces, and one real notice traced through all five steps. New columns are green and changed values are orange.</li>
+      <li>Start with <b>What is a transformation?</b> for the idea in plain terms, then <b>The five transformations</b>: each query script, the manual reporting task it replaces, and one real notice traced through all five steps. New columns are green and changed values are orange.</li>
       <li>Click <b>Run all tests</b> any time to rebuild every step on the real data and check it.</li>
       <li>Click a step in the pipeline to see its input and output side by side, its SQL, its unit tests (fixture in, expected out) and its data tests.</li>
       <li>Click <b>Introduce a bug</b>, or edit the SQL yourself, then <b>Run tests</b> to watch the tests catch it. <b>Reset SQL</b> puts it back.</li>
@@ -126,21 +135,79 @@
     </ol>
   </div>
 
-  <section class="card" id="pipeline">
-    <h2><span class="n">1</span>Pipeline</h2>
-    <p class="sub">Raw EDGAR tables flow through five SQL steps to the weekly report. Each step reads only the step before it, so each one can be tested alone by giving it fixture rows in place of its input.</p>
-    <div class="row"><button class="btn run" id="runAll" disabled>Loading SQLite…</button><span id="suiteSum" class="summary"></span></div>
-    <div class="dag" id="dag"></div>
+  <div class="part">Part 1 · The transformations</div>
+
+  <section class="card" id="what">
+    <h2><span class="n">1</span>What is a transformation?</h2>
+    <p class="sub" style="font-size:14px;color:var(--ink)">A transformation takes a table in and gives a changed table out. The raw EDGAR download isn't a report yet: it has duplicates, no deadlines, and no answer to "did the company file on time?". Five transformations, run in order, turn it into the weekly report. Each one is a short SQL query script, so it runs the same way every week instead of being redone by hand in a spreadsheet.</p>
+    <div class="kinds">
+      <div class="kind">
+        <div class="kh"><span class="kn">1</span><b>Clean</b> <span class="note">fix the raw rows</span></div>
+        <div class="kflow">
+          <table class="mini"><tr><th>cik</th><th>form</th><th>filed</th></tr><tr><td class="chg0">0000123456</td><td class="chg0"> nt 10-k</td><td>2025-03-03</td></tr><tr><td class="lostrow">0000123456</td><td class="lostrow"> nt 10-k</td><td class="lostrow">2025-03-03</td></tr></table>
+          <span class="ar">→</span>
+          <table class="mini"><tr><th>cik</th><th>form</th><th>filed</th></tr><tr><td class="chg">123456</td><td class="chg">NT 10-K</td><td>2025-03-03</td></tr></table>
+        </div>
+        <div class="kfoot">The duplicate row is dropped and the formats are fixed. <code>upper(trim(form))</code> <code>CAST(cik AS INTEGER)</code><br><span class="manual">By hand: delete duplicates and retype form names in Excel.</span></div>
+      </div>
+      <div class="kind">
+        <div class="kh"><span class="kn">2</span><b>Calculate</b> <span class="note">add a column from a formula</span></div>
+        <div class="kflow">
+          <table class="mini"><tr><th>form</th><th>filed</th></tr><tr><td>NT 10-K</td><td>2025-03-03</td></tr></table>
+          <span class="ar">→</span>
+          <table class="mini"><tr><th>form</th><th>filed</th><th class="new">deadline</th></tr><tr><td>NT 10-K</td><td>2025-03-03</td><td class="new">2025-03-18</td></tr></table>
+        </div>
+        <div class="kfoot">The deadline is the notice date plus 15 days for a 10-K, or 5 days for a 10-Q. <code>date(filed, '+15 days')</code><br><span class="manual">By hand: count days on a calendar for every company.</span></div>
+      </div>
+      <div class="kind">
+        <div class="kh"><span class="kn">3</span><b>Join</b> <span class="note">look up a second table</span></div>
+        <div class="kflow">
+          <div><table class="mini"><tr><th>cik</th><th>deadline</th></tr><tr><td>123456</td><td>2025-03-18</td></tr></table><div class="note">+ the company's 10-K filings</div><table class="mini"><tr><th>cik</th><th>form</th><th>filed</th></tr><tr><td>123456</td><td>10-K</td><td>2025-03-14</td></tr></table></div>
+          <span class="ar">→</span>
+          <table class="mini"><tr><th>cik</th><th>deadline</th><th class="new">followed</th></tr><tr><td>123456</td><td>2025-03-18</td><td class="new">2025-03-14</td></tr></table>
+        </div>
+        <div class="kfoot">It finds the date the late 10-K actually arrived. <code>SELECT min(p.filed) FROM raw_periodic_filings p WHERE p.cik = d.cik …</code><br><span class="manual">By hand: search EDGAR for each company, one at a time.</span></div>
+      </div>
+      <div class="kind">
+        <div class="kh"><span class="kn">4</span><b>Label</b> <span class="note">sort each row into a category</span></div>
+        <div class="kflow">
+          <table class="mini"><tr><th>deadline</th><th>followed</th></tr><tr><td>2025-03-18</td><td>2025-03-14</td></tr></table>
+          <span class="ar">→</span>
+          <table class="mini"><tr><th>deadline</th><th>followed</th><th class="new">status</th></tr><tr><td>2025-03-18</td><td>2025-03-14</td><td class="new">Filed in extension</td></tr></table>
+        </div>
+        <div class="kfoot">Arrived by the deadline means on time; after it means late; never means missed. <code>CASE WHEN followed &lt;= deadline THEN 'Filed in extension' …</code><br><span class="manual">By hand: compare two dates per row and type the answer.</span></div>
+      </div>
+      <div class="kind">
+        <div class="kh"><span class="kn">5</span><b>Summarize</b> <span class="note">many rows become one</span></div>
+        <div class="kflow">
+          <table class="mini"><tr><th>filed</th><th>status</th></tr><tr><td>2025-03-03</td><td>Filed in extension</td></tr><tr><td>2025-03-04</td><td>Not filed</td></tr><tr><td>2025-03-06</td><td>Filed in extension</td></tr></table>
+          <span class="ar">→</span>
+          <table class="mini"><tr><th class="new">week</th><th class="new">notices</th><th class="new">on time</th><th class="new">missed</th></tr><tr><td class="new">2025-03-03</td><td class="new">3</td><td class="new">2</td><td class="new">1</td></tr></table>
+        </div>
+        <div class="kfoot">Each week's notices are counted into one report row. <code>GROUP BY week_start</code><br><span class="manual">By hand: build a pivot table and paste it into the report.</span></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:12px">These examples are simplified. The next section runs the five real query scripts on 3,568 real EDGAR notices. Green = a new column, orange = a value that changed, struck out = a row that was removed.</p>
   </section>
 
   <section class="card" id="transforms"></section>
+
+  <div class="part">Part 2 · Testing and reviewing the transformations</div>
+  <p class="note" style="margin:-6px 0 12px;max-width:900px">A transformation can be wrong without anyone noticing: a deadline off by a day, a duplicate counted twice. A test feeds a transformation a few rows where the right answer is already known, and checks that it gives that answer back. Because each transformation is its own small script, each can be tested alone, and any change to one can be reviewed before it reaches the report.</p>
+
+  <section class="card" id="pipeline">
+    <h2><span class="n">3</span>Testing them</h2>
+    <p class="sub">Raw EDGAR tables flow through the five transformations to the weekly report. Each one reads only the one before it, so each can be tested alone by giving it fixture rows in place of its input.</p>
+    <div class="row"><button class="btn run" id="runAll" disabled>Loading SQLite…</button><span id="suiteSum" class="summary"></span></div>
+    <div class="dag" id="dag"></div>
+  </section>
 
   <section class="card" id="step"></section>
 
   <section class="card" id="review"></section>
 
   <section class="card" id="workflow">
-    <h2><span class="n">5</span>Repeatable workflow</h2>
+    <h2><span class="n">6</span>Repeatable workflow</h2>
     <p class="sub">The tests replace the manual check of "does this week's report look right?". They live in the repo next to the SQL and run the same way every time.</p>
     <div class="two">
       <div>
@@ -330,7 +397,7 @@ function ioHtml(i) {
     ${io.note ? `<p class="note">${esc(io.note)}</p>` : ""}`;
 }
 function renderTransforms() {
-  let h = `<h2><span class="n">2</span>What each transformation does</h2>
+  let h = `<h2><span class="n">2</span>The five transformations, on the real data</h2>
     <p class="sub">Each query script does one job that used to be done by hand. Green columns are added by that step, and orange cells are values it changed.</p>`;
   if (!last) { $("transforms").innerHTML = h + '<p class="note">Loading…</p>'; return; }
   const n = id => { try { return query(last.db, `SELECT count(*) AS n FROM ${id}`).rows[0].n.toLocaleString(); } catch (e) { return "error"; } };
@@ -359,7 +426,7 @@ function renderTransforms() {
 }
 function renderStep() {
   const st = SPEC.steps[sel], res = last && last.steps[sel], sql = EDIT[st.id] ?? MAIN[st.id], edited = sql !== MAIN[st.id], bug = BUGS[st.id];
-  let h = `<h2><span class="n">3</span>Step ${sel + 1}: ${esc(st.title)} <code>${st.id}</code></h2>
+  let h = `<h2><span class="n">4</span>Step ${sel + 1}: ${esc(st.title)} <code>${st.id}</code></h2>
     <p class="sub">${esc(st.summary)} Reads <b>${st.inputs.map(esc).join("</b> and <b>")}</b>. File: <a href="${st.file}" target="_blank">${st.file}</a></p>
     <div class="row"><button class="btn run" id="runStep">Run tests</button>
       <button class="btn" id="bug" title="${esc(bug[0])}">Introduce a bug: ${esc(bug[0].toLowerCase())}</button>
@@ -416,7 +483,7 @@ const testsJson = spec => JSON.stringify(spec.steps.find(s => s.id === PR.step),
 function renderReview(tab) {
   tab = tab || "conv";
   const saved = JSON.parse(localStorage.getItem("tt-review-1") || "null");
-  let h = `<h2><span class="n">4</span>Review a change</h2>
+  let h = `<h2><span class="n">5</span>Review a change</h2>
     <p class="sub">A transformation change is reviewed on three things: the code diff, how the tests changed, and what it does to the output. This proposed change is real: it fixes how the pipeline handles weekend deadlines.</p>
     <div class="pr-head"><h3>#${PR.id} ${esc(PR.title)}</h3>${saved ? pill(saved.verdict === "approve", saved.verdict === "approve" ? "Approved" : "Changes requested") : '<span class="pill p-der">Open</span>'}
       <span class="note"><b>${esc(PR.author)}</b> wants to merge <span class="branch">${esc(PR.branch)}</span> into <span class="branch">main</span></span></div>
