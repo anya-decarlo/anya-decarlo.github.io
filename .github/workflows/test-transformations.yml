@@ -1,0 +1,28 @@
+name: Test Late Filers transformations
+
+on:
+  push:
+    paths:
+      - "sec/transform-tests/**"
+      - "sec/late-filers/data.json"
+      - ".github/workflows/test-transformations.yml"
+  pull_request:
+    paths:
+      - "sec/transform-tests/**"
+  workflow_run:
+    workflows: ["Refresh SEC Late Filers report"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit and data tests (main)
+        run: python sec/transform-tests/run_tests.py
+      - name: Proposed change review/pr-1.json
+        run: python sec/transform-tests/run_tests.py --pr review/pr-1.json

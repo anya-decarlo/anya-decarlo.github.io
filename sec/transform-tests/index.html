@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tested Transformations: Late Filers Pipeline</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; --warn:#b54708; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 0; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; max-width:900px; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  nav.sec { display:flex; flex-wrap:wrap; gap:2px; margin-top:16px; }
+  nav.sec a { color:#c9d3e3; text-decoration:none; padding:8px 12px; font-size:13px; border-bottom:3px solid transparent; }
+  nav.sec a:hover { color:#fff; border-color:#8da9c4; }
+  main { max-width:1280px; margin:0 auto; padding:20px 32px 48px; }
+  @media (max-width: 900px) { main { padding:16px; } .two { grid-template-columns:1fr !important; } }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .kpi .k { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .v { font-size:28px; font-weight:600; margin-top:2px; }
+  .kpi .d { font-size:12.5px; color:var(--muted); }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; margin-bottom:16px; scroll-margin-top:12px; }
+  .card h2 { margin:0 0 4px; font-size:16px; }
+  .card h2 .n { color:var(--muted); font-weight:500; margin-right:6px; }
+  .card .sub { margin:0 0 14px; color:var(--muted); font-size:12.5px; max-width:900px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); padding:6px 8px; white-space:nowrap; }
+  td { border-bottom:1px solid var(--line); padding:7px 8px; vertical-align:top; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  code { font-size:12px; background:#f2f4f7; padding:1px 4px; border-radius:4px; word-break:break-all; }
+  .note { font-size:12.5px; color:var(--muted); }
+  .concept td { background:#f8f9fb; font-weight:600; }
+  .bar { display:inline-block; height:10px; background:var(--blue); border-radius:2px; vertical-align:middle; }
+  .bar.alt { background:#8da9c4; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; white-space:nowrap; }
+  .p-ok { background:#e7f5ee; color:var(--ok); } .p-bad { background:#fdecee; color:var(--accent); } .p-na { background:#f2f4f7; color:var(--muted); } .p-der { background:#fff4e5; color:var(--warn); }
+  .lost { color:var(--muted); text-decoration:line-through; }
+  input[type=text], select { font:inherit; padding:7px 9px; border:1px solid #cfd4dc; border-radius:6px; background:#fff; color:var(--ink); }
+  .btn { font:inherit; border:1px solid var(--blue); background:#fff; color:var(--blue); padding:6px 12px; border-radius:6px; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn.solid { background:var(--blue); color:#fff; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+  .sugg { position:absolute; z-index:5; background:#fff; border:1px solid var(--line); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.08); width:420px; max-width:90vw; }
+  .sugg div { padding:7px 10px; cursor:pointer; font-size:13px; } .sugg div:hover { background:#eef2f8; }
+  .co h3 { margin:0; font-size:17px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .chip { border:1px solid var(--line); border-radius:6px; padding:6px 10px; font-size:12.5px; }
+  .chip b { display:block; font-size:15px; }
+  svg text { font-family:inherit; }
+  a { color:var(--blue); }
+  .link { cursor:pointer; color:var(--blue); text-decoration:underline; }
+  #loading { padding:60px; text-align:center; color:var(--muted); }
+</style>
+<style>
+  .how { background:#fff7e6; border:1px solid #f5d9a8; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; }
+  .how ol { margin:6px 0 0; padding-left:20px; } .how li { margin:2px 0; }
+  .btn.run { background:#e8590c; border-color:#e8590c; color:#fff; font-weight:600; padding:8px 16px; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .dag { display:flex; flex-wrap:wrap; align-items:stretch; gap:6px; }
+  .node { border:1px solid var(--line); border-radius:8px; padding:10px 12px; min-width:150px; flex:1; background:#fff; cursor:pointer; position:relative; }
+  .node.raw { background:#f8f9fb; cursor:default; flex:.8; }
+  .node.sel { border-color:var(--blue); box-shadow:0 0 0 2px var(--blue) inset; }
+  .node .t { font-weight:600; font-size:13px; } .node .id { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--muted); }
+  .node .s { margin-top:6px; font-size:12px; }
+  .arrow { align-self:center; color:var(--muted); font-size:18px; }
+  textarea.sql { width:100%; font:12.5px/1.5 ui-monospace,Menlo,monospace; border:1px solid #cfd4dc; border-radius:6px; padding:10px; color:var(--ink); background:#fbfcfd; resize:vertical; }
+  textarea.sql.edited { border-color:var(--warn); background:#fffaf2; }
+  pre.code { font:12px/1.5 ui-monospace,Menlo,monospace; background:#f8f9fb; border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin:6px 0; overflow:auto; white-space:pre-wrap; }
+  pre.diff { font:12px/1.5 ui-monospace,Menlo,monospace; border:1px solid var(--line); border-radius:6px; margin:6px 0 14px; overflow:auto; }
+  pre.diff div { padding:0 10px; white-space:pre-wrap; } pre.diff .a { background:#e7f5ee; } pre.diff .d { background:#fdecee; } pre.diff .h { background:#eef2f8; color:var(--muted); padding:4px 10px; }
+  .test { border:1px solid var(--line); border-radius:6px; margin-bottom:8px; }
+  .test > summary { padding:8px 10px; cursor:pointer; display:flex; gap:10px; align-items:center; list-style:none; }
+  .test > summary::-webkit-details-marker { display:none; }
+  .test > summary .nm { font-weight:600; flex:1; } .test .body { padding:0 12px 12px; }
+  .test .why { color:var(--muted); font-size:12.5px; margin:0 0 8px; }
+  .mini { font-size:12px; margin:4px 0 10px; } .mini td, .mini th { padding:4px 6px; }
+  tr.miss td { background:#fdecee; }
+  .lbl { font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; margin-top:8px; }
+  .summary { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .pr-head { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-bottom:8px; }
+  .pr-head h3 { margin:0; font-size:16px; }
+  .branch { font-family:ui-monospace,Menlo,monospace; font-size:12px; background:#eef2f8; padding:2px 6px; border-radius:4px; }
+  .checklist label { display:block; margin:4px 0; }
+  .tabs { display:flex; gap:4px; margin:8px 0 12px; border-bottom:1px solid var(--line); }
+  .tabs button { font:inherit; border:0; background:none; padding:8px 12px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--ink); border-color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Query Scripts &amp; Tested Transformations: Late Filers Pipeline</h1>
+  <p>The Weekly Late Filers report, rebuilt as five small SQL steps. Each step has unit tests on hand-made fixture rows and data tests on the real EDGAR data. The same tests run here in your browser and in a GitHub Action on every push, and a proposed change gets reviewed with its code diff, test changes and output diff side by side.</p>
+  <div class="meta">
+    <span>Engine <b>SQLite (sql.js in the browser, sqlite3 in CI)</b></span>
+    <span>Data <b><a style="color:#fff" href="../late-filers/">Weekly Late Filers</a></b> <span id="asof"></span></span>
+    <span>Tests <b><a style="color:#fff" href="tests.json" target="_blank">tests.json</a></b></span>
+    <span>Runner <b><a style="color:#fff" href="run_tests.py" target="_blank">run_tests.py</a></b></span>
+    <span><a href="https://github.com/anya-decarlo/anya-decarlo.github.io/actions/workflows/test-transformations.yml" target="_blank" rel="noopener"><img alt="CI status" style="vertical-align:middle" src="https://github.com/anya-decarlo/anya-decarlo.github.io/actions/workflows/test-transformations.yml/badge.svg"></a></span>
+  </div>
+  <nav class="sec">
+    <a href="#pipeline">1. Pipeline</a><a href="#step">2. Step tests</a><a href="#review">3. Review a change</a><a href="#workflow">4. Repeatable workflow</a>
+  </nav>
+</header>
+<main>
+  <div class="how"><b>How to use</b>
+    <ol>
+      <li>Click <b>Run all tests</b>. Every step is built on the real data and checked.</li>
+      <li>Click a step in the pipeline to see its SQL, its unit tests (fixture in, expected out) and its data tests.</li>
+      <li>Click <b>Introduce a bug</b>, or edit the SQL yourself, then <b>Run tests</b> to watch the tests catch it. <b>Reset SQL</b> puts it back.</li>
+      <li>In <b>Review a change</b>, run the checks on the proposed change, read the diffs, and approve it or request changes.</li>
+    </ol>
+  </div>
+
+  <section class="card" id="pipeline">
+    <h2><span class="n">1</span>Pipeline</h2>
+    <p class="sub">Raw EDGAR tables flow through five SQL steps to the weekly report. Each step reads only the step before it, so each one can be tested alone by giving it fixture rows in place of its input.</p>
+    <div class="row"><button class="btn run" id="runAll" disabled>Loading SQLite…</button><span id="suiteSum" class="summary"></span></div>
+    <div class="dag" id="dag"></div>
+  </section>
+
+  <section class="card" id="step"></section>
+
+  <section class="card" id="review"></section>
+
+  <section class="card" id="workflow">
+    <h2><span class="n">4</span>Repeatable workflow</h2>
+    <p class="sub">The tests replace the manual check of "does this week's report look right?". They live in the repo next to the SQL and run the same way every time.</p>
+    <div class="two">
+      <div>
+        <div class="lbl">What runs, and when</div>
+        <table>
+          <tr><td><b>Every push</b> that touches the SQL, the tests or the report data</td><td><code>python sec/transform-tests/run_tests.py</code></td></tr>
+          <tr><td><b>After every Monday refresh</b> of the Late Filers report</td><td>Same command, triggered by the refresh workflow finishing</td></tr>
+          <tr><td><b>Every proposed change</b></td><td><code>run_tests.py --pr review/pr-1.json</code> also prints the output diff</td></tr>
+          <tr><td><b>In this page</b></td><td>The same <code>tests.json</code> and SQL files, run with SQLite compiled to WebAssembly</td></tr>
+        </table>
+        <p class="note">A failing test fails the GitHub Action, which turns the badge at the top red. The Action is defined in <a href="https://github.com/anya-decarlo/anya-decarlo.github.io/blob/main/.github/workflows/test-transformations.yml" target="_blank" rel="noopener">test-transformations.yml</a>.</p>
+      </div>
+      <div>
+        <div class="lbl">Adding a test</div>
+        <p class="note" style="margin-top:4px">Add an entry to the step's <code>unit</code> list in <code>tests.json</code>: a name, why it matters, the input rows and the rows you expect back. Only the columns you list in <code>expect</code> are compared, so a test pins down one behavior.</p>
+<pre class="code">{ "name": "NT 10-Q gets 5 calendar days",
+  "why": "Rule 12b-25(b) gives quarterly reports a 5-day extension.",
+  "given":  { "stg_nt_filings": [ { "adsh": "A-1", "form": "NT 10-Q", "filed": "2026-03-04", ... } ] },
+  "expect": [ { "adsh": "A-1", "extension_days": 5, "deadline": "2026-03-09" } ] }</pre>
+        <p class="note">Data tests are a SQL query that returns the rows breaking a rule. No rows means pass.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = v => v === null || v === undefined ? '<span class="note">null</span>' : esc(v);
+const pill = (ok, txt) => `<span class="pill ${ok === true ? "p-ok" : ok === false ? "p-bad" : "p-na"}">${txt ?? (ok ? "PASS" : "FAIL")}</span>`;
+const v = "?v=" + Date.now();
+const BUGS = {
+  stg_nt_filings: ["Forget to drop repeated accession numbers", "WHERE copy_number = 1\n  AND", "WHERE"],
+  int_extension_deadlines: ["Give NT 10-K 14 days instead of 15", "WHEN 'NT 10-K' THEN 15 WHEN 'NT 10-Q' THEN 5 END || ' days'", "WHEN 'NT 10-K' THEN 14 WHEN 'NT 10-Q' THEN 5 END || ' days'"],
+  int_follow_through: ["Stop counting 10-KT transition reports", "('10-K', '10-KT', '10-K405')", "('10-K', '10-K405')"],
+  fct_late_filers: ["Count a filing on the deadline day as late", "f.followed <= f.deadline", "f.followed < f.deadline"],
+  rpt_weekly_late_filers: ["Start weeks on Sunday", "AS INTEGER) + 6) % 7)", "AS INTEGER) + 7) % 7)"],
+};
+let SQL, SPEC, PR, DATA, MAIN = {}, PROPOSED, EDIT = {}, sel = 1, last = null, prRun = null;
+
+function create(db, name, rows) {
+  const cols = [...new Set(rows.flatMap(Object.keys))];
+  db.run(`CREATE TABLE ${name} (${cols.join(", ")})`);
+  const st = db.prepare(`INSERT INTO ${name} VALUES (${cols.map(() => "?").join(", ")})`);
+  for (const r of rows) st.run(cols.map(c => r[c] ?? null));
+  st.free();
+}
+function query(db, sql) {
+  const res = db.exec(sql);
+  if (!res.length) return { cols: [], rows: [] };
+  const { columns, values } = res[res.length - 1];
+  return { cols: columns, rows: values.map(r => Object.fromEntries(columns.map((c, i) => [c, r[i]]))) };
+}
+function runUnit(sql, t) {
+  const db = new SQL.Database();
+  try {
+    for (const [name, rows] of Object.entries(t.given)) create(db, name, rows);
+    create(db, "params", [{ as_of: (t.params || {}).as_of || "2026-01-01" }]);
+    const keys = [...new Set(t.expect.flatMap(Object.keys))];
+    let out;
+    try { out = query(db, sql).rows; } catch (e) { return { ok: false, error: e.message, keys, expect: t.expect, actual: [] }; }
+    const actual = out.map(r => Object.fromEntries(keys.map(k => [k, r[k] ?? null])));
+    const want = {}; t.expect.forEach(r => { const k = JSON.stringify(keys.map(c => r[c] ?? null)); want[k] = (want[k] || 0) + 1; });
+    const left = { ...want }; const miss = actual.map(r => { const k = JSON.stringify(keys.map(c => r[c])); if (left[k]) { left[k]--; return false; } return true; });
+    const ok = !miss.some(Boolean) && Object.values(left).every(n => n === 0);
+    return { ok, keys, expect: t.expect, actual, miss };
+  } finally { db.close(); }
+}
+function specFor(branch) {
+  const s = JSON.parse(JSON.stringify(SPEC));
+  if (branch !== "pr") return s;
+  for (const st of s.steps) {
+    for (const m of PR.modifiedTests) if (m.step === st.id) st.unit.find(t => t.name === m.name).expect = m.expect;
+    st.unit.push(...PR.addedTests.filter(a => a.step === st.id).map(a => a.test));
+    st.data.push(...PR.addedDataTests.filter(a => a.step === st.id).map(a => a.test));
+  }
+  return s;
+}
+const sqlFor = (branch, id) => branch === "pr" ? (id === PR.step ? PROPOSED : MAIN[id]) : branch === "clean" ? MAIN[id] : (EDIT[id] ?? MAIN[id]);
+function realDb(branch) {
+  const db = new SQL.Database();
+  const rows = DATA.rows.map(r => Object.fromEntries(DATA.fields.map((f, i) => [f, r[i]])));
+  create(db, "raw_nt_filings", rows.map(r => ({ adsh: r.adsh, form: r.form, filed: r.filed, period: r.period, cik: r.cik, name: r.name, sic: r.sic, state: r.state })));
+  const per = new Map();
+  rows.filter(r => r.followed).forEach(r => { const f = r.form === "NT 10-K" ? "10-K" : "10-Q"; per.set(`${r.cik}|${f}|${r.followed}`, { cik: r.cik, form: f, filed: r.followed }); });
+  create(db, "raw_periodic_filings", [...per.values()]);
+  db.run("CREATE INDEX periodic_cik ON raw_periodic_filings (cik)");
+  create(db, "production_status", rows.map(r => ({ adsh: r.adsh, status: r.status, deadline: r.deadline, followed: r.followed })));
+  create(db, "params", [{ as_of: DATA.windowEnd }]);
+  const errors = {};
+  for (const st of SPEC.steps) {
+    try { db.run(`CREATE TABLE ${st.id} AS ${sqlFor(branch, st.id)}`); }
+    catch (e) { errors[st.id] = e.message; }
+  }
+  return { db, errors };
+}
+function runSuite(branch) {
+  const t0 = performance.now(), spec = specFor(branch === "pr" ? "pr" : "main");
+  const { db, errors } = realDb(branch);
+  const steps = spec.steps.map(st => {
+    const unit = st.unit.map(t => ({ t, r: runUnit(sqlFor(branch, st.id), t) }));
+    const data = st.data.map(t => {
+      if (errors[st.id]) return { t, ok: false, error: errors[st.id], rows: [], cols: [] };
+      try { const q = query(db, t.sql); return { t, ok: !q.rows.length, ...q }; }
+      catch (e) { return { t, ok: false, error: e.message, rows: [], cols: [] }; }
+    });
+    let preview = null;
+    if (!errors[st.id]) { preview = query(db, `SELECT * FROM ${st.id} LIMIT 8`); preview.n = query(db, `SELECT count(*) AS n FROM ${st.id}`).rows[0].n; }
+    return { st, unit, data, preview, error: errors[st.id] };
+  });
+  return { branch, steps, db, ms: performance.now() - t0 };
+}
+const counts = s => { const u = s.unit.filter(x => x.r.ok).length, d = s.data.filter(x => x.ok).length; return { u, U: s.unit.length, d, D: s.data.length }; };
+
+function table(rows, keys, miss) {
+  if (!rows.length) return '<p class="note">(no rows)</p>';
+  keys = keys || Object.keys(rows[0]);
+  return `<table class="mini"><tr>${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr>${rows.map((r, i) => `<tr class="${miss && miss[i] ? "miss" : ""}">${keys.map(k => `<td>${fmt(r[k])}</td>`).join("")}</tr>`).join("")}</table>`;
+}
+function renderDag() {
+  const raw = `<div class="node raw"><div class="t">Raw EDGAR tables</div><div class="id">raw_nt_filings<br>raw_periodic_filings</div><div class="s note">${DATA.rows.length.toLocaleString()} notices</div></div>`;
+  $("dag").innerHTML = raw + SPEC.steps.map((st, i) => {
+    let s = '<span class="note">Not run yet</span>';
+    if (last) { const c = counts(last.steps[i]); s = `${pill(c.u === c.U, `unit ${c.u}/${c.U}`)} ${pill(c.d === c.D, `data ${c.d}/${c.D}`)}`; }
+    const ed = EDIT[st.id] != null && EDIT[st.id] !== MAIN[st.id] ? ' <span class="pill p-der">edited</span>' : "";
+    return `<span class="arrow">→</span><div class="node ${i === sel ? "sel" : ""}" data-i="${i}"><div class="t">${i + 1}. ${esc(st.title)}${ed}</div><div class="id">${st.id}</div><div class="s">${s}</div></div>`;
+  }).join("");
+  $("dag").querySelectorAll("[data-i]").forEach(n => n.onclick = () => { sel = +n.dataset.i; renderDag(); renderStep(); });
+  if (last) {
+    const all = last.steps.map(counts).reduce((a, c) => ({ u: a.u + c.u, U: a.U + c.U, d: a.d + c.d, D: a.D + c.D }), { u: 0, U: 0, d: 0, D: 0 });
+    const ok = all.u === all.U && all.d === all.D;
+    $("suiteSum").innerHTML = `${pill(ok, ok ? "All tests pass" : `${all.U - all.u + all.D - all.d} failing`)} <span class="note">${all.u}/${all.U} unit · ${all.d}/${all.D} data · ${Math.round(last.ms)} ms</span>`;
+  }
+}
+function renderStep() {
+  const st = SPEC.steps[sel], res = last && last.steps[sel], sql = EDIT[st.id] ?? MAIN[st.id], edited = sql !== MAIN[st.id], bug = BUGS[st.id];
+  let h = `<h2><span class="n">2</span>Step ${sel + 1}: ${esc(st.title)} <code>${st.id}</code></h2>
+    <p class="sub">${esc(st.summary)} Reads <b>${st.inputs.map(esc).join("</b> and <b>")}</b>. File: <a href="${st.file}" target="_blank">${st.file}</a></p>
+    <div class="row"><button class="btn run" id="runStep">Run tests</button>
+      <button class="btn" id="bug" title="${esc(bug[0])}">Introduce a bug: ${esc(bug[0].toLowerCase())}</button>
+      <button class="btn" id="reset" ${edited ? "" : "disabled"}>Reset SQL</button>
+      ${edited ? '<span class="pill p-der">SQL edited in your browser, not saved</span>' : ""}</div>
+    <textarea class="sql ${edited ? "edited" : ""}" id="sqlEd" spellcheck="false" rows="${sql.split("\n").length + 1}">${esc(sql)}</textarea>`;
+  if (!res) h += '<p class="note">Click <b>Run tests</b> to run this step\'s tests.</p>';
+  else {
+    if (res.error) h += `<p>${pill(false, "SQL error")} <code>${esc(res.error)}</code></p>`;
+    h += `<div class="two" style="margin-top:12px"><div><div class="lbl">Unit tests: fixture in, expected out (${counts(res).u}/${res.unit.length} pass)</div>` +
+      res.unit.map(({ t, r }) => `<details class="test" ${r.ok ? "" : "open"}><summary>${pill(r.ok)}<span class="nm">${esc(t.name)}</span></summary><div class="body">
+        <p class="why">${esc(t.why)}</p>
+        ${Object.entries(t.given).map(([n, rows]) => `<div class="lbl">Given ${esc(n)}</div>${table(rows)}`).join("")}
+        ${t.params ? `<div class="lbl">Report date</div><p class="mini"><code>as_of = ${esc(t.params.as_of)}</code></p>` : ""}
+        <div class="lbl">Expected</div>${table(r.expect, r.keys)}
+        <div class="lbl">Actual</div>${r.error ? `<p>${pill(false, "SQL error")} <code>${esc(r.error)}</code></p>` : table(r.actual, r.keys, r.miss)}
+      </div></details>`).join("") +
+      `</div><div><div class="lbl">Data tests on ${DATA.rows.length.toLocaleString()} real notices (${counts(res).d}/${res.data.length} pass)</div>` +
+      res.data.map(d => `<details class="test" ${d.ok ? "" : "open"}><summary>${pill(d.ok)}<span class="nm">${esc(d.t.name)}</span>${d.ok ? "" : `<span class="note">${d.error ? "error" : d.rows.length.toLocaleString() + " rows break it"}</span>`}</summary><div class="body">
+        <div class="lbl">Query: returns the rows that break the rule</div><pre class="code">${esc(d.t.sql)}</pre>
+        ${d.error ? `<code>${esc(d.error)}</code>` : d.ok ? '<p class="note">No rows returned.</p>' : `<div class="lbl">First rows that fail</div>${table(d.rows.slice(0, 5))}`}
+      </div></details>`).join("") +
+      (res.preview ? `<div class="lbl">Output on the real data: ${res.preview.n.toLocaleString()} rows (first 8)</div><div style="overflow:auto">${table(res.preview.rows)}</div>` : "") +
+      `</div></div>`;
+  }
+  $("step").innerHTML = h;
+  $("sqlEd").oninput = e => { EDIT[st.id] = e.target.value; e.target.classList.toggle("edited", e.target.value !== MAIN[st.id]); $("reset").disabled = e.target.value === MAIN[st.id]; };
+  $("runStep").onclick = () => runAll(true);
+  $("reset").onclick = () => { delete EDIT[st.id]; runAll(true); };
+  $("bug").onclick = () => { EDIT[st.id] = MAIN[st.id].replace(bug[1], bug[2]); runAll(true); };
+}
+function runAll(keepScroll) {
+  const y = scrollY;
+  last = runSuite("main"); renderDag(); renderStep();
+  if (keepScroll) scrollTo(0, y);
+}
+
+function diff(a, b) {
+  const n = a.length, m = b.length, L = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = []; let i = 0, j = 0;
+  while (i < n && j < m) { if (a[i] === b[j]) { out.push([" ", a[i++]]); j++; } else if (L[i + 1][j] >= L[i][j + 1]) out.push(["-", a[i++]]); else out.push(["+", b[j++]]); }
+  while (i < n) out.push(["-", a[i++]]); while (j < m) out.push(["+", b[j++]]);
+  return out;
+}
+const diffHtml = (title, a, b) => { const d = diff(a.split("\n"), b.split("\n")); const add = d.filter(x => x[0] === "+").length, del = d.filter(x => x[0] === "-").length;
+  return `<pre class="diff"><div class="h">${esc(title)}  <span style="color:var(--ok)">+${add}</span> <span style="color:var(--accent)">−${del}</span></div>${d.map(([k, l]) => `<div class="${k === "+" ? "a" : k === "-" ? "d" : ""}">${k} ${esc(l)}</div>`).join("")}</pre>`; };
+const testsJson = spec => JSON.stringify(spec.steps.find(s => s.id === PR.step), (k, v) => k === "given" ? undefined : v, 1);
+
+function renderReview(tab) {
+  tab = tab || "conv";
+  const saved = JSON.parse(localStorage.getItem("tt-review-1") || "null");
+  let h = `<h2><span class="n">3</span>Review a change</h2>
+    <p class="sub">A transformation change is reviewed on three things: the code diff, how the tests changed, and what it does to the output. This proposed change is real: it fixes how the pipeline handles weekend deadlines.</p>
+    <div class="pr-head"><h3>#${PR.id} ${esc(PR.title)}</h3>${saved ? pill(saved.verdict === "approve", saved.verdict === "approve" ? "Approved" : "Changes requested") : '<span class="pill p-der">Open</span>'}
+      <span class="note"><b>${esc(PR.author)}</b> wants to merge <span class="branch">${esc(PR.branch)}</span> into <span class="branch">main</span></span></div>
+    <div class="tabs">${[["conv", "Summary"], ["files", "Files changed"], ["checks", "Checks"], ["output", "Output diff"], ["rev", "Review"]].map(([k, l]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}</div>`;
+  if (tab === "conv") h += `<p>${esc(PR.summary)}</p><div class="lbl">What changes</div><ul>${PR.changes.map(c => `<li>${esc(c)}</li>`).join("")}</ul>`;
+  if (tab === "files") h += diffHtml(PR.mainFile, MAIN[PR.step], PROPOSED) + diffHtml(`tests.json: ${PR.step} (fixture rows hidden)`, testsJson(specFor("main")), testsJson(specFor("pr")));
+  if (tab === "checks" || tab === "output") {
+    if (!prRun) h += `<p class="note">Run the full test suite on both branches to compare them.</p><button class="btn run" id="runPr">Run checks on main and ${esc(PR.branch)}</button>`;
+    else if (tab === "checks") {
+      const rows = [];
+      prRun.pr.steps.forEach((s, i) => {
+        const m = prRun.main.steps[i];
+        s.unit.forEach(u => { const mu = m.unit.find(x => x.t.name === u.t.name); rows.push([s.st.id, "unit", u.t.name, mu ? mu.r.ok : null, u.r.ok]); });
+        s.data.forEach(d => { const md = m.data.find(x => x.t.name === d.t.name); rows.push([s.st.id, "data", d.t.name, md ? md.ok : null, d.ok, d.ok ? "" : d.rows.length]); });
+      });
+      const exp = new Set(PR.expectedDataFailures), bad = rows.filter(r => r[4] === false && !exp.has(r[2])).length;
+      h += `<p>${pill(!bad, bad ? `${bad} unexpected failures` : "All checks pass")} <span class="note">One failure is expected and explained below.</span></p>
+        <table><tr><th>Step</th><th>Type</th><th>Test</th><th>main</th><th>${esc(PR.branch)}</th></tr>${rows.map(r => {
+          const changed = r[3] !== r[4];
+          const b = r[4] === false && exp.has(r[2]) ? pill(null, `expected fail (${r[5]} rows)`) : pill(r[4]);
+          return `<tr style="${changed ? "background:#fffaf2" : ""}"><td><code>${r[0]}</code></td><td>${r[1]}</td><td>${esc(r[2])}${PR.modifiedTests.some(m => m.name === r[2]) ? ' <span class="pill p-der">expectation changed</span>' : ""}</td><td>${r[3] === null ? pill(null, "new") : pill(r[3])}</td><td>${b}</td></tr>`; }).join("")}</table>
+        <p class="note">"Matches the published report" compares the SQL output to what the live report shows. It's supposed to fail on this branch: the live report still counts calendar days, and the rows that differ are exactly the ones in the output diff.</p>`;
+    } else {
+      const q = "SELECT adsh, name, form, filed, deadline, followed, status FROM fct_late_filers";
+      const before = Object.fromEntries(query(prRun.main.db, q).rows.map(r => [r.adsh, r]));
+      const after = query(prRun.pr.db, q).rows;
+      const moved = after.filter(r => r.deadline !== before[r.adsh].deadline), changed = moved.filter(r => r.status !== before[r.adsh].status);
+      const trans = {}; changed.forEach(r => { const k = before[r.adsh].status + " → " + r.status; trans[k] = (trans[k] || 0) + 1; });
+      const wq = "SELECT * FROM rpt_weekly_late_filers";
+      const wb = Object.fromEntries(query(prRun.main.db, wq).rows.map(r => [r.week_start, r])), wa = query(prRun.pr.db, wq).rows;
+      const wch = wa.filter(r => r.filed_in_extension !== wb[r.week_start].filed_in_extension).length;
+      h += `<div class="chips"><div class="chip"><b>${moved.length.toLocaleString()}</b>deadlines moved to a Monday</div><div class="chip"><b>${changed.length.toLocaleString()}</b>notices change status</div><div class="chip"><b>${wch}</b>weeks of the weekly report change</div></div>
+        <table style="max-width:520px"><tr><th>Status change in fct_late_filers</th><th class="num">Notices</th></tr>${Object.entries(trans).map(([k, n]) => `<tr><td>${esc(k)}</td><td class="num">${n}</td></tr>`).join("") || '<tr><td colspan="2" class="note">None</td></tr>'}</table>
+        <p class="note">These companies filed on the Monday after a weekend deadline. The current pipeline calls that late. Under Rule 0-3 it's on time.</p>
+        <div class="lbl">Notices that change status</div><div style="overflow:auto;max-height:420px"><table><tr><th>Company</th><th>Form</th><th>NT filed</th><th>Deadline</th><th>Filed report</th><th>Status</th></tr>${changed.map(r => { const b = before[r.adsh];
+          return `<tr><td>${esc(r.name)}</td><td>${r.form}</td><td>${r.filed}</td><td><span class="lost">${b.deadline}</span> ${r.deadline}</td><td>${r.followed}</td><td><span class="lost">${esc(b.status)}</span> ${esc(r.status)}</td></tr>`; }).join("")}</table></div>`;
+    }
+  }
+  if (tab === "rev") {
+    h += `<p class="sub">Tick each item once you've checked it. Approve is enabled after the checks have run and every item is ticked.</p><div class="checklist">${PR.checklist.map((c, i) => `<label><input type="checkbox" class="ck" data-i="${i}"> ${esc(c)}</label>`).join("")}</div>
+      <textarea id="revNote" class="sql" rows="3" style="margin-top:10px;font-family:inherit" placeholder="Review comment (optional)"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn solid" id="approve" disabled>Approve</button><button class="btn" id="reqChanges">Request changes</button>${prRun ? "" : '<span class="note">Run the checks first (Checks tab).</span>'}</div>
+      ${saved ? `<p>${pill(saved.verdict === "approve", saved.verdict === "approve" ? "Approved" : "Changes requested")} <span class="note">${new Date(saved.at).toLocaleString()}</span>${saved.note ? ` · ${esc(saved.note)}` : ""}</p>` : ""}
+      <p class="note">Your review is saved in this browser only. On a team, this would be a GitHub pull-request review, with this suite as a required check.</p>`;
+  }
+  $("review").innerHTML = h;
+  $("review").querySelectorAll(".tabs button").forEach(b => b.onclick = () => renderReview(b.dataset.t));
+  if ($("runPr")) $("runPr").onclick = () => { $("runPr").textContent = "Running…"; setTimeout(() => { prRun = { main: runSuite("clean"), pr: runSuite("pr") }; renderReview(tab); }, 20); };
+  if (tab === "rev") {
+    const upd = () => $("approve").disabled = !prRun || [...document.querySelectorAll(".ck")].some(c => !c.checked);
+    document.querySelectorAll(".ck").forEach(c => c.onchange = upd);
+    const save = verdict => { localStorage.setItem("tt-review-1", JSON.stringify({ verdict, note: $("revNote").value.trim(), at: Date.now() })); renderReview("rev"); };
+    $("approve").onclick = () => save("approve"); $("reqChanges").onclick = () => save("changes");
+  }
+}
+
+(async () => {
+  const [sqlLib, spec, pr, data] = await Promise.all([
+    initSqlJs({ locateFile: f => "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/" + f }),
+    fetch("tests.json" + v).then(r => r.json()), fetch("review/pr-1.json" + v).then(r => r.json()), fetch("../late-filers/data.json" + v).then(r => r.json())]);
+  SQL = sqlLib; SPEC = spec; PR = pr; DATA = data;
+  await Promise.all(SPEC.steps.map(async s => MAIN[s.id] = (await (await fetch(s.file + v)).text()).trimEnd()));
+  PROPOSED = (await (await fetch(PR.proposedFile + v)).text()).trimEnd();
+  $("asof").textContent = `(report date ${DATA.windowEnd})`;
+  $("runAll").disabled = false; $("runAll").textContent = "Run all tests";
+  $("runAll").onclick = () => runAll(true);
+  renderDag(); renderStep(); renderReview();
+})().catch(e => { $("runAll").textContent = "Failed to load: " + e.message; });
+</script>
+</body>
+</html>

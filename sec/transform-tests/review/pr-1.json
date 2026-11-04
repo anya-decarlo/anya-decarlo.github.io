@@ -1,0 +1,105 @@
+{
+ "id": 1,
+ "title": "Move weekend deadlines to the next business day (Rule 0-3)",
+ "author": "Anya",
+ "branch": "rule-0-3-weekend-deadlines",
+ "summary": "Rule 0-3 says that when a filing deadline falls on a Saturday, Sunday or federal holiday, the filing is on time if it's made the next business day. The pipeline counts calendar days only, so a company that files on the Monday after a Saturday or Sunday deadline is wrongly labelled 'Filed after extension'.",
+ "changes": [
+  "int_extension_deadlines keeps the calendar deadline as calendar_deadline and moves a Saturday or Sunday deadline to the following Monday.",
+  "Updates the expectation in 'NT 10-Q deadline crosses a month end': 2025-02-02 is a Sunday, so the deadline is now 2025-02-03.",
+  "Adds two unit tests, a Saturday deadline and a weekday deadline, and a data test that no deadline falls on a weekend.",
+  "Federal holidays are out of scope. They need a holiday calendar table, which would be a separate change."
+ ],
+ "step": "int_extension_deadlines",
+ "mainFile": "sql/02_int_extension_deadlines.sql",
+ "proposedFile": "review/02_int_extension_deadlines.proposed.sql",
+ "modifiedTests": [
+  {
+   "step": "int_extension_deadlines",
+   "name": "NT 10-Q deadline crosses a month end",
+   "expect": [
+    {
+     "adsh": "A-1",
+     "deadline": "2025-02-03"
+    }
+   ]
+  }
+ ],
+ "addedTests": [
+  {
+   "step": "int_extension_deadlines",
+   "test": {
+    "name": "Saturday deadline moves to Monday",
+    "why": "Oct 26 2026 + 5 days is Saturday Oct 31. Rule 0-3 moves it to Monday Nov 2.",
+    "given": {
+     "stg_nt_filings": [
+      {
+       "adsh": "A-1",
+       "form": "NT 10-Q",
+       "filed": "2026-10-26",
+       "period": "2025-12-31",
+       "cik": 1001,
+       "name": "Acme Corp",
+       "sic": "3711",
+       "state": "DE"
+      }
+     ]
+    },
+    "expect": [
+     {
+      "adsh": "A-1",
+      "calendar_deadline": "2026-10-31",
+      "deadline": "2026-11-02"
+     }
+    ]
+   }
+  },
+  {
+   "step": "int_extension_deadlines",
+   "test": {
+    "name": "Weekday deadline is unchanged",
+    "why": "The change should only touch weekend deadlines.",
+    "given": {
+     "stg_nt_filings": [
+      {
+       "adsh": "A-1",
+       "form": "NT 10-K",
+       "filed": "2026-03-02",
+       "period": "2025-12-31",
+       "cik": 1001,
+       "name": "Acme Corp",
+       "sic": "3711",
+       "state": "DE"
+      }
+     ]
+    },
+    "expect": [
+     {
+      "adsh": "A-1",
+      "calendar_deadline": "2026-03-17",
+      "deadline": "2026-03-17"
+     }
+    ]
+   }
+  }
+ ],
+ "addedDataTests": [
+  {
+   "step": "int_extension_deadlines",
+   "test": {
+    "name": "No deadline falls on a weekend",
+    "sql": "SELECT * FROM int_extension_deadlines WHERE strftime('%w', deadline) IN ('0', '6')"
+   }
+  }
+ ],
+ "expectedDataFailures": [
+  "Matches the published report, row by row"
+ ],
+ "checklist": [
+  "The rule is cited and the scope (weekends, not holidays) is stated.",
+  "Every changed test expectation has a reason.",
+  "New tests cover both sides of the change (weekend moves, weekday doesn't).",
+  "The output diff only contains the rows the change should move.",
+  "Failing reconciliation is expected: the published report still uses calendar days until this merges."
+ ]
+}

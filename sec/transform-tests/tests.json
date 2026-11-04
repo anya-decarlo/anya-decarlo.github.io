@@ -1,0 +1,882 @@
+{
+ "name": "Late Filers transformation tests",
+ "source": "../late-filers/data.json",
+ "raw": {
+  "raw_nt_filings": "One row per NT notice, as returned by EDGAR full-text search.",
+  "raw_periodic_filings": "10-K and 10-Q filings from the EDGAR quarterly form index.",
+  "production_status": "The status and deadline the published report shows, for the reconciliation test.",
+  "params": "as_of: the report date."
+ },
+ "steps": [
+  {
+   "id": "stg_nt_filings",
+   "file": "sql/01_stg_nt_filings.sql",
+   "title": "Stage NT notices",
+   "inputs": [
+    "raw_nt_filings"
+   ],
+   "summary": "Cleans the raw EDGAR notices: one row per accession number, standard form codes, typed columns.",
+   "unit": [
+    {
+     "name": "Repeated accession number is kept once",
+     "why": "EDGAR search can return the same filing twice when it matches more than one query.",
+     "given": {
+      "raw_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       },
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       },
+       {
+        "adsh": "A-2",
+        "form": "NT 10-Q",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1"
+      },
+      {
+       "adsh": "A-2"
+      }
+     ]
+    },
+    {
+     "name": "Amended notice (NT 10-K/A) is left out",
+     "why": "An amendment corrects an earlier notice. Counting it would count the same delay twice.",
+     "given": {
+      "raw_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       },
+       {
+        "adsh": "A-2",
+        "form": "NT 10-K/A",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "form": "NT 10-K"
+      }
+     ]
+    },
+    {
+     "name": "Form codes are trimmed and upper-cased",
+     "why": "Source systems differ on case and spacing. Joins and filters need one spelling.",
+     "given": {
+      "raw_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": " nt 10-q ",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "form": "NT 10-Q"
+      }
+     ]
+    },
+    {
+     "name": "Forms other than NT 10-K / NT 10-Q are dropped",
+     "why": "The report only covers late-filing notices for annual and quarterly reports.",
+     "given": {
+      "raw_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       },
+       {
+        "adsh": "A-2",
+        "form": "NT 20-F",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       },
+       {
+        "adsh": "A-3",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-3"
+      }
+     ]
+    },
+    {
+     "name": "CIK with leading zeros becomes a number",
+     "why": "EDGAR writes CIKs as 0000320193 in some places and 320193 in others. They must match when joined.",
+     "given": {
+      "raw_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": "0000320193",
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "cik": 320193
+      }
+     ]
+    }
+   ],
+   "data": [
+    {
+     "name": "adsh is never null",
+     "sql": "SELECT * FROM stg_nt_filings WHERE adsh IS NULL"
+    },
+    {
+     "name": "adsh is unique",
+     "sql": "SELECT adsh, count(*) AS n FROM stg_nt_filings GROUP BY adsh HAVING n > 1"
+    },
+    {
+     "name": "form is NT 10-K or NT 10-Q",
+     "sql": "SELECT * FROM stg_nt_filings WHERE form NOT IN ('NT 10-K', 'NT 10-Q')"
+    },
+    {
+     "name": "filed is a valid date",
+     "sql": "SELECT * FROM stg_nt_filings WHERE filed IS NULL"
+    },
+    {
+     "name": "cik is a positive number",
+     "sql": "SELECT * FROM stg_nt_filings WHERE cik IS NULL OR cik <= 0"
+    }
+   ]
+  },
+  {
+   "id": "int_extension_deadlines",
+   "file": "sql/02_int_extension_deadlines.sql",
+   "title": "Extension deadlines",
+   "inputs": [
+    "stg_nt_filings"
+   ],
+   "summary": "Adds the Rule 12b-25 deadline: 15 days after an NT 10-K, 5 days after an NT 10-Q.",
+   "unit": [
+    {
+     "name": "NT 10-K gets 15 calendar days",
+     "why": "Rule 12b-25(b) gives annual reports a 15-day extension.",
+     "given": {
+      "stg_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "extension_days": 15,
+       "deadline": "2026-03-17"
+      }
+     ]
+    },
+    {
+     "name": "NT 10-Q gets 5 calendar days",
+     "why": "Rule 12b-25(b) gives quarterly reports a 5-day extension.",
+     "given": {
+      "stg_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-Q",
+        "filed": "2026-03-04",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "extension_days": 5,
+       "deadline": "2026-03-09"
+      }
+     ]
+    },
+    {
+     "name": "Deadline across a leap day",
+     "why": "Date math has to know February 2024 has 29 days.",
+     "given": {
+      "stg_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2024-02-20",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "deadline": "2024-03-06"
+      }
+     ]
+    },
+    {
+     "name": "NT 10-Q deadline crosses a month end",
+     "why": "Jan 28 + 5 days should land in February, not Jan 33.",
+     "given": {
+      "stg_nt_filings": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-Q",
+        "filed": "2025-01-28",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "deadline": "2025-02-02"
+      }
+     ]
+    }
+   ],
+   "data": [
+    {
+     "name": "Every notice has a deadline",
+     "sql": "SELECT * FROM int_extension_deadlines WHERE deadline IS NULL"
+    },
+    {
+     "name": "Deadline is at least the extension length after the notice",
+     "sql": "SELECT * FROM int_extension_deadlines WHERE julianday(deadline) - julianday(filed) < extension_days"
+    },
+    {
+     "name": "Row count matches the staged notices",
+     "sql": "SELECT (SELECT count(*) FROM stg_nt_filings) AS staged, (SELECT count(*) FROM int_extension_deadlines) AS out WHERE staged <> out"
+    }
+   ]
+  },
+  {
+   "id": "int_follow_through",
+   "file": "sql/03_int_follow_through.sql",
+   "title": "Follow-through filing",
+   "inputs": [
+    "int_extension_deadlines",
+    "raw_periodic_filings"
+   ],
+   "summary": "Finds the date the company actually filed the late 10-K or 10-Q, if it did within a year.",
+   "unit": [
+    {
+     "name": "Earliest matching report is used",
+     "why": "A company can file a 10-K and then a second one. The first one is when it stopped being late.",
+     "given": {
+      "int_extension_deadlines": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2026-03-17"
+       }
+      ],
+      "raw_periodic_filings": [
+       {
+        "cik": 1001,
+        "form": "10-K",
+        "filed": "2026-03-20"
+       },
+       {
+        "cik": 1001,
+        "form": "10-K",
+        "filed": "2026-03-12"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "followed": "2026-03-12"
+      }
+     ]
+    },
+    {
+     "name": "A 10-Q does not answer an NT 10-K",
+     "why": "The notice is about the annual report, so a quarterly report doesn't count.",
+     "given": {
+      "int_extension_deadlines": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2026-03-17"
+       }
+      ],
+      "raw_periodic_filings": [
+       {
+        "cik": 1001,
+        "form": "10-Q",
+        "filed": "2026-03-10"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "followed": null
+      }
+     ]
+    },
+    {
+     "name": "A report filed before the notice is ignored",
+     "why": "That report belongs to an earlier period.",
+     "given": {
+      "int_extension_deadlines": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-Q",
+        "filed": "2026-05-15",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 5,
+        "deadline": "2026-05-20"
+       }
+      ],
+      "raw_periodic_filings": [
+       {
+        "cik": 1001,
+        "form": "10-Q",
+        "filed": "2026-05-01"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "followed": null
+      }
+     ]
+    },
+    {
+     "name": "A report more than 365 days later is ignored",
+     "why": "After a year it is most likely the next period's report, not the late one.",
+     "given": {
+      "int_extension_deadlines": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2025-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2025-03-17"
+       }
+      ],
+      "raw_periodic_filings": [
+       {
+        "cik": 1001,
+        "form": "10-K",
+        "filed": "2026-03-03"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "followed": null
+      }
+     ]
+    },
+    {
+     "name": "A transition report (10-KT) counts",
+     "why": "Companies that change fiscal year file a 10-KT in place of the 10-K.",
+     "given": {
+      "int_extension_deadlines": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2026-03-17"
+       }
+      ],
+      "raw_periodic_filings": [
+       {
+        "cik": 1001,
+        "form": "10-KT",
+        "filed": "2026-03-16"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "followed": "2026-03-16"
+      }
+     ]
+    },
+    {
+     "name": "Another company's report is ignored",
+     "why": "The match must be on the same CIK.",
+     "given": {
+      "int_extension_deadlines": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2026-03-17"
+       }
+      ],
+      "raw_periodic_filings": [
+       {
+        "cik": 2002,
+        "form": "10-K",
+        "filed": "2026-03-10"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "followed": null
+      }
+     ]
+    }
+   ],
+   "data": [
+    {
+     "name": "Follow-through is never before the notice",
+     "sql": "SELECT * FROM int_follow_through WHERE followed < filed"
+    },
+    {
+     "name": "Follow-through is within 365 days",
+     "sql": "SELECT * FROM int_follow_through WHERE julianday(followed) - julianday(filed) > 365"
+    }
+   ]
+  },
+  {
+   "id": "fct_late_filers",
+   "file": "sql/04_fct_late_filers.sql",
+   "title": "Classify outcome",
+   "inputs": [
+    "int_follow_through",
+    "params"
+   ],
+   "summary": "Labels every notice: filed in extension, filed after extension, not filed, or window still open.",
+   "unit": [
+    {
+     "name": "Filed on the deadline day is in extension",
+     "why": "The deadline day itself is allowed. An off-by-one here would wrongly flag on-time filers.",
+     "given": {
+      "int_follow_through": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2026-03-17",
+        "followed": "2026-03-17"
+       }
+      ]
+     },
+     "params": {
+      "as_of": "2026-06-01"
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "status": "Filed in extension"
+      }
+     ]
+    },
+    {
+     "name": "Filed one day late is after extension",
+     "why": "Checks the other side of the same boundary.",
+     "given": {
+      "int_follow_through": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-03-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 15,
+        "deadline": "2026-03-17",
+        "followed": "2026-03-18"
+       }
+      ]
+     },
+     "params": {
+      "as_of": "2026-06-01"
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "status": "Filed after extension"
+      }
+     ]
+    },
+    {
+     "name": "Not filed yet but deadline is today: window open",
+     "why": "A company still inside its window hasn't missed anything yet.",
+     "given": {
+      "int_follow_through": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-Q",
+        "filed": "2026-03-04",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 5,
+        "deadline": "2026-03-09",
+        "followed": null
+       }
+      ]
+     },
+     "params": {
+      "as_of": "2026-03-09"
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "status": "Window open"
+      }
+     ]
+    },
+    {
+     "name": "Not filed and deadline passed: not filed",
+     "why": "One day after the deadline with no report is a miss.",
+     "given": {
+      "int_follow_through": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-Q",
+        "filed": "2026-03-04",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "extension_days": 5,
+        "deadline": "2026-03-09",
+        "followed": null
+       }
+      ]
+     },
+     "params": {
+      "as_of": "2026-03-10"
+     },
+     "expect": [
+      {
+       "adsh": "A-1",
+       "status": "Not filed"
+      }
+     ]
+    }
+   ],
+   "data": [
+    {
+     "name": "status is one of the four outcomes",
+     "sql": "SELECT * FROM fct_late_filers WHERE status NOT IN ('Filed in extension', 'Filed after extension', 'Not filed', 'Window open')"
+    },
+    {
+     "name": "No notice is lost or duplicated since staging",
+     "sql": "SELECT (SELECT count(*) FROM stg_nt_filings) AS staged, (SELECT count(DISTINCT adsh) FROM fct_late_filers) AS out WHERE staged <> out"
+    },
+    {
+     "name": "Matches the published report, row by row",
+     "sql": "SELECT f.adsh, f.status AS sql_status, p.status AS published_status, f.deadline AS sql_deadline, p.deadline AS published_deadline FROM fct_late_filers f JOIN production_status p USING (adsh) WHERE f.status <> p.status OR f.deadline <> p.deadline"
+    }
+   ]
+  },
+  {
+   "id": "rpt_weekly_late_filers",
+   "file": "sql/05_rpt_weekly_late_filers.sql",
+   "title": "Weekly report",
+   "inputs": [
+    "fct_late_filers"
+   ],
+   "summary": "Rolls the notices up to one row per Monday-to-Sunday week. This is the table the weekly report shows.",
+   "unit": [
+    {
+     "name": "Sunday belongs to the week that started Monday",
+     "why": "SQLite numbers Sunday as day 0, which can wrongly start a new week.",
+     "given": {
+      "fct_late_filers": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-10-26",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Not filed"
+       },
+       {
+        "adsh": "A-2",
+        "form": "NT 10-Q",
+        "filed": "2026-11-01",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Window open"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "week_start": "2026-10-26",
+       "nt_filings": 2
+      }
+     ]
+    },
+    {
+     "name": "Monday starts a new week",
+     "why": "Checks the other side of the week boundary.",
+     "given": {
+      "fct_late_filers": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-11-01",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Not filed"
+       },
+       {
+        "adsh": "A-2",
+        "form": "NT 10-Q",
+        "filed": "2026-11-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Window open"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "week_start": "2026-10-26",
+       "nt_filings": 1
+      },
+      {
+       "week_start": "2026-11-02",
+       "nt_filings": 1
+      }
+     ]
+    },
+    {
+     "name": "Counts split by form and outcome",
+     "why": "Each column must count only its own rows.",
+     "given": {
+      "fct_late_filers": [
+       {
+        "adsh": "A-1",
+        "form": "NT 10-K",
+        "filed": "2026-11-02",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Filed in extension"
+       },
+       {
+        "adsh": "A-2",
+        "form": "NT 10-K",
+        "filed": "2026-11-03",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Not filed"
+       },
+       {
+        "adsh": "A-3",
+        "form": "NT 10-Q",
+        "filed": "2026-11-04",
+        "period": "2025-12-31",
+        "cik": 1001,
+        "name": "Acme Corp",
+        "sic": "3711",
+        "state": "DE",
+        "deadline": null,
+        "followed": null,
+        "status": "Filed after extension"
+       }
+      ]
+     },
+     "expect": [
+      {
+       "week_start": "2026-11-02",
+       "nt_filings": 3,
+       "nt_10k": 2,
+       "nt_10q": 1,
+       "filed_in_extension": 1,
+       "filed_after_extension": 1,
+       "not_filed": 1,
+       "window_open": 0
+      }
+     ]
+    }
+   ],
+   "data": [
+    {
+     "name": "Every week starts on a Monday",
+     "sql": "SELECT * FROM rpt_weekly_late_filers WHERE strftime('%w', week_start) <> '1'"
+    },
+    {
+     "name": "Weekly totals add up to every notice",
+     "sql": "SELECT (SELECT sum(nt_filings) FROM rpt_weekly_late_filers) AS weekly, (SELECT count(*) FROM fct_late_filers) AS notices WHERE weekly <> notices"
+    },
+    {
+     "name": "Form counts add up to the total",
+     "sql": "SELECT * FROM rpt_weekly_late_filers WHERE nt_10k + nt_10q <> nt_filings"
+    },
+    {
+     "name": "Outcome counts add up to the total",
+     "sql": "SELECT * FROM rpt_weekly_late_filers WHERE filed_in_extension + filed_after_extension + not_filed + window_open <> nt_filings"
+    }
+   ]
+  }
+ ]
+}
