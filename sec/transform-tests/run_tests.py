@@ -46,7 +46,8 @@ def run_unit(sql, test):
 def load_real(db, spec):
     d = json.loads((HERE / spec["source"]).read_text())
     rows = [dict(zip(d["fields"], r)) for r in d["rows"]]
-    create(db, "raw_nt_filings", [{k: r[k] for k in ("adsh", "form", "filed", "period", "cik", "name", "sic", "state")} for r in rows])
+    create(db, "raw_nt_filings", [{**{k: r[k] for k in ("adsh", "form", "filed", "period", "name", "sic", "state")},
+                                  "cik": f'{r["cik"]:010d}'} for r in rows])  # EDGAR search returns zero-padded CIK text
     periodic = {(r["cik"], "10-K" if r["form"] == "NT 10-K" else "10-Q", r["followed"]) for r in rows if r["followed"]}
     create(db, "raw_periodic_filings", [{"cik": c, "form": f, "filed": x} for c, f, x in sorted(periodic)])
     db.execute("CREATE INDEX periodic_cik ON raw_periodic_filings (cik)")
