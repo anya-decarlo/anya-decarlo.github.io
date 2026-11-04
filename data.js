@@ -2,6 +2,11 @@
 
 // SEC — pieces built to match the SEC role. Files go in /sec. Same fields as Work; tags optional.
 const sec = [
+  { title: "Recurring Reports: Weekly Late Filers",
+    description: "A weekly report on companies that told the SEC they'd miss a 10-K or 10-Q deadline (NT 10-K and NT 10-Q notices), built on two years of real EDGAR data that a scheduled GitHub Action refreshes every Monday. It matches each notice to the company's next 10-K or 10-Q to show whether it filed within the Rule 12b-25 extension. It has week-over-week and year-over-year measures, filters for form, industry, location and listing, alerts for repeat filers, missed extensions and volume spikes, and Public, Analyst and Compliance admin views. Every measure is documented on the page.",
+    languages: ["Python", "JavaScript"],
+    topics: ["SEC EDGAR", "Recurring Reports"],
+    file: "sec/late-filers/index.html" },
 ];
 
 // WORK — single HTMLs, filterable by language and topic. Files go in /work.

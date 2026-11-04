@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Late Filers Report</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; --warn:#b54708; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 18px; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  main { max-width:1280px; margin:0 auto; padding:20px 32px 48px; }
+  .bar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 16px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:16px; }
+  .bar label { display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  select, input[type=text], input[type=number] { font:inherit; padding:6px 8px; border:1px solid #cfd4dc; border-radius:6px; background:#fff; color:var(--ink); }
+  input[type=number] { width:80px; }
+  .roles { display:flex; border:1px solid #cfd4dc; border-radius:6px; overflow:hidden; }
+  .roles button { font:inherit; border:0; background:#fff; padding:6px 12px; cursor:pointer; color:var(--ink); }
+  .roles button + button { border-left:1px solid #cfd4dc; }
+  .roles button.on { background:var(--blue); color:#fff; }
+  .spacer { flex:1; }
+  .btn { font:inherit; border:1px solid var(--blue); background:var(--blue); color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .btn.ghost { background:#fff; color:var(--blue); }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .kpi .k { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .v { font-size:28px; font-weight:600; margin-top:2px; }
+  .kpi .d { font-size:12.5px; color:var(--muted); }
+  .up { color:var(--accent); } .down { color:var(--ok); }
+  .grid2 { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns:1fr; } main { padding:16px; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:16px; }
+  .card h2 { margin:0 0 4px; font-size:15px; }
+  .card .sub { margin:0 0 12px; color:var(--muted); font-size:12.5px; }
+  .alert { display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--line); }
+  .alert:first-of-type { border-top:0; }
+  .dot { flex:none; width:10px; height:10px; border-radius:50%; margin-top:5px; background:var(--ok); }
+  .dot.on { background:var(--accent); }
+  .alert b { display:block; }
+  .alert small { color:var(--muted); }
+  .alert .who { font-size:12.5px; margin-top:2px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); padding:6px 8px; cursor:default; white-space:nowrap; }
+  th[data-k] { cursor:pointer; }
+  td { border-bottom:1px solid var(--line); padding:7px 8px; vertical-align:top; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; white-space:nowrap; }
+  .s-in { background:#e7f5ee; color:var(--ok); } .s-late { background:#fff4e5; color:var(--warn); }
+  .s-open { background:#eef2f8; color:var(--blue); } .s-not { background:#fdecee; color:var(--accent); }
+  .tag { font-size:11px; background:#fdecee; color:var(--accent); border-radius:4px; padding:0 5px; margin-left:4px; }
+  .restricted { padding:28px; text-align:center; color:var(--muted); border:1px dashed #cfd4dc; border-radius:8px; }
+  .hbar { display:grid; grid-template-columns:170px 1fr 36px; align-items:center; gap:8px; font-size:12.5px; margin:5px 0; }
+  .hbar i { display:block; height:12px; background:var(--blue); border-radius:3px; }
+  svg text { font-size:10.5px; fill:var(--muted); }
+  .legend { display:flex; gap:14px; font-size:12px; color:var(--muted); margin-top:4px; }
+  .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; background:var(--c); }
+  .doc td:first-child { font-weight:600; white-space:nowrap; }
+  code { font-size:12px; background:#f2f4f7; padding:1px 4px; border-radius:4px; }
+  .note { font-size:12.5px; color:var(--muted); }
+  a { color:var(--blue); }
+  .admin-only, .analyst-only { display:none; }
+  body.analyst .analyst-only, body.admin .analyst-only, body.admin .admin-only { display:block; }
+  body.analyst .public-only, body.admin .public-only { display:none; }
+  #loading { padding:60px; text-align:center; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Weekly Late Filers Report</h1>
+  <p>Public companies that told the SEC they would miss a 10-K or 10-Q deadline (Form 12b-25: NT 10-K, NT 10-Q), and whether they filed within the extension.</p>
+  <div class="meta">
+    <span>Data refreshed <b id="refreshed">…</b></span>
+    <span>Schedule <b>Mondays 11:00 UTC</b> (GitHub Actions)</span>
+    <span>Coverage <b id="coverage">…</b></span>
+    <span>Source <b><a style="color:#fff" href="https://efts.sec.gov/LATEST/search-index?forms=NT%2010-K" target="_blank" rel="noopener">SEC EDGAR</a></b></span>
+  </div>
+</header>
+<main>
+  <div id="loading">Loading EDGAR data…</div>
+  <div id="app" hidden>
+    <div class="bar">
+      <label>View as
+        <div class="roles" id="roles">
+          <button data-r="public">Public</button><button data-r="analyst">Analyst</button><button data-r="admin">Compliance admin</button>
+        </div>
+      </label>
+      <label>Report week <select id="week"></select></label>
+      <label>Form <select id="form"><option value="">All</option><option>NT 10-K</option><option>NT 10-Q</option></select></label>
+      <label>Industry <select id="division"><option value="">All</option></select></label>
+      <label>Location <select id="loc"><option value="">All</option><option value="us">United States</option><option value="intl">Outside the US</option></select></label>
+      <label>Listed <select id="listed"><option value="">All</option><option value="1">Has a ticker</option><option value="0">No ticker</option></select></label>
+      <label class="analyst-only">Company <input type="text" id="q" placeholder="Name, ticker or CIK"></label>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Weekly volume, last 52 weeks</h2>
+        <p class="sub">NT filings per week with the current filters. Click a bar to open that week. Peaks follow the 10-K and 10-Q deadline seasons.</p>
+        <svg id="trend" width="100%" height="200"></svg>
+        <div class="legend"><span style="--c:#13315c">NT 10-K</span><span style="--c:#8da9c4">NT 10-Q</span><span style="--c:#c8102e">Selected week</span></div>
+      </div>
+      <div class="card">
+        <h2>Alerts</h2>
+        <p class="sub" id="alertSub"></p>
+        <div id="alerts"></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Late filers this week</h2>
+        <p class="sub" id="tableSub"></p>
+        <div class="public-only restricted">Company-level detail is restricted to the Analyst and Compliance admin roles. Switch roles above to view it.</div>
+        <div class="analyst-only">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn ghost" id="csv">Download CSV</button></div>
+          <div style="overflow-x:auto"><table id="tbl"></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>By industry, trailing 13 weeks</h2>
+        <p class="sub">NT filings by SIC division, in the 13 weeks ending the selected week.</p>
+        <div id="industry"></div>
+        <h2 style="margin-top:18px">Extension follow-through, trailing 13 weeks</h2>
+        <p class="sub">Outcome of each NT filing whose extension window has closed.</p>
+        <div id="follow"></div>
+      </div>
+    </div>
+
+    <div class="card admin-only">
+      <h2>Alert thresholds</h2>
+      <p class="sub">Compliance admins set the thresholds. They're saved in this browser.</p>
+      <div class="bar" style="border:0;padding:0;margin:0">
+        <label>Repeat filer: NT filings in 12 months ≥ <input type="number" id="tRepeat" min="2" max="10"></label>
+        <label>Volume spike: × trailing 8-week average ≥ <input type="number" id="tSpike" min="1" max="5" step="0.1"></label>
+        <label>Missed extension: days past deadline ≥ <input type="number" id="tMissed" min="0" max="60"></label>
+        <button class="btn ghost" id="tReset">Reset defaults</button>
+      </div>
+    </div>
+
+    <div class="card admin-only">
+      <h2>Refresh log</h2>
+      <p class="sub">Each scheduled run of <code>sec/late-filers/refresh.py</code>.</p>
+      <table id="log"></table>
+    </div>
+
+    <div class="card">
+      <h2>Measure definitions</h2>
+      <p class="sub">How every number on this page is defined and where it comes from.</p>
+      <table class="doc">
+        <tr><th>Measure</th><th>Definition</th><th>Source fields</th></tr>
+        <tr><td>NT filings</td><td>Count of NT 10-K and NT 10-Q notices filed in the report week (Monday–Sunday, by EDGAR filing date) that match the filters. Amendments (NT 10-K/A) are excluded.</td><td>EDGAR full-text search: <code>form</code>, <code>file_date</code></td></tr>
+        <tr><td>Week-over-week change</td><td>NT filings in the report week minus the prior week, and the same week one year earlier (52 weeks back).</td><td>Derived</td></tr>
+        <tr><td>Extension deadline</td><td>Rule 12b-25 grants 15 calendar days for a 10-K and 5 for a 10-Q. Because the notice is due within one business day of the original deadline, the deadline is estimated as the NT filing date plus 15 or 5 days.</td><td><code>file_date</code>, <code>form</code></td></tr>
+        <tr><td>Follow-through status</td><td><b>Filed in extension:</b> the same CIK filed a 10-K/10-KT (or 10-Q/10-QT) on or before the extension deadline. <b>Filed after extension:</b> filed later, within a year. <b>Not filed:</b> nothing found and the deadline has passed. <b>Window open:</b> the deadline hasn't passed yet.</td><td>EDGAR quarterly <code>form.idx</code>: form type, CIK, date filed</td></tr>
+        <tr><td>Follow-through rate</td><td>Filed in extension ÷ all NT filings whose window has closed, over the 13 weeks ending the report week.</td><td>Derived</td></tr>
+        <tr><td>Repeat late filer</td><td>A company whose NT filings in the 365 days up to and including this one meet the repeat threshold (default 3).</td><td><code>ciks</code>, <code>file_date</code></td></tr>
+        <tr><td>Industry</td><td>SIC code grouped into the standard SIC divisions (e.g. 6770 blank checks fall under Finance).</td><td><code>sics</code></td></tr>
+        <tr><td>Location</td><td>Business address state. EDGAR country codes (e.g. Q5) count as outside the US.</td><td><code>biz_states</code>, <code>biz_locations</code></td></tr>
+        <tr><td>Listed</td><td>The filer has at least one ticker in EDGAR.</td><td><code>display_names</code></td></tr>
+      </table>
+      <h2 style="margin-top:20px">Refresh schedule and lineage</h2>
+      <p class="note">Every Monday at 11:00 UTC a GitHub Actions workflow (<code>.github/workflows/refresh-late-filers.yml</code>) runs <code>refresh.py</code>. The script pulls the trailing two years of NT 10-K/10-Q filings from EDGAR full-text search, then reads EDGAR's quarterly form indexes to match each notice to the company's next 10-K or 10-Q. It writes <code>data.json</code> and commits it, and GitHub Pages republishes this page. The workflow can also run on demand. Requests identify themselves with a User-Agent and stay under the SEC's 10-requests-per-second fair-access limit.</p>
+      <h2 style="margin-top:20px">Access controls</h2>
+      <table>
+        <tr><th>Capability</th><th>Public</th><th>Analyst</th><th>Compliance admin</th></tr>
+        <tr><td>Totals, trend, industry and follow-through views; alert status</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Company-level table, company search, names in alerts, CSV export</td><td></td><td>✓</td><td>✓</td></tr>
+        <tr><td>Edit alert thresholds, view refresh log</td><td></td><td></td><td>✓</td></tr>
+      </table>
+      <p class="note">This is a demonstration: a static public site can't enforce roles, and every number here comes from public EDGAR filings. In production these roles would map to identity-provider groups, with row-level security enforced on the server.</p>
+    </div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const DAY = 864e5;
+const iso = d => d.toISOString().slice(0, 10);
+const parse = s => new Date(s + "T00:00:00Z");
+const monday = s => { const d = parse(s); return iso(new Date(d - ((d.getUTCDay() + 6) % 7) * DAY)); };
+const addDays = (s, n) => iso(new Date(parse(s).getTime() + n * DAY));
+const fmtWeek = w => { const o = { month: "short", day: "numeric", timeZone: "UTC" }; return `${parse(w).toLocaleDateString("en-US", o)} – ${parse(addDays(w, 6)).toLocaleDateString("en-US", { ...o, year: "numeric" })}`; };
+const DEFAULTS = { repeat: 3, spike: 1.5, missed: 0 };
+let rows = [], data, role = localStorage.getItem("secLateFilers.role") || "public";
+let th = { ...DEFAULTS, ...JSON.parse(localStorage.getItem("secLateFilers.alerts") || "{}") };
+let sort = { k: "filed", dir: -1 };
+
+fetch("data.json?v=" + Date.now()).then(r => r.json()).then(d => {
+  data = d;
+  rows = d.rows.map(r => Object.fromEntries(d.fields.map((f, i) => [f, r[i]])));
+  const byCik = {};
+  for (const r of [...rows].sort((a, b) => a.filed < b.filed ? -1 : 1)) {
+    const prior = (byCik[r.cik] ||= []);
+    const cutoff = addDays(r.filed, -365);
+    r.repeat = prior.filter(f => f > cutoff).length + 1;
+    prior.push(r.filed);
+    r.week = monday(r.filed);
+  }
+  $("refreshed").textContent = new Date(d.generated).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  $("coverage").textContent = `${rows.length.toLocaleString()} NT filings, ${d.windowStart} to ${d.windowEnd}`;
+  const lastFull = addDays(monday(d.windowEnd), -7);
+  const weeks = [];
+  for (let w = lastFull; w >= monday(d.windowStart); w = addDays(w, -7)) weeks.push(w);
+  $("week").innerHTML = `<option value="${monday(d.windowEnd)}">This week so far (${fmtWeek(monday(d.windowEnd))})</option>` +
+    weeks.map(w => `<option value="${w}">${fmtWeek(w)}</option>`).join("");
+  $("week").value = lastFull;
+  [...new Set(rows.map(r => r.division))].sort().forEach(v => $("division").add(new Option(v, v)));
+  $("loading").hidden = true; $("app").hidden = false;
+  setRole(role);
+});
+
+function setRole(r) {
+  role = r; localStorage.setItem("secLateFilers.role", r);
+  document.body.className = r === "public" ? "" : r;
+  document.querySelectorAll("#roles button").forEach(b => b.classList.toggle("on", b.dataset.r === r));
+  render();
+}
+$("roles").onclick = e => e.target.dataset.r && setRole(e.target.dataset.r);
+["week", "form", "division", "loc", "listed"].forEach(id => $(id).onchange = render);
+$("q").oninput = render;
+for (const [id, k] of [["tRepeat", "repeat"], ["tSpike", "spike"], ["tMissed", "missed"]]) {
+  $(id).onchange = () => { th[k] = +$(id).value; localStorage.setItem("secLateFilers.alerts", JSON.stringify(th)); render(); };
+}
+$("tReset").onclick = () => { th = { ...DEFAULTS }; localStorage.removeItem("secLateFilers.alerts"); render(); };
+
+function filtered() {
+  const f = $("form").value, dv = $("division").value, loc = $("loc").value, li = $("listed").value;
+  return rows.filter(r => (!f || r.form === f) && (!dv || r.division === dv) &&
+    (!loc || (loc === "us") === r.us) && (!li || (li === "1") === !!r.ticker));
+}
+
+function render() {
+  if (!data) return;
+  $("tRepeat").value = th.repeat; $("tSpike").value = th.spike; $("tMissed").value = th.missed;
+  const week = $("week").value, all = filtered();
+  const count = w => all.filter(r => r.week === w).length;
+  let cur = all.filter(r => r.week === week);
+  const q = $("q").value.trim().toLowerCase();
+  const inWeek = cur;
+  if (q && role !== "public") cur = cur.filter(r => `${r.name} ${r.ticker} ${r.cik}`.toLowerCase().includes(q));
+  const prev = count(addDays(week, -7)), yoy = count(addDays(week, -364));
+  const delta = (n, base, label) => base === 0 && n === 0 ? `no change vs ${label}` :
+    `<span class="${n > base ? "up" : n < base ? "down" : ""}">${n > base ? "▲" : n < base ? "▼" : "■"} ${Math.abs(n - base)}</span> vs ${label} (${base})`;
+  const t13 = all.filter(r => r.week <= week && r.week > addDays(week, -91));
+  const closed = t13.filter(r => r.status !== "Window open");
+  const inExt = closed.filter(r => r.status === "Filed in extension").length;
+  const repeats = inWeek.filter(r => r.repeat >= th.repeat);
+  const k10 = inWeek.filter(r => r.form === "NT 10-K").length;
+  $("kpis").innerHTML = [
+    ["NT filings", inWeek.length, `${delta(inWeek.length, prev, "prior week")}<br>${delta(inWeek.length, yoy, "same week last year")}`],
+    ["NT 10-K / NT 10-Q", `${k10} / ${inWeek.length - k10}`, "annual vs quarterly reports"],
+    ["Repeat late filers", repeats.length, `${th.repeat}+ NT filings in 12 months`],
+    ["Listed companies", inWeek.filter(r => r.ticker).length, "filers with a ticker"],
+    ["Follow-through rate", closed.length ? Math.round(100 * inExt / closed.length) + "%" : "–", `filed within extension, trailing 13 weeks (${inExt} of ${closed.length})`],
+  ].map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+
+  trend(all, week);
+  alerts(all, inWeek, week);
+  table(cur, week);
+  bars("industry", t13, r => r.division);
+  bars("follow", closed, r => r.status, ["Filed in extension", "Filed after extension", "Not filed"]);
+  $("log").innerHTML = `<tr><th>Run (UTC)</th><th class="num">Rows</th><th class="num">New filings</th><th class="num">Seconds</th></tr>` +
+    data.refreshLog.map(l => `<tr><td>${esc(l.at.replace("T", " ").replace("+00:00", ""))}</td><td class="num">${l.rows}</td><td class="num">${l.new}</td><td class="num">${l.seconds}</td></tr>`).join("");
+}
+
+function trend(all, week) {
+  const svg = $("trend"), W = svg.clientWidth || 700, H = 200, pad = { l: 28, r: 6, t: 8, b: 22 };
+  const weeks = []; for (let i = 51; i >= 0; i--) weeks.push(addDays(week, -7 * i));
+  const k = weeks.map(w => all.filter(r => r.week === w && r.form === "NT 10-K").length);
+  const qq = weeks.map(w => all.filter(r => r.week === w && r.form === "NT 10-Q").length);
+  const max = Math.max(5, ...k.map((v, i) => v + qq[i]));
+  const bw = (W - pad.l - pad.r) / weeks.length, y = v => (H - pad.b - pad.t) * v / max;
+  let s = "";
+  for (const t of [0, Math.round(max / 2), max]) s += `<text x="${pad.l - 4}" y="${H - pad.b - y(t) + 3}" text-anchor="end">${t}</text><line x1="${pad.l}" x2="${W - pad.r}" y1="${H - pad.b - y(t)}" y2="${H - pad.b - y(t)}" stroke="#eef0f3"/>`;
+  weeks.forEach((w, i) => {
+    const x = pad.l + i * bw + 1, sel = w === week, base = H - pad.b;
+    s += `<g data-w="${w}" style="cursor:pointer"><title>${fmtWeek(w)}: ${k[i]} NT 10-K, ${qq[i]} NT 10-Q</title>` +
+      `<rect x="${x}" y="${pad.t}" width="${bw - 2}" height="${base - pad.t}" fill="transparent"/>` +
+      `<rect x="${x}" y="${base - y(k[i])}" width="${bw - 2}" height="${y(k[i])}" fill="${sel ? "#c8102e" : "#13315c"}"/>` +
+      `<rect x="${x}" y="${base - y(k[i]) - y(qq[i])}" width="${bw - 2}" height="${y(qq[i])}" fill="${sel ? "#e8798a" : "#8da9c4"}"/></g>`;
+    if (i % 8 === 0) s += `<text x="${x}" y="${H - 6}">${parse(w).toLocaleDateString("en-US", { month: "short", year: "2-digit", timeZone: "UTC" })}</text>`;
+  });
+  svg.innerHTML = s;
+  svg.onclick = e => { const g = e.target.closest("g[data-w]"); if (g && [...$("week").options].some(o => o.value === g.dataset.w)) { $("week").value = g.dataset.w; render(); } };
+}
+
+function alerts(all, inWeek, week) {
+  const names = list => role === "public" ? "" : `<div class="who">${list.slice(0, 6).map(r => esc(r.name) + (r.ticker ? ` (${esc(r.ticker)})` : "")).join(", ")}${list.length > 6 ? `, +${list.length - 6} more` : ""}</div>`;
+  const avg = [1, 2, 3, 4, 5, 6, 7, 8].reduce((a, i) => a + all.filter(r => r.week === addDays(week, -7 * i)).length, 0) / 8;
+  const weekEnd = addDays(week, 6);
+  const missed = all.filter(r => r.status === "Not filed" && addDays(r.deadline, th.missed) >= week && addDays(r.deadline, th.missed) <= weekEnd);
+  const repeats = inWeek.filter(r => r.repeat >= th.repeat);
+  const listed10k = inWeek.filter(r => r.ticker && r.form === "NT 10-K");
+  const spike = avg > 0 && inWeek.length >= th.spike * avg;
+  const items = [
+    [repeats.length > 0, "Repeat late filers", `${repeats.length} compan${repeats.length === 1 ? "y has" : "ies have"} ${th.repeat}+ NT filings in 12 months`, repeats],
+    [missed.length > 0, "Missed extensions", `${missed.length} extension${missed.length === 1 ? "" : "s"} expired${th.missed ? ` ${th.missed}+ days ago` : ""} this week with no 10-K/10-Q on EDGAR`, missed],
+    [spike, "Volume spike", `${inWeek.length} this week vs a trailing 8-week average of ${avg.toFixed(1)} (threshold ${th.spike}×)`, []],
+    [listed10k.length > 0, "Listed company missed an annual report", `${listed10k.length} filer${listed10k.length === 1 ? "" : "s"} with a ticker filed an NT 10-K`, listed10k],
+  ];
+  $("alertSub").textContent = `${items.filter(i => i[0]).length} of ${items.length} rules triggered for ${fmtWeek(week)}.`;
+  $("alerts").innerHTML = items.map(([on, t, d, list]) => `<div class="alert"><span class="dot ${on ? "on" : ""}"></span><div><b>${t}</b><small>${d}</small>${on && list.length ? names(list) : ""}</div></div>`).join("");
+}
+
+const COLS = [["name", "Company"], ["form", "Form"], ["filed", "Filed"], ["period", "Period"], ["deadline", "Extension ends"], ["status", "Follow-through"], ["repeat", "NT in 12 mo", 1], ["division", "Industry"], ["location", "Location"]];
+const pill = s => `<span class="pill ${{ "Filed in extension": "s-in", "Filed after extension": "s-late", "Window open": "s-open", "Not filed": "s-not" }[s]}">${esc(s)}</span>`;
+function table(cur, week) {
+  $("tableSub").textContent = `${cur.length} NT filing${cur.length === 1 ? "" : "s"}, ${fmtWeek(week)}. Click a column to sort.`;
+  cur = [...cur].sort((a, b) => (a[sort.k] > b[sort.k] ? 1 : a[sort.k] < b[sort.k] ? -1 : 0) * sort.dir);
+  $("tbl").innerHTML = `<tr>${COLS.map(([k, l, n]) => `<th data-k="${k}" class="${n ? "num" : ""}">${l}${sort.k === k ? (sort.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>` +
+    (cur.length ? cur.map(r => `<tr>
+      <td><a href="https://www.sec.gov/Archives/edgar/data/${r.cik}/${r.adsh.replace(/-/g, "")}/${r.adsh}-index.htm" target="_blank" rel="noopener">${esc(r.name)}</a>${r.ticker ? ` <span class="note">${esc(r.ticker)}</span>` : ""}${r.repeat >= th.repeat ? '<span class="tag">repeat</span>' : ""}<div class="note">CIK ${r.cik}</div></td>
+      <td>${esc(r.form)}</td><td>${r.filed}</td><td>${r.period || ""}</td><td>${r.deadline}</td>
+      <td>${pill(r.status)}${r.followed ? `<div class="note">filed ${r.followed}</div>` : ""}</td>
+      <td class="num">${r.repeat}</td><td>${esc(r.division)}</td><td>${esc(r.location || r.state)}</td></tr>`).join("")
+      : `<tr><td colspan="${COLS.length}" class="note" style="padding:20px;text-align:center">No NT filings match these filters this week.</td></tr>`);
+  $("tbl").querySelectorAll("th[data-k]").forEach(h => h.onclick = () => { sort = { k: h.dataset.k, dir: sort.k === h.dataset.k ? -sort.dir : 1 }; render(); });
+  $("csv").onclick = () => {
+    const keys = ["name", "ticker", "cik", "form", "filed", "period", "deadline", "status", "followed", "repeat", "sic", "division", "state", "location", "adsh"];
+    const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const blob = new Blob([keys.join(",") + "\n" + cur.map(r => keys.map(k => q(r[k])).join(",")).join("\n") + "\n"], { type: "text/csv" });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `late-filers-${week}.csv` });
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+}
+
+function bars(id, list, key, order) {
+  const c = {}; list.forEach(r => c[key(r)] = (c[key(r)] || 0) + 1);
+  const ks = order || Object.keys(c).sort((a, b) => c[b] - c[a]);
+  const max = Math.max(1, ...ks.map(k => c[k] || 0));
+  $(id).innerHTML = ks.length ? ks.map(k => `<div class="hbar"><span>${esc(k)}</span><i style="width:${100 * (c[k] || 0) / max}%"></i><span class="num">${c[k] || 0}</span></div>`).join("") : '<p class="note">No filings.</p>';
+}
+</script>
+</body>
+</html>
