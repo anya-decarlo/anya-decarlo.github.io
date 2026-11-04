@@ -17,6 +17,11 @@ const sec = [
     languages: ["SQL", "Python", "JavaScript"],
     topics: ["SEC EDGAR", "Data Testing", "Code Review"],
     file: "sec/transform-tests/index.html" },
+  { title: "Variance Analysis: What Changed from FY2023 to FY2024",
+    description: "Revenue, operating income and net income for every SEC filer in two fiscal years, from about 6,900 companies' XBRL filings. Variance here means the gap between years, not σ². A variance bridge splits the total change into companies that stopped reporting, same-company change by SEC review office, and new reporters. Click any office to break it down by industry, then by company. A rate-vs-mix section shows whether margins moved because companies became more or less profitable or because revenue shifted between groups. A ranked investigation list flags top dollar drivers, XBRL tag changes, industry outliers, profit-to-loss swings, fiscal-period changes, single companies driving an office, new or missing reporters, and filings where figures look off by 1,000×, which are kept out of the totals. Every company opens to both years, its tags, and links to the filings.",
+    languages: ["Python", "JavaScript"],
+    topics: ["SEC EDGAR", "XBRL", "Variance Analysis"],
+    file: "sec/variance/index.html" },
 ];
 
 // WORK — single HTMLs, filterable by language and topic. Files go in /work.

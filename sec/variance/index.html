@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variance Analysis: What Changed from FY2023 to FY2024</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; --warn:#b54708; --up:#1f7a4d; --down:#c8102e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 0; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; max-width:900px; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  nav.sec { display:flex; flex-wrap:wrap; gap:2px; margin-top:16px; }
+  nav.sec a { color:#c9d3e3; text-decoration:none; padding:8px 12px; font-size:13px; border-bottom:3px solid transparent; }
+  nav.sec a:hover { color:#fff; border-color:#8da9c4; }
+  main { max-width:1280px; margin:0 auto; padding:20px 32px 48px; }
+  @media (max-width: 900px) { main { padding:16px; } .two { grid-template-columns:1fr !important; } }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .kpi .k { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .v { font-size:26px; font-weight:600; margin-top:2px; }
+  .kpi .d { font-size:12.5px; color:var(--muted); }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; margin-bottom:16px; scroll-margin-top:12px; }
+  .card h2 { margin:0 0 4px; font-size:16px; }
+  .card h2 .n { color:var(--muted); font-weight:500; margin-right:6px; }
+  .card .sub { margin:0 0 14px; color:var(--muted); font-size:12.5px; max-width:900px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); padding:6px 8px; white-space:nowrap; }
+  td { border-bottom:1px solid var(--line); padding:7px 8px; vertical-align:top; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  code { font-size:12px; background:#f2f4f7; padding:1px 4px; border-radius:4px; word-break:break-all; }
+  .note { font-size:12.5px; color:var(--muted); }
+  .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; white-space:nowrap; margin:1px 2px 1px 0; }
+  .up { color:var(--up); } .down { color:var(--down); }
+  select, input[type=text] { font:inherit; padding:7px 9px; border:1px solid #cfd4dc; border-radius:6px; background:#fff; color:var(--ink); }
+  .btn { font:inherit; border:1px solid var(--blue); background:#fff; color:var(--blue); padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .btn.on { background:var(--blue); color:#fff; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+  a { color:var(--blue); }
+  .how { background:#fff7e6; border:1px solid #f5d9a8; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; }
+  .how ol { margin:6px 0 0; padding-left:20px; } .how li { margin:2px 0; }
+  .what { background:#eef2f8; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13.5px; }
+  .crumbs { font-size:13px; margin-bottom:10px; } .crumbs a { cursor:pointer; }
+  .wf { width:100%; }
+  .wf .lab { font-size:12.5px; fill:var(--ink); } .wf .val { font-size:12px; font-variant-numeric:tabular-nums; }
+  .wf g.click { cursor:pointer; } .wf g.click:hover rect.b { stroke:var(--ink); stroke-width:1.5; }
+  .wf g.click:hover .lab { text-decoration:underline; }
+  tr.click { cursor:pointer; } tr.click:hover td { background:#f5f8fc; }
+  .barcell { width:180px; } .hb { position:relative; height:12px; }
+  .hb span { position:absolute; top:0; height:12px; border-radius:2px; } .hb i { position:absolute; left:50%; top:-2px; bottom:-2px; border-left:1px solid #98a2b3; }
+  .f-driver { background:#eef2f8; color:var(--blue); } .f-def { background:#fff4e5; color:var(--warn); } .f-out { background:#fdecee; color:var(--accent); }
+  .f-sign { background:#f4ebff; color:#6941c6; } .f-per { background:#fef7c3; color:#854a0e; } .f-conc { background:#e0f2fe; color:#026aa2; } .f-entry { background:#f2f4f7; color:#475467; } .f-scale { background:#fee4e2; color:#b42318; }
+  .co { border:1px solid var(--blue); border-radius:8px; padding:14px 16px; margin-top:12px; background:#fbfcfe; }
+  .co h3 { margin:0 0 4px; font-size:16px; }
+  .eq { font-family:ui-monospace,Menlo,monospace; font-size:12.5px; background:#f8f9fb; border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin:6px 0; white-space:pre-wrap; }
+  #loading { padding:60px; text-align:center; color:var(--muted); }
+  dl.defs dt { font-weight:600; margin-top:10px; } dl.defs dd { margin:2px 0 0; color:var(--ink); max-width:900px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Variance Analysis: What Changed from FY2023 to FY2024</h1>
+  <p>Every SEC filer's revenue, operating income and net income for two fiscal years, from XBRL. The page breaks the total change down by the SEC review office that covers each company, then by industry, then by company, and ends with a ranked list of where to investigate.</p>
+  <div class="meta">
+    <span>Source <b>SEC XBRL frames API (CY2023, CY2024)</b></span>
+    <span>Offices <b>SEC Division of Corporation Finance review offices</b></span>
+    <span id="metaN"></span>
+  </div>
+  <nav class="sec">
+    <a href="#bridge">1. Variance bridge</a><a href="#drivers">2. Drivers</a><a href="#margin">3. Why the margin moved</a><a href="#investigate">4. Where to investigate</a><a href="#method">5. Method</a>
+  </nav>
+</header>
+<main>
+  <div class="what"><b>What "variance" means here:</b> not the statistical spread (σ²), but the gap between this year and last year. If revenue was $100M in FY2023 and $120M in FY2024, the variance is +$20M (+20%). Variance analysis explains that gap: which parts of the business added to it, which took away, and which numbers look wrong enough to check.</div>
+  <div class="how"><b>How to use</b>
+    <ol>
+      <li>Pick a measure: <b>Revenue</b>, <b>Operating income</b> or <b>Net income</b>.</li>
+      <li>Read the <b>variance bridge</b> from top to bottom: last year's total, what each office added or took away, and this year's total. Click any office bar to break it down by industry, then click an industry to see its companies.</li>
+      <li>Click a company row anywhere on the page to see both years, the XBRL tags behind each number, and links to the filings.</li>
+      <li><b>Where to investigate</b> ranks companies by dollar impact, with the reason each was flagged. Filter it by reason.</li>
+    </ol>
+  </div>
+  <div id="loading">Loading 2 years of XBRL data…</div>
+  <div id="app" hidden>
+    <div class="row"><b>Measure</b> <span id="metricBtns"></span></div>
+    <div class="kpis" id="kpis"></div>
+    <section class="card" id="bridge"></section>
+    <section class="card" id="drivers"></section>
+    <section class="card" id="margin"></section>
+    <section class="card" id="investigate"></section>
+    <section class="card" id="method"></section>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const LABEL = { revenue: "Revenue", operatingIncome: "Operating income", netIncome: "Net income" };
+const MK = ["revenue", "operatingIncome", "netIncome"];
+let D, CO, Y0, Y1, metric = "revenue", path = [], selCo = null, flagFilter = "all";
+
+function money(v, sign) {
+  if (v == null || isNaN(v)) return "–";
+  const a = Math.abs(v), s = v < 0 ? "−" : sign && v > 0 ? "+" : "";
+  const [d, u] = a >= 1e12 ? [1e12, "T"] : a >= 1e9 ? [1e9, "B"] : a >= 1e6 ? [1e6, "M"] : a >= 1e3 ? [1e3, "K"] : [1, ""];
+  const x = a / d;
+  return `${s}$${x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2)}${u}`;
+}
+const pct = (v, sign = true) => v == null || !isFinite(v) ? "–" : `${v < 0 ? "−" : sign && v > 0 ? "+" : ""}${Math.abs(v * 100) >= 100 ? Math.abs(v * 100).toFixed(0) : Math.abs(v * 100).toFixed(1)}%`;
+const cls = v => v > 0 ? "up" : v < 0 ? "down" : "";
+const chg = (a, b) => a ? (b - a) / Math.abs(a) : null;
+const edgar = (cik, accn) => `https://www.sec.gov/Archives/edgar/data/${cik}/${accn.replace(/-/g, "")}/`;
+
+fetch("data.json?v=" + Date.now()).then(r => r.json()).then(d => {
+  D = d; [Y0, Y1] = d.years;
+  CO = d.companies.map(([cik, name, ticker, org, sic, yrs]) => {
+    const c = { cik, name, ticker, org: d.orgs[org], sic, ind: d.industries[sic] || "Not classified", y: {} };
+    for (const y of d.years) {
+      const r = yrs[y]; c.y[y] = {};
+      if (!r) continue;
+      MK.forEach((m, k) => {
+        const b = k * 5;
+        if (r[b] != null) c.y[y][m] = { val: r[b], tag: d.tags[r[b + 1]], start: d.dates[r[b + 2]], end: d.dates[r[b + 3]], accn: d.accns[r[b + 4]] };
+      });
+    }
+    // Scale screen: a value off by ~1,000× (thousands tagged as dollars) would swamp every total.
+    for (const y of d.years) {
+      const r = c.y[y], rev = r.revenue ? r.revenue.val : 0;
+      for (const m of ["operatingIncome", "netIncome"]) if (r[m] && Math.abs(r[m].val) >= 4e10 && Math.abs(r[m].val) > Math.max(rev, 0)) r[m].scale = true;
+      const o = c.y[d.years.find(x => x != y)].revenue;
+      if (r.revenue && r.revenue.val >= 4e10 && o && Math.abs(o.val) < r.revenue.val / 100) r.revenue.scale = true;
+    }
+    return c;
+  });
+  $("metaN").innerHTML = `Companies <b>${CO.length.toLocaleString()}</b> &nbsp; Facts <b>${d.factsRead.toLocaleString()}</b> &nbsp; Built <b>${d.generated.slice(0, 10)}</b> &nbsp; <a style="color:#fff" href="build.py" target="_blank">build.py</a> · <a style="color:#fff" href="data.json" target="_blank">data.json</a>`;
+  $("metricBtns").innerHTML = MK.map(m => `<button class="btn" data-m="${m}">${LABEL[m]}</button>`).join(" ");
+  $("metricBtns").onclick = e => { const m = e.target.dataset.m; if (m) { metric = m; path = []; render(); } };
+  $("loading").hidden = true; $("app").hidden = false;
+  renderMethod(); render();
+}).catch(e => { $("loading").textContent = "Couldn't load data.json: " + e.message; });
+
+const v = (c, y, m = metric) => c.y[y][m] && !c.y[y][m].scale ? c.y[y][m].val : null;
+
+// One bridge: start total, companies that stopped reporting, like-for-like change per group, new reporters, end total.
+function bridge(cos, keyFn) {
+  let start = 0, end = 0, stopped = 0, added = 0, nStop = 0, nNew = 0, nBoth = 0;
+  const groups = new Map();
+  for (const c of cos) {
+    const a = v(c, Y0), b = v(c, Y1);
+    if (a != null) start += a;
+    if (b != null) end += b;
+    if (a != null && b == null) { stopped -= a; nStop++; }
+    else if (a == null && b != null) { added += b; nNew++; }
+    else if (a != null && b != null) {
+      nBoth++;
+      const k = keyFn(c), g = groups.get(k) || { key: k, a: 0, b: 0, n: 0, cos: [] };
+      g.a += a; g.b += b; g.n++; g.cos.push(c); groups.set(k, g);
+    }
+  }
+  const items = [...groups.values()].map(g => ({ ...g, d: g.b - g.a })).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+  return { start, end, stopped, added, nStop, nNew, nBoth, items };
+}
+
+function scope() {
+  let cos = CO;
+  if (path[0]) cos = cos.filter(c => c.org === path[0]);
+  if (path[1] != null) cos = cos.filter(c => c.sic === path[1]);
+  return cos;
+}
+const level = () => path.length === 0 ? { key: c => c.org, noun: "office" } : path.length === 1 ? { key: c => c.sic, noun: "industry" } : { key: c => c.cik, noun: "company" };
+const groupName = (k, lv) => lv === 0 ? k : lv === 1 ? (D.industries[k] || "Not classified") + (k ? ` (SIC ${k})` : "") : (CO.find(c => c.cik === k) || {}).name;
+
+function render() {
+  document.querySelectorAll("#metricBtns .btn").forEach(b => b.classList.toggle("on", b.dataset.m === metric));
+  const all = bridge(CO, c => c.org);
+  const lfl = all.items.reduce((s, g) => s + g.d, 0), lflBase = all.items.reduce((s, g) => s + g.a, 0);
+  $("kpis").innerHTML = [
+    [`FY${Y0} ${LABEL[metric]}`, money(all.start), `${(all.nBoth + all.nStop).toLocaleString()} companies`],
+    [`FY${Y1} ${LABEL[metric]}`, money(all.end), `${(all.nBoth + all.nNew).toLocaleString()} companies`],
+    ["Total variance", `<span class="${cls(all.end - all.start)}">${money(all.end - all.start, true)}</span>`, `${pct(chg(all.start, all.end))} on FY${Y0}`],
+    ["Same companies, both years", `<span class="${cls(lfl)}">${money(lfl, true)}</span>`, `${pct(chg(lflBase, lflBase + lfl))} across ${all.nBoth.toLocaleString()} companies`],
+    ["Changed who reports", `<span class="${cls(all.added + all.stopped)}">${money(all.added + all.stopped, true)}</span>`, `${all.nNew.toLocaleString()} new, ${all.nStop.toLocaleString()} stopped`],
+  ].map(([k, val, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${val}</div><div class="d">${d}</div></div>`).join("");
+  renderBridge(); renderDrivers(); renderMargin(); renderInvestigate();
+}
+
+function crumbs() {
+  const parts = [`<a data-l="0">All filers</a>`];
+  if (path[0]) parts.push(path.length > 1 ? `<a data-l="1">${esc(path[0])}</a>` : `<b>${esc(path[0])}</b>`);
+  if (path[1] != null) parts.push(`<b>${esc(groupName(path[1], 1))}</b>`);
+  return `<div class="crumbs">${parts.join(" › ")}</div>`;
+}
+function bindCrumbs(el) { el.querySelectorAll(".crumbs a").forEach(a => a.onclick = () => { path = path.slice(0, +a.dataset.l); render(); }); }
+
+function renderBridge() {
+  const lv = path.length, L = level(), b = bridge(scope(), L.key), MAXN = 12;
+  let items = b.items.slice(0, MAXN);
+  if (b.items.length > MAXN) { const rest = b.items.slice(MAXN); items.push({ key: null, other: true, d: rest.reduce((s, g) => s + g.d, 0), n: rest.reduce((s, g) => s + g.n, 0), count: rest.length }); }
+  if (lv < 2) items.sort((x, y) => (x.other - y.other) || (y.d - x.d));
+  const bars = [{ label: `FY${Y0} total`, total: true, v: b.start }, { label: `Stopped reporting (${b.nStop})`, d: b.stopped, kind: "entry" },
+    ...items.map(g => ({ label: g.other ? `${g.count} other ${L.noun === "industry" ? "industries" : "companies"}` : groupName(g.key, lv), d: g.d, key: g.key, n: g.n, a: g.a })),
+    { label: `New reporters (${b.nNew})`, d: b.added, kind: "entry" }, { label: `FY${Y1} total`, total: true, v: b.end }];
+  let run = 0; const segs = bars.map(x => { if (x.total) { run = x.v; return { ...x, x0: 0, x1: x.v }; } const s = { ...x, x0: run, x1: run + x.d }; run += x.d; return s; });
+  const lo = Math.min(0, ...segs.map(s => Math.min(s.x0, s.x1))), hi = Math.max(...segs.map(s => Math.max(s.x0, s.x1)));
+  const W = 1180, LW = 330, VW = 110, RH = 26, PW = W - LW - VW - 10, sx = x => LW + (x - lo) / ((hi - lo) || 1) * PW;
+  let svg = `<svg class="wf" viewBox="0 0 ${W} ${segs.length * RH + 24}">`;
+  if (lo < 0) svg += `<line x1="${sx(0)}" x2="${sx(0)}" y1="0" y2="${segs.length * RH}" stroke="#98a2b3"/>`;
+  segs.forEach((s, i) => {
+    const y = i * RH, x = Math.min(sx(s.x0), sx(s.x1)), w = Math.max(1.5, Math.abs(sx(s.x1) - sx(s.x0)));
+    const col = s.total ? "#13315c" : s.kind === "entry" ? (s.d >= 0 ? "#98c9b0" : "#f1a7b0") : s.d >= 0 ? "#1f7a4d" : "#c8102e";
+    const click = !s.total && !s.kind && s.key != null && lv < 2 || (lv === 2 && s.key != null && !s.kind && !s.total);
+    svg += `<g class="${click ? "click" : ""}" data-k="${s.key ?? ""}"><title>${esc(s.label)}: ${s.total ? money(s.v) : money(s.d, true)}${s.n ? ` · ${s.n} companies` : ""}</title>
+      <text class="lab" x="${LW - 10}" y="${y + 17}" text-anchor="end" ${s.total ? 'font-weight="700"' : ""}>${esc(s.label.length > 48 ? s.label.slice(0, 46) + "…" : s.label)}</text>
+      <rect class="b" x="${x}" y="${y + 4}" width="${w}" height="${RH - 8}" rx="2" fill="${col}"/>
+      ${i < segs.length - 1 ? `<line x1="${sx(s.total ? s.x1 : s.x1)}" x2="${sx(s.total ? s.x1 : s.x1)}" y1="${y + RH - 4}" y2="${y + RH + 4}" stroke="#98a2b3" stroke-dasharray="2,2"/>` : ""}
+      <text class="val ${s.total ? "" : cls(s.d)}" x="${W - 6}" y="${y + 17}" text-anchor="end" ${s.total ? 'font-weight="700"' : ""} fill="${s.total ? "#1d2433" : s.d >= 0 ? "#1f7a4d" : "#c8102e"}">${s.total ? money(s.v) : money(s.d, true)}</text></g>`;
+  });
+  svg += `<text x="${LW}" y="${segs.length * RH + 18}" class="val" fill="#667085">${money(lo)}</text><text x="${LW + PW}" y="${segs.length * RH + 18}" class="val" fill="#667085" text-anchor="end">${money(hi)}</text></svg>`;
+  const el = $("bridge");
+  el.innerHTML = `<h2><span class="n">1</span>Variance bridge: ${LABEL[metric]}, FY${Y0} → FY${Y1}</h2>
+    <p class="sub">Read it top to bottom. Start from last year's total, take away companies that stopped reporting, add or subtract each ${L.noun}'s change for companies that reported both years, add new reporters, and you land on this year's total. Green adds, red takes away. ${lv < 2 ? `Click a${L.noun === "office" ? "n" : ""} ${L.noun} to break it down.` : "Click a company for its details."}</p>
+    ${crumbs()}${svg}`;
+  bindCrumbs(el);
+  el.querySelectorAll("g.click").forEach(g => g.onclick = () => {
+    const k = g.dataset.k;
+    if (lv === 0) path = [k]; else if (lv === 1) path = [path[0], +k]; else { showCo(+k); return; }
+    render(); $("bridge").scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+function hbar(d, max) {
+  const w = Math.min(50, Math.abs(d) / (max || 1) * 50);
+  return `<div class="hb"><i></i><span style="${d >= 0 ? `left:50%` : `left:${50 - w}%`};width:${w}%;background:${d >= 0 ? "var(--up)" : "var(--down)"}"></span></div>`;
+}
+
+function renderDrivers() {
+  const lv = path.length, L = level(), b = bridge(scope(), L.key), tot = b.items.reduce((s, g) => s + g.d, 0), max = Math.max(...b.items.map(g => Math.abs(g.d)));
+  const rows = b.items.slice(0, lv === 2 ? 60 : 40);
+  const el = $("drivers");
+  el.innerHTML = `<h2><span class="n">2</span>Drivers: who moved the number</h2>
+    <p class="sub">Companies that reported both years, grouped by ${L.noun}. "Share of change" is each row's dollar change divided by the total same-company change (${money(tot, true)}), so the shares add up to 100%. A row can be over 100%, or negative, when other rows pull the other way.</p>
+    ${crumbs()}
+    <table><tr><th>${L.noun[0].toUpperCase() + L.noun.slice(1)}</th>${lv < 2 ? "<th class=num>Companies</th>" : "<th>Industry</th>"}<th class="num">FY${Y0}</th><th class="num">FY${Y1}</th><th class="num">Variance</th><th class="num">%</th><th class="num">Share of change</th><th class="barcell"></th></tr>
+    ${rows.map(g => `<tr class="click" data-k="${g.key}"><td>${esc(groupName(g.key, lv))}</td>${lv < 2 ? `<td class="num">${g.n.toLocaleString()}</td>` : `<td class="note">${esc(g.cos[0].ind)}</td>`}<td class="num">${money(g.a)}</td><td class="num">${money(g.b)}</td>
+      <td class="num ${cls(g.d)}">${money(g.d, true)}</td><td class="num ${cls(g.d)}">${pct(chg(g.a, g.b))}</td><td class="num">${pct(tot ? g.d / tot : null, false)}</td><td class="barcell">${hbar(g.d, max)}</td></tr>`).join("")}
+    </table>${b.items.length > rows.length ? `<p class="note">Showing the ${rows.length} largest of ${b.items.length.toLocaleString()} by absolute change.</p>` : ""}<div id="coBox"></div>`;
+  bindCrumbs(el);
+  el.querySelectorAll("tr.click").forEach(tr => tr.onclick = () => {
+    const k = tr.dataset.k;
+    if (lv === 0) path = [k]; else if (lv === 1) path = [path[0], +k]; else { showCo(+k); return; }
+    render();
+  });
+  if (selCo) showCo(selCo, true);
+}
+
+function showCo(cik, quiet) {
+  selCo = cik;
+  const c = CO.find(x => x.cik === cik), fl = (FLAGS || []).find(f => f.c.cik === cik);
+  const tr = MK.map(m => { const a = c.y[Y0][m], b = c.y[Y1][m];
+    return `<tr><td><b>${LABEL[m]}</b></td><td class="num">${money(a && a.val)}</td><td class="num">${money(b && b.val)}</td><td class="num ${cls(b && a ? b.val - a.val : 0)}">${a && b ? money(b.val - a.val, true) : "–"}</td><td class="num">${a && b ? pct(chg(a.val, b.val)) : "–"}</td>
+      <td>${a ? `<code>${a.tag}</code>` : "–"}${a && b && a.tag !== b.tag ? " → " : ""}${b && (!a || a.tag !== b.tag) ? `<code>${b.tag}</code>` : ""}</td>
+      <td class="note">${b ? `${b.start} to ${b.end}` : a ? `${a.start} to ${a.end} (FY${Y0})` : ""}</td>
+      <td>${a ? `<a href="${edgar(c.cik, a.accn)}" target="_blank" rel="noopener">FY${Y0}</a>` : ""} ${b ? `<a href="${edgar(c.cik, b.accn)}" target="_blank" rel="noopener">FY${Y1}</a>` : ""}</td></tr>`; }).join("");
+  const box = $("coBox"); if (!box) return;
+  box.innerHTML = `<div class="co"><h3>${esc(c.name)} ${c.ticker ? `<span class="note">${esc(c.ticker)}</span>` : ""}</h3>
+    <div class="note">CIK ${c.cik} · ${esc(c.org)} · ${esc(c.ind)}${c.sic ? ` (SIC ${c.sic})` : ""} · <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${c.cik}" target="_blank" rel="noopener">EDGAR filings</a> · <a class="link" id="coClose" style="cursor:pointer">close</a></div>
+    ${fl ? `<div style="margin-top:6px">${fl.reasons.map(r => `<span class="pill ${r.cls}">${esc(r.label)}</span> <span class="note">${esc(r.why)}</span>`).join("<br>")}</div>` : ""}
+    <table style="margin-top:8px"><tr><th></th><th class="num">FY${Y0}</th><th class="num">FY${Y1}</th><th class="num">Variance</th><th class="num">%</th><th>XBRL tag</th><th>FY${Y1} period</th><th>Filing</th></tr>${tr}</table></div>`;
+  $("coClose").onclick = () => { selCo = null; box.innerHTML = ""; };
+  if (!quiet) box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// Rate vs mix: margin change = shift of revenue between offices (mix) + margin change inside offices (rate) + both at once.
+function renderMargin() {
+  const num = metric === "revenue" ? "operatingIncome" : metric, g = new Map();
+  for (const c of scope()) {
+    const r0 = v(c, Y0, "revenue"), r1 = v(c, Y1, "revenue"), n0 = v(c, Y0, num), n1 = v(c, Y1, num);
+    if (!(r0 > 0 && r1 > 0) || n0 == null || n1 == null) continue;
+    const k = level().key(c), x = g.get(k) || { key: k, r0: 0, r1: 0, n0: 0, n1: 0, n: 0 };
+    x.r0 += r0; x.r1 += r1; x.n0 += n0; x.n1 += n1; x.n++; g.set(k, x);
+  }
+  const L = [...g.values()], R0 = L.reduce((s, x) => s + x.r0, 0), R1 = L.reduce((s, x) => s + x.r1, 0);
+  L.forEach(x => { x.w0 = x.r0 / R0; x.w1 = x.r1 / R1; x.m0 = x.n0 / x.r0; x.m1 = x.n1 / x.r1;
+    x.mix = (x.w1 - x.w0) * x.m0; x.rate = x.w0 * (x.m1 - x.m0); x.both = (x.w1 - x.w0) * (x.m1 - x.m0); x.tot = x.mix + x.rate + x.both; });
+  const M0 = L.reduce((s, x) => s + x.n0, 0) / R0, M1 = L.reduce((s, x) => s + x.n1, 0) / R1;
+  const S = k => L.reduce((s, x) => s + x[k], 0), pp = d => `${d < 0 ? "−" : d > 0 ? "+" : ""}${Math.abs(d * 100).toFixed(2)} pts`;
+  L.sort((a, b) => Math.abs(b.tot) - Math.abs(a.tot));
+  const lv = path.length, mname = num === "operatingIncome" ? "Operating margin" : "Net margin";
+  const el = $("margin");
+  el.innerHTML = `<h2><span class="n">3</span>Why the margin moved: rate vs mix</h2>
+    <p class="sub">${mname} (${LABEL[num].toLowerCase()} ÷ revenue) went from ${pct(M0, false)} to ${pct(M1, false)}, a change of ${pp(M1 - M0)}. That change has two possible causes, and they call for different follow-up. <b>Rate:</b> ${level().noun === "office" ? "offices" : level().noun === "industry" ? "industries" : "companies"} became more or less profitable. <b>Mix:</b> revenue shifted toward ${level().noun === "office" ? "offices" : "groups"} that were already more or less profitable, with no one's margin changing. Companies with positive revenue and ${LABEL[num].toLowerCase()} in both years (${L.reduce((s, x) => s + x.n, 0).toLocaleString()}).</p>
+    ${crumbs()}
+    <div class="eq">margin change = Σ (share₁ − share₀) × margin₀   ← mix:  ${pp(S("mix"))}
+              + Σ share₀ × (margin₁ − margin₀)  ← rate: ${pp(S("rate"))}
+              + Σ Δshare × Δmargin               ← both: ${pp(S("both"))}
+              = ${pp(M1 - M0)}</div>
+    <table><tr><th>${level().noun}</th><th class="num">Revenue share FY${Y0} → FY${Y1}</th><th class="num">${mname} FY${Y0} → FY${Y1}</th><th class="num">Mix</th><th class="num">Rate</th><th class="num">Both</th><th class="num">Total effect</th></tr>
+    ${L.slice(0, 15).map(x => `<tr><td>${esc(groupName(x.key, lv))}</td><td class="num">${pct(x.w0, false)} → ${pct(x.w1, false)}</td><td class="num">${pct(x.m0, false)} → ${pct(x.m1, false)}</td>
+      <td class="num ${cls(x.mix)}">${pp(x.mix)}</td><td class="num ${cls(x.rate)}">${pp(x.rate)}</td><td class="num ${cls(x.both)}">${pp(x.both)}</td><td class="num ${cls(x.tot)}"><b>${pp(x.tot)}</b></td></tr>`).join("")}</table>
+    ${metric === "revenue" ? `<p class="note">Revenue has no margin of its own, so this section uses operating margin. Switch the measure to net income for net margin.</p>` : ""}`;
+  bindCrumbs(el);
+}
+
+// Flags: rules that point at a company worth checking, each with the reason and the dollars involved.
+let FLAGS = [];
+function renderInvestigate() {
+  const cos = CO, by = new Map(), ind = new Map(), org = new Map();
+  const both = cos.filter(c => v(c, Y0) != null && v(c, Y1) != null);
+  const lflTot = both.reduce((s, c) => s + v(c, Y1) - v(c, Y0), 0);
+  for (const c of both) { const d = v(c, Y1) - v(c, Y0); org.set(c.org, (org.get(c.org) || 0) + d); }
+  const g = c => { const a = v(c, Y0), b = v(c, Y1); return a > 0 && b > 0 ? Math.log(b / a) : null; };
+  for (const c of both) { const x = g(c); if (x == null) continue; (ind.get(c.sic) || ind.set(c.sic, []).get(c.sic)).push(x); }
+  const med = a => { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+  const robust = new Map(); for (const [k, a] of ind) if (a.length >= 8) { const m = med(a), mad = med(a.map(x => Math.abs(x - m))) * 1.4826; if (mad > 0) robust.set(k, { m, mad, n: a.length }); }
+  const add = (c, impact, r) => { const f = by.get(c.cik) || { c, impact: 0, reasons: [] }; f.impact = Math.max(f.impact, Math.abs(impact)); f.reasons.push(r); by.set(c.cik, f); };
+  const top = [...both].sort((a, b) => Math.abs(v(b, Y1) - v(b, Y0)) - Math.abs(v(a, Y1) - v(a, Y0))).slice(0, 15);
+  top.forEach((c, i) => { const d = v(c, Y1) - v(c, Y0); add(c, d, { k: "driver", cls: "f-driver", label: "Top driver", why: `#${i + 1} by dollar change: ${money(d, true)}, ${pct(lflTot ? d / lflTot : null, false)} of the same-company total.` }); });
+  for (const c of cos) {
+    let a = c.y[Y0][metric], b = c.y[Y1][metric];
+    const bad = [a, b].map((x, i) => x && x.scale ? `${money(x.val)} for FY${i ? Y1 : Y0}` : null).filter(Boolean);
+    if (bad.length) { add(c, Math.max(...[a, b].filter(x => x && x.scale).map(x => Math.abs(x.val))), { k: "scale", cls: "f-scale", label: "Scale error suspected", why: `${bad.join(" and ")} is larger than the company's revenue and at least $40B, which usually means figures in thousands were tagged as dollars. Left out of every total on this page.` }); if (a && a.scale) a = null; if (b && b.scale) b = null; }
+    if (a && b) {
+      const d = b.val - a.val;
+      if (a.tag !== b.tag) add(c, d, { k: "def", cls: "f-def", label: "Definition changed", why: `Reported as ${a.tag} in FY${Y0} and ${b.tag} in FY${Y1}, so part of the ${money(d, true)} may be a tagging change, not a real one.` });
+      const rs = robust.get(c.sic), x = g(c);
+      if (rs && x != null && Math.abs(a.val) >= 5e7) { const z = (x - rs.m) / rs.mad; if (Math.abs(z) >= 3.5) add(c, d, { k: "out", cls: "f-out", label: "Unusual for its industry", why: `${pct(chg(a.val, b.val))} vs a typical ${pct(Math.exp(rs.m) - 1)} for ${rs.n} peers in SIC ${c.sic} (robust z = ${z.toFixed(1)}).` }); }
+      if (metric !== "revenue" && Math.sign(a.val) !== Math.sign(b.val) && Math.min(Math.abs(a.val), Math.abs(b.val)) >= 1e7 && Math.max(Math.abs(a.val), Math.abs(b.val)) >= 1e8) add(c, d, { k: "sign", cls: "f-sign", label: a.val > 0 ? "Profit to loss" : "Loss to profit", why: `${money(a.val)} in FY${Y0}, ${money(b.val)} in FY${Y1}.` });
+      const days = (new Date(b.end) - new Date(b.start)) / 864e5, shift = Math.abs((new Date(b.end) - new Date(a.end)) / 864e5 - 365.25);
+      if ((days < 350 || days > 380 || shift > 20) && Math.abs(d) >= 1e8) add(c, d, { k: "per", cls: "f-per", label: "Period changed", why: days < 350 || days > 380 ? `FY${Y1} covers ${Math.round(days)} days (${b.start} to ${b.end}), not a full year.` : `Fiscal year-end moved from ${a.end} to ${b.end}.` });
+      const od = org.get(c.org);
+      if (Math.abs(od) >= 5e9 && Math.sign(d) === Math.sign(od) && Math.abs(d) / Math.abs(od) >= 0.5) add(c, d, { k: "conc", cls: "f-conc", label: "Drives its office", why: `${pct(d / od, false)} of ${esc(c.org)}'s ${money(od, true)} change comes from this one company.` });
+    } else if ((a || b) && Math.abs((a || b).val) >= 2e9) {
+      const x = a || b; add(c, x.val, { k: "entry", cls: "f-entry", label: a ? `Missing in FY${Y1}` : `New in FY${Y1}`, why: a ? `Reported ${money(a.val)} for FY${Y0} but no FY${Y1} value in this frame: delisted, acquired, late, or a fiscal-year shift. Check the filing.` : `${money(b.val)} for FY${Y1} with no FY${Y0} value: new registrant, spin-off, or a gap in its FY${Y0} tagging.` });
+    }
+  }
+  FLAGS = [...by.values()].sort((a, b) => b.impact - a.impact);
+  const kinds = [["all", "All"], ["scale", "Scale error"], ["driver", "Top driver"], ["def", "Definition changed"], ["out", "Unusual for its industry"], ["sign", "Profit ↔ loss"], ["per", "Period changed"], ["conc", "Drives its office"], ["entry", "New / missing"]];
+  const cnt = k => k === "all" ? FLAGS.length : FLAGS.filter(f => f.reasons.some(r => r.k === k)).length;
+  const list = FLAGS.filter(f => flagFilter === "all" || f.reasons.some(r => r.k === flagFilter));
+  const el = $("investigate");
+  el.innerHTML = `<h2><span class="n">4</span>Where to investigate: ${LABEL[metric]}</h2>
+    <p class="sub">Each rule below picks out companies where the change could be misleading or deserves a closer look. Companies are ranked by the dollars involved, and every flag says why it fired. Click a row for both years and links to the filings.</p>
+    <div class="row">${kinds.filter(([k]) => cnt(k)).map(([k, l]) => `<button class="btn ${flagFilter === k ? "on" : ""}" data-f="${k}">${l} (${cnt(k)})</button>`).join("")}</div>
+    <table><tr><th>#</th><th>Company</th><th>Office</th><th class="num">FY${Y0}</th><th class="num">FY${Y1}</th><th class="num">Variance</th><th>Why it's flagged</th></tr>
+    ${list.slice(0, 60).map((f, i) => { const a = v(f.c, Y0), b = v(f.c, Y1); return `<tr class="click" data-c="${f.c.cik}"><td class="note">${i + 1}</td><td><b>${esc(f.c.name)}</b>${f.c.ticker ? ` <span class="note">${esc(f.c.ticker)}</span>` : ""}<div class="note">${esc(f.c.ind)}</div></td><td class="note">${esc(f.c.org)}</td>
+      <td class="num">${money(a)}</td><td class="num">${money(b)}</td><td class="num ${cls(a != null && b != null ? b - a : 0)}">${a != null && b != null ? money(b - a, true) : "–"}</td>
+      <td>${f.reasons.map(r => `<span class="pill ${r.cls}" title="${esc(r.why)}">${esc(r.label)}</span>`).join("")}<div class="note">${esc(f.reasons[0].why)}</div></td></tr>`; }).join("")}</table>
+    ${list.length > 60 ? `<p class="note">Showing the top 60 of ${list.length} by dollar impact.</p>` : ""}<div id="coBox2"></div>`;
+  el.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { flagFilter = b.dataset.f; renderInvestigate(); });
+  el.querySelectorAll("tr.click").forEach(tr => tr.onclick = () => { const box = $("coBox"); box.id = "tmp"; $("coBox2").id = "coBox"; showCo(+tr.dataset.c); $("coBox").id = "coBox2"; box.id = "coBox"; });
+}
+
+function renderMethod() {
+  $("method").innerHTML = `<h2><span class="n">5</span>Method and definitions</h2>
+    <dl class="defs">
+      <dt>Variance</dt><dd>FY${Y1} value minus FY${Y0} value. Percent variance divides by the absolute FY${Y0} value, so a loss that shrinks shows as positive.</dd>
+      <dt>Fiscal years</dt><dd>Values come from the SEC's XBRL frames API, which picks, for each company, the annual figure that best lines up with a calendar year (frames CY${Y0} and CY${Y1}). A company whose fiscal year ends in September ${Y0} is counted in FY${Y0}. Each value keeps the accession number of the filing it came from.</dd>
+      <dt>Measures and tag precedence</dt><dd>${MK.map(m => `<b>${LABEL[m]}:</b> ${D.metrics[m].map(t => `<code>${t}</code>`).join(" → ")}`).join("<br>")}<br>The first tag a company reported wins, the same rule as the <a href="../semantic-model/">Semantic Model</a>. A company that used a different tag each year is flagged "Definition changed".</dd>
+      <dt>Offices and industries</dt><dd>The office is the SEC Division of Corporation Finance office that reviews the company's filings (<code>ownerOrg</code> in its EDGAR submissions record). The industry is its SIC code.</dd>
+      <dt>The bridge</dt><dd>FY${Y0} total − companies that stopped reporting + same-company change by group + new reporters = FY${Y1} total. Only the middle bars compare like with like; the first and last movement bars come from changes in who reported.</dd>
+      <dt>Rate vs mix</dt><dd>The aggregate margin is Σ shareᵢ × marginᵢ. Its change splits exactly into mix (shares moved), rate (margins moved) and an interaction term.</dd>
+      <dt>Flag rules</dt><dd><b>Top driver:</b> the 15 largest dollar changes. <b>Definition changed:</b> source tag differs between years. <b>Unusual for its industry:</b> log growth more than 3.5 robust standard deviations (median and MAD) from peers in the same SIC code, for SIC codes with 8+ peers and companies with at least $50M in FY${Y0}. <b>Profit ↔ loss:</b> sign change, with both years at least $10M and one at least $100M. <b>Period changed:</b> FY${Y1} isn't 350–380 days long, or the year-end moved more than 20 days, with at least $100M of change. <b>Drives its office:</b> one company accounts for half or more of an office's change of $5B or more. <b>New / missing:</b> $2B or more reported in only one of the two years. <b>Scale error suspected:</b> operating or net income of $40B or more in absolute value that is also larger than the company's revenue, or revenue of $40B or more that is over 100× the other year's. These values are left out of all totals and listed so they can be checked.</dd>
+      <dt>Limits</dt><dd>As-filed XBRL, not audited restatements: when a company restates FY${Y0}, the frame keeps the latest filed value. Financial companies often don't report <code>Revenues</code> or operating income the way industrial companies do, so their totals cover fewer companies. Values are in USD only.</dd>
+    </dl>`;
+}
+</script>
+</body>
+</html>
