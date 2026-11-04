@@ -1,5 +1,9 @@
 // All site content lives here. Add an entry, drop the file(s) in the matching folder, commit and push.
 
+// SEC — pieces built to match the SEC role. Files go in /sec. Same fields as Work; tags optional.
+const sec = [
+];
+
 // WORK — single HTMLs, filterable by language and topic. Files go in /work.
 const work = [
   // { title: "Project name", description: "One-line description.", file: "work/project-name.html",
