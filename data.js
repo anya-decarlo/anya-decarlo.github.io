@@ -7,6 +7,11 @@ const sec = [
     languages: ["Python", "JavaScript"],
     topics: ["SEC EDGAR", "Recurring Reports"],
     file: "sec/late-filers/index.html" },
+  { title: "Semantic Models: Reconciled Financial Statements",
+    description: "Companies tag the same number differently in XBRL. Revenue alone shows up under three us-gaap tags. This model reconciles 269,000 FY2024 facts from every SEC filer into 15 business concepts. It documents the source tags in precedence order, a definition for each concept, the relationships from company to filing to fact to concept to metric, and the calculation logic for seven ratios. Gaps are filled from accounting identities, six quality checks run on every company, and a lineage explorer traces each value to the filing it came from. The clean dataset (6,312 companies) downloads as CSV, and the whole model is a single model.json spec.",
+    languages: ["Python", "JavaScript"],
+    topics: ["SEC EDGAR", "XBRL", "Semantic Models"],
+    file: "sec/semantic-model/index.html" },
 ];
 
 // WORK — single HTMLs, filterable by language and topic. Files go in /work.

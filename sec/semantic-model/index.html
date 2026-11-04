@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semantic Model: Reconciled Financial Statements</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; --warn:#b54708; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 0; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; max-width:900px; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  nav.sec { display:flex; flex-wrap:wrap; gap:2px; margin-top:16px; }
+  nav.sec a { color:#c9d3e3; text-decoration:none; padding:8px 12px; font-size:13px; border-bottom:3px solid transparent; }
+  nav.sec a:hover { color:#fff; border-color:#8da9c4; }
+  main { max-width:1280px; margin:0 auto; padding:20px 32px 48px; }
+  @media (max-width: 900px) { main { padding:16px; } .two { grid-template-columns:1fr !important; } }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .kpi .k { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .v { font-size:28px; font-weight:600; margin-top:2px; }
+  .kpi .d { font-size:12.5px; color:var(--muted); }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; margin-bottom:16px; scroll-margin-top:12px; }
+  .card h2 { margin:0 0 4px; font-size:16px; }
+  .card h2 .n { color:var(--muted); font-weight:500; margin-right:6px; }
+  .card .sub { margin:0 0 14px; color:var(--muted); font-size:12.5px; max-width:900px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); padding:6px 8px; white-space:nowrap; }
+  td { border-bottom:1px solid var(--line); padding:7px 8px; vertical-align:top; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  code { font-size:12px; background:#f2f4f7; padding:1px 4px; border-radius:4px; word-break:break-all; }
+  .note { font-size:12.5px; color:var(--muted); }
+  .concept td { background:#f8f9fb; font-weight:600; }
+  .bar { display:inline-block; height:10px; background:var(--blue); border-radius:2px; vertical-align:middle; }
+  .bar.alt { background:#8da9c4; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; white-space:nowrap; }
+  .p-ok { background:#e7f5ee; color:var(--ok); } .p-bad { background:#fdecee; color:var(--accent); } .p-na { background:#f2f4f7; color:var(--muted); } .p-der { background:#fff4e5; color:var(--warn); }
+  .lost { color:var(--muted); text-decoration:line-through; }
+  input[type=text], select { font:inherit; padding:7px 9px; border:1px solid #cfd4dc; border-radius:6px; background:#fff; color:var(--ink); }
+  .btn { font:inherit; border:1px solid var(--blue); background:#fff; color:var(--blue); padding:6px 12px; border-radius:6px; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn.solid { background:var(--blue); color:#fff; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+  .sugg { position:absolute; z-index:5; background:#fff; border:1px solid var(--line); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.08); width:420px; max-width:90vw; }
+  .sugg div { padding:7px 10px; cursor:pointer; font-size:13px; } .sugg div:hover { background:#eef2f8; }
+  .co h3 { margin:0; font-size:17px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .chip { border:1px solid var(--line); border-radius:6px; padding:6px 10px; font-size:12.5px; }
+  .chip b { display:block; font-size:15px; }
+  svg text { font-family:inherit; }
+  a { color:var(--blue); }
+  .link { cursor:pointer; color:var(--blue); text-decoration:underline; }
+  #loading { padding:60px; text-align:center; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Semantic Model: Reconciled Financial Statements</h1>
+  <p>Companies tag the same number differently in their XBRL filings. This model maps those source tags onto one set of business definitions, links every value back to its filing, and documents the calculation logic. The result is a clean FY2024 dataset for every SEC filer.</p>
+  <div class="meta">
+    <span>Built <b id="built">…</b></span>
+    <span>Source <b><a style="color:#fff" href="https://www.sec.gov/search-filings/edgar-application-programming-interfaces" target="_blank" rel="noopener">SEC XBRL frames API</a></b></span>
+    <span>Taxonomy <b>US GAAP, USD</b></span>
+    <span>Spec <b><a style="color:#fff" href="model.json" target="_blank">model.json</a></b></span>
+  </div>
+  <nav class="sec">
+    <a href="#source">1. Source fields</a><a href="#definitions">2. Business definitions</a><a href="#relationships">3. Relationships</a>
+    <a href="#calculations">4. Calculation logic</a><a href="#quality">5. Quality checks</a><a href="#lineage">6. Lineage explorer</a><a href="#dataset">7. Clean dataset</a>
+  </nav>
+</header>
+<main>
+  <div id="loading">Loading the model…</div>
+  <div id="app" hidden>
+    <div class="kpis" id="kpis"></div>
+
+    <section class="card" id="source">
+      <h2><span class="n">1</span>Source fields</h2>
+      <p class="sub">Each business concept can come from several XBRL tags. Tags are tried in precedence order, and the first one a company reports wins. If none is reported, the concept is derived from other concepts where an accounting identity allows it. <b>Reported by</b> counts the companies that filed the tag. <b>Used for</b> counts the companies whose value came from it.</p>
+      <table id="srcTbl"></table>
+    </section>
+
+    <section class="card" id="definitions">
+      <h2><span class="n">2</span>Business definitions</h2>
+      <p class="sub">The meaning of each concept, independent of how any company tagged it. Duration concepts cover the fiscal year. Instant concepts are measured at fiscal year-end.</p>
+      <table id="defTbl"></table>
+    </section>
+
+    <section class="card" id="relationships">
+      <h2><span class="n">3</span>Relationships</h2>
+      <p class="sub">How the model's entities connect, and the accounting identities that tie concepts together. The identities drive both the derivations and the quality checks.</p>
+      <div class="two">
+        <svg id="erd" viewBox="0 0 560 330" width="100%"></svg>
+        <div>
+          <table>
+            <tr><th>Relationship</th><th>Cardinality</th></tr>
+            <tr><td>Company → Filing</td><td>one to many (CIK → accession number)</td></tr>
+            <tr><td>Filing → Fact</td><td>one to many</td></tr>
+            <tr><td>Fact → Source tag</td><td>many to one</td></tr>
+            <tr><td>Source tag → Concept</td><td>many to one, ranked by precedence</td></tr>
+            <tr><td>Concept → Metric</td><td>many to many (numerator and denominator)</td></tr>
+          </table>
+          <h3 style="font-size:14px;margin:18px 0 6px">Identities</h3>
+          <table>
+            <tr><td><code>Revenue − Cost of revenue = Gross profit</code></td></tr>
+            <tr><td><code>Assets = Liabilities + Temporary equity + Total equity</code></td></tr>
+            <tr><td><code>Assets = Total liabilities and equity</code></td></tr>
+            <tr><td><code>Total equity = Shareholders' equity + Noncontrolling interests</code></td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="calculations">
+      <h2><span class="n">4</span>Calculation logic</h2>
+      <p class="sub" id="guard"></p>
+      <table id="calcTbl"></table>
+      <h3 style="font-size:14px;margin:18px 0 6px">Derivations</h3>
+      <table id="derTbl"></table>
+    </section>
+
+    <section class="card" id="quality">
+      <h2><span class="n">5</span>Quality checks</h2>
+      <p class="sub">Run on every company after reconciliation. A check that doesn't apply (e.g. a bank with no gross profit) counts as not applicable, not as a pass. Click a failure count to list those companies in the clean dataset.</p>
+      <table id="qTbl"></table>
+    </section>
+
+    <section class="card" id="lineage">
+      <h2><span class="n">6</span>Lineage explorer</h2>
+      <p class="sub">Pick any company to trace each value to the tag and filing it came from, and to see which candidate tags lost.</p>
+      <div class="row" style="position:relative">
+        <input type="text" id="coSearch" placeholder="Search a company, ticker or CIK" style="width:420px;max-width:100%">
+        <div class="sugg" id="sugg" hidden></div>
+      </div>
+      <div id="co"></div>
+    </section>
+
+    <section class="card" id="dataset">
+      <h2><span class="n">7</span>Clean dataset</h2>
+      <p class="sub">One row per company: reconciled values, the source of each, metrics and check results. The full file has every column.</p>
+      <div class="row">
+        <input type="text" id="dsSearch" placeholder="Filter by name or ticker">
+        <select id="dsCheck"><option value="">All companies</option><option value="clean">Passes every applicable check</option></select>
+        <span class="note" id="dsCount"></span>
+        <span style="flex:1"></span>
+        <button class="btn" id="dsCsv">Download filtered CSV</button>
+        <a class="btn solid" href="fy2024-clean.csv" download>Download full dataset</a>
+      </div>
+      <div style="overflow-x:auto"><table id="dsTbl"></table></div>
+    </section>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const money = v => { if (v == null) return "–"; const a = Math.abs(v), s = v < 0 ? "−$" : "$";
+  return a >= 1e9 ? s + (a / 1e9).toFixed(1) + "B" : a >= 1e6 ? s + (a / 1e6).toFixed(1) + "M" : a >= 1e3 ? s + (a / 1e3).toFixed(0) + "K" : s + a.toFixed(0); };
+const fmt = (m, v) => v == null ? "–" : m.format === "pct" ? (100 * v).toFixed(1) + "%" : v.toFixed(2) + "×";
+const filing = (cik, accn) => `https://www.sec.gov/Archives/edgar/data/${cik}/${accn.replace(/-/g, "")}/${accn}-index.htm`;
+let D, M, C, label = {}, dsFilter = null;
+
+fetch("data.json?v=" + Date.now()).then(r => r.json()).then(d => {
+  D = d; M = d.model;
+  const ti = Object.fromEntries(d.tags.map((t, i) => [t, i]));
+  C = d.companies.map(([cik, name, ticker, loc, fs, fe, flat, srcs, der, chk]) => {
+    const raw = {};
+    for (let i = 0; i < flat.length; i += 4) raw[flat[i]] = [flat[i + 1], flat[i + 2], d.dates[flat[i + 3]]];
+    const c = { cik, name, ticker, loc, fyStart: d.dates[fs], fyEnd: d.dates[fe], raw, val: {}, src: {}, metrics: {}, checks: {}, flags: [] };
+    M.concepts.forEach((k, i) => {
+      if (srcs[i] == null) return;
+      if (srcs[i] === -1) { c.src[k.id] = "derived:" + k.derive.join(":"); c.val[k.id] = der[i]; }
+      else { c.src[k.id] = d.tags[srcs[i]]; c.val[k.id] = raw[srcs[i]][0]; }
+    });
+    for (const m of M.metrics) { const n = c.val[m.num], q = c.val[m.den]; if (n != null && q > 0) c.metrics[m.id] = n / q; }
+    M.checks.forEach((k, i) => c.checks[k.id] = chk[i] === "-" ? null : chk[i] === "p");
+    const bs = raw[ti.Assets] || raw[ti.LiabilitiesAndStockholdersEquity]; c.bsEnd = bs && bs[2];
+    if (c.src.netIncome === "ProfitLoss") c.flags.push("Net income falls back to ProfitLoss, which includes noncontrolling interests.");
+    return c;
+  });
+  M.concepts.forEach(c => label[c.id] = c.label);
+  $("built").textContent = new Date(d.generated).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  kpis(); source(); defs(); erd(); calcs(); quality(); dataset();
+  pick(C.find(c => c.cik === 320193) || C[0]);
+  $("loading").hidden = true; $("app").hidden = false;
+});
+
+const srcLabel = s => !s ? "–" : s.startsWith("derived") ? (() => { const [, op, a, b] = s.split(":");
+  return op === "copy" ? `= ${label[a]}` : `${label[a]} ${op === "add" ? "+" : "−"} ${label[b]}`; })() : s;
+const allPass = c => Object.values(c.checks).every(v => v !== false);
+
+function kpis() {
+  const vals = C.reduce((n, c) => n + Object.keys(c.val).length, 0);
+  const fallback = C.reduce((n, c) => n + M.concepts.filter(k => c.src[k.id] && c.src[k.id] !== k.tags[0]).length, 0);
+  const derived = C.reduce((n, c) => n + Object.values(c.src).filter(s => s.startsWith("derived")).length, 0);
+  $("kpis").innerHTML = [
+    ["Companies modeled", C.length.toLocaleString(), "SEC filers with a FY2024 balance sheet"],
+    ["Source facts read", D.factsRead.toLocaleString(), `${D.tags.length} XBRL tags → ${M.concepts.length} concepts`],
+    ["Values reconciled", vals.toLocaleString(), `${fallback.toLocaleString()} came from a fallback tag or derivation`],
+    ["Derived values", derived.toLocaleString(), "filled from accounting identities"],
+    ["Clean companies", Math.round(100 * C.filter(allPass).length / C.length) + "%", "pass every applicable check"],
+  ].map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+}
+
+function source() {
+  const ti = Object.fromEntries(D.tags.map((t, i) => [t, i]));
+  let h = `<tr><th>Concept / source tag</th><th>Rank</th><th class="num">Reported by</th><th class="num">Used for</th><th style="width:30%"></th></tr>`;
+  for (const k of M.concepts) {
+    const used = C.filter(c => c.src[k.id]).length;
+    h += `<tr class="concept"><td colspan="2">${esc(k.label)}</td><td></td><td class="num">${used.toLocaleString()}</td><td class="note" style="font-weight:400">${Math.round(100 * used / C.length)}% of companies</td></tr>`;
+    k.tags.forEach((t, r) => {
+      const rep = C.filter(c => c.raw[ti[t]]).length, win = C.filter(c => c.src[k.id] === t).length;
+      h += `<tr><td style="padding-left:20px"><code>us-gaap:${esc(t)}</code></td><td>${r + 1}</td><td class="num">${rep.toLocaleString()}</td><td class="num">${win.toLocaleString()}</td>
+        <td><span class="bar alt" style="width:${45 * rep / C.length}%"></span> <span class="bar" style="width:${45 * win / C.length}%"></span></td></tr>`;
+    });
+    if (k.derive) {
+      const der = C.filter(c => (c.src[k.id] || "").startsWith("derived")).length;
+      h += `<tr><td style="padding-left:20px"><span class="pill p-der">derived</span> ${esc(srcLabel("derived:" + k.derive.join(":")))}</td><td>${k.tags.length + 1}</td><td></td><td class="num">${der.toLocaleString()}</td><td><span class="bar" style="width:${45 * der / C.length}%;background:var(--warn)"></span></td></tr>`;
+    }
+    if (k.note) h += `<tr><td colspan="5" class="note" style="padding-left:20px">${esc(k.note)}</td></tr>`;
+  }
+  $("srcTbl").innerHTML = h;
+}
+
+function defs() {
+  $("defTbl").innerHTML = `<tr><th>Concept</th><th>Statement</th><th>Period</th><th>Definition</th><th>Unit</th></tr>` +
+    M.concepts.map(k => `<tr><td><b>${esc(k.label)}</b><div class="note"><code>${k.id}</code></div></td><td>${k.statement}</td><td>${k.period === "duration" ? "Fiscal year" : "Year-end"}</td><td>${esc(k.definition)}</td><td>USD</td></tr>`).join("");
+}
+
+function erd() {
+  const box = (x, y, w, title, rows, color = "#13315c") => `<g><rect x="${x}" y="${y}" width="${w}" height="${26 + rows.length * 17}" rx="6" fill="#fff" stroke="${color}"/>
+    <rect x="${x}" y="${y}" width="${w}" height="24" rx="6" fill="${color}"/><rect x="${x}" y="${y + 14}" width="${w}" height="10" fill="${color}"/>
+    <text x="${x + 10}" y="${y + 16}" fill="#fff" font-size="12.5" font-weight="600">${title}</text>
+    ${rows.map((r, i) => `<text x="${x + 10}" y="${y + 40 + i * 17}" font-size="11.5" fill="#1d2433">${r}</text>`).join("")}</g>`;
+  const line = (x1, y1, x2, y2, t) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#98a2b3" stroke-width="1.5"/><text x="${(x1 + x2) / 2 + 4}" y="${(y1 + y2) / 2 - 4}" font-size="10.5" fill="#667085">${t}</text>`;
+  $("erd").innerHTML =
+    line(140, 50, 210, 50, "1 : n") + line(330, 50, 390, 50, "1 : n") + line(460, 102, 460, 165, "n : 1") + line(390, 215, 330, 215, "n : 1") + line(210, 215, 140, 215, "n : m") +
+    box(10, 20, 130, "Company", ["cik (key)", "name, ticker", "fiscal year"]) +
+    box(210, 20, 120, "Filing", ["accn (key)", "cik", "filed"]) +
+    box(390, 20, 160, "Fact", ["cik, accn, tag", "period end", "value (USD)"]) +
+    box(390, 165, 160, "Source tag", ["us-gaap tag (key)", "concept", "precedence rank"], "#4b6a8f") +
+    box(210, 165, 120, "Concept", ["id (key)", "definition", "derivation"], "#4b6a8f") +
+    box(10, 165, 130, "Metric", ["id (key)", "numerator", "denominator"], "#b54708") +
+    `<text x="10" y="300" font-size="11" fill="#667085">Blue: source data · Slate: semantic layer · Orange: calculation layer</text>`;
+}
+
+function calcs() {
+  $("guard").textContent = "Each metric is a ratio of two reconciled concepts. " + M.metricGuards;
+  const q = (a, p) => a[Math.floor(p * (a.length - 1))];
+  $("calcTbl").innerHTML = `<tr><th>Metric</th><th>Formula</th><th>Definition</th><th class="num">Companies</th><th class="num">Median</th><th class="num">Middle 50%</th></tr>` +
+    M.metrics.map(m => { const v = C.map(c => c.metrics[m.id]).filter(x => x != null).sort((a, b) => a - b);
+      return `<tr><td><b>${m.label}</b></td><td><code>${label[m.num]} ÷ ${label[m.den]}</code></td><td>${esc(m.definition)}</td><td class="num">${v.length.toLocaleString()}</td>
+        <td class="num">${fmt(m, q(v, .5))}</td><td class="num">${fmt(m, q(v, .25))} to ${fmt(m, q(v, .75))}</td></tr>`; }).join("");
+  $("derTbl").innerHTML = `<tr><th>Concept</th><th>Derived as</th><th>Used when</th></tr>` +
+    M.concepts.filter(k => k.derive).map(k => `<tr><td>${k.label}</td><td><code>${esc(srcLabel("derived:" + k.derive.join(":")))}</code></td><td>none of ${k.tags.map(t => `<code>${t}</code>`).join(", ")} is reported</td></tr>`).join("");
+}
+
+function quality() {
+  $("qTbl").innerHTML = `<tr><th>Check</th><th>Rule</th><th class="num">Pass</th><th class="num">Fail</th><th class="num">N/A</th><th class="num">Pass rate</th></tr>` +
+    M.checks.map(k => { const p = C.filter(c => c.checks[k.id] === true).length, f = C.filter(c => c.checks[k.id] === false).length;
+      return `<tr><td><b>${k.label}</b></td><td>${esc(k.rule)}</td><td class="num">${p.toLocaleString()}</td>
+        <td class="num">${f ? `<span class="link" data-fail="${k.id}">${f.toLocaleString()}</span>` : 0}</td><td class="num">${(C.length - p - f).toLocaleString()}</td>
+        <td class="num">${p + f ? (100 * p / (p + f)).toFixed(1) + "%" : "–"}</td></tr>`; }).join("");
+  $("qTbl").onclick = e => { const id = e.target.dataset.fail; if (!id) return;
+    dsFilter = id; $("dsCheck").value = ""; ensureOpt(id); $("dsCheck").value = "fail:" + id; dataset(); $("dataset").scrollIntoView({ behavior: "smooth" }); };
+}
+function ensureOpt(id) { if (![...$("dsCheck").options].some(o => o.value === "fail:" + id)) $("dsCheck").add(new Option("Fails: " + M.checks.find(k => k.id === id).label, "fail:" + id)); }
+
+function pick(c) {
+  $("sugg").hidden = true; $("coSearch").value = c.name;
+  const raw = Object.entries(c.raw).map(([t, [v, a, end]]) => ({ tag: D.tags[t], val: v, accn: D.accns[a], end }));
+  const pill = v => v == null ? '<span class="pill p-na">n/a</span>' : v ? '<span class="pill p-ok">pass</span>' : '<span class="pill p-bad">fail</span>';
+  let rows = "";
+  for (const k of M.concepts) {
+    const s = c.src[k.id], used = raw.find(r => r.tag === s);
+    const others = raw.filter(r => k.tags.includes(r.tag) && r.tag !== s);
+    rows += `<tr><td><b>${k.label}</b></td><td class="num">${money(c.val[k.id])}</td>
+      <td>${!s ? '<span class="note">not reported</span>' : s.startsWith("derived") ? `<span class="pill p-der">derived</span> ${esc(srcLabel(s))}` : `<code>${s}</code>${s !== k.tags[0] ? ' <span class="note">(fallback)</span>' : ""}`}</td>
+      <td>${used ? `<a href="${filing(c.cik, used.accn)}" target="_blank" rel="noopener">${used.accn}</a><div class="note">as of ${used.end}</div>` : ""}</td>
+      <td>${others.map(o => `<div class="lost"><code>${o.tag}</code> ${money(o.val)}</div>`).join("") || '<span class="note">–</span>'}</td></tr>`;
+  }
+  $("co").innerHTML = `<div class="co"><h3>${esc(c.name)} ${c.ticker ? `<span class="note">${esc(c.ticker)}</span>` : ""}</h3>
+    <div class="note">CIK ${c.cik} · fiscal year ${c.fyStart || "?"} to ${c.fyEnd} · balance sheet ${c.bsEnd || "–"} · ${esc(c.loc)}</div>
+    <div class="chips">${M.metrics.map(m => `<div class="chip">${m.label}<b>${fmt(m, c.metrics[m.id])}</b></div>`).join("")}</div>
+    <div style="overflow-x:auto"><table><tr><th>Concept</th><th class="num">Value</th><th>Source</th><th>Filing</th><th>Candidates not used</th></tr>${rows}</table></div>
+    <div class="chips">${M.checks.map(k => `<div class="chip">${k.label} ${pill(c.checks[k.id])}</div>`).join("")}</div>
+    ${c.flags.map(f => `<p class="note">⚑ ${esc(f)}</p>`).join("")}</div>`;
+}
+$("coSearch").oninput = () => {
+  const q = $("coSearch").value.trim().toLowerCase();
+  if (q.length < 2) return $("sugg").hidden = true;
+  const hits = C.filter(c => c.name.toLowerCase().includes(q) || (c.ticker || "").toLowerCase() === q || String(c.cik) === q).slice(0, 8);
+  $("sugg").innerHTML = hits.map(c => `<div data-cik="${c.cik}">${esc(c.name)} <span class="note">${esc(c.ticker || "")} · ${money(c.val.revenue)} revenue</span></div>`).join("") || '<div class="note">No match</div>';
+  $("sugg").hidden = false;
+};
+$("sugg").onclick = e => { const el = e.target.closest("[data-cik]"); if (el) pick(C.find(c => c.cik === +el.dataset.cik)); };
+document.addEventListener("click", e => { if (!e.target.closest("#lineage .row")) $("sugg").hidden = true; });
+
+function dsRows() {
+  const q = $("dsSearch").value.trim().toLowerCase(), f = $("dsCheck").value;
+  return C.filter(c => (!q || c.name.toLowerCase().includes(q) || (c.ticker || "").toLowerCase() === q) &&
+    (!f || (f === "clean" ? allPass(c) : c.checks[f.slice(5)] === false)));
+}
+function dataset() {
+  const rows = dsRows(), cols = ["revenue", "netIncome", "assets", "liabilities", "equity"], ms = ["grossMargin", "netMargin", "currentRatio"];
+  $("dsCount").textContent = `${rows.length.toLocaleString()} companies${rows.length > 100 ? ", showing the 100 largest by revenue" : ""}`;
+  $("dsTbl").innerHTML = `<tr><th>Company</th>${cols.map(k => `<th class="num">${label[k]}</th>`).join("")}${ms.map(m => `<th class="num">${M.metrics.find(x => x.id === m).label}</th>`).join("")}<th>Checks</th></tr>` +
+    rows.slice(0, 100).map(c => { const fails = M.checks.filter(k => c.checks[k.id] === false);
+      return `<tr><td><span class="link" data-cik="${c.cik}">${esc(c.name)}</span> <span class="note">${esc(c.ticker || "")}</span></td>
+      ${cols.map(k => `<td class="num" title="${esc(srcLabel(c.src[k]))}">${money(c.val[k])}${(c.src[k] || "").startsWith("derived") ? "*" : ""}</td>`).join("")}
+      ${ms.map(m => `<td class="num">${fmt(M.metrics.find(x => x.id === m), c.metrics[m])}</td>`).join("")}
+      <td>${fails.length ? fails.map(k => `<span class="pill p-bad" title="${esc(k.rule)}">${k.label}</span>`).join(" ") : '<span class="pill p-ok">all pass</span>'}</td></tr>`; }).join("") +
+    `<tr><td colspan="9" class="note">* derived value. Hover a number to see its source. Click a company to trace it.</td></tr>`;
+}
+$("dsSearch").oninput = dataset; $("dsCheck").onchange = dataset;
+$("dsTbl").onclick = e => { const el = e.target.closest("[data-cik]"); if (el) { pick(C.find(c => c.cik === +el.dataset.cik)); $("lineage").scrollIntoView({ behavior: "smooth" }); } };
+$("dsCsv").onclick = () => {
+  const keys = M.concepts.map(k => k.id), q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const head = ["cik", "ticker", "name", "fiscal_year_end", ...keys, ...keys.map(k => k + "_source"), ...M.metrics.map(m => m.id), ...M.checks.map(k => "check_" + k.id)];
+  const body = dsRows().map(c => [c.cik, c.ticker, c.name, c.fyEnd, ...keys.map(k => c.val[k]), ...keys.map(k => c.src[k]), ...M.metrics.map(m => c.metrics[m.id]),
+    ...M.checks.map(k => c.checks[k.id] == null ? "" : c.checks[k.id] ? "pass" : "fail")].map(q).join(","));
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([head.join(",") + "\n" + body.join("\n") + "\n"], { type: "text/csv" })), download: "fy2024-clean-filtered.csv" });
+  a.click(); URL.revokeObjectURL(a.href);
+};
+</script>
+</body>
+</html>
