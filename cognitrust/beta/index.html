@@ -30,11 +30,11 @@
 <main>
   <div class="kicker">CogniTrust · Beta</div>
   <h1>Help us test CogniTrust.</h1>
-  <p id="intro">Leave your email and when you're usually free. We'll reach out with next steps.</p>
+  <p id="intro">Leave your email and we'll send you the beta.</p>
 
   <div class="done" id="thanks" role="status" aria-live="polite">
     <div class="big">&#10003; You're signed up!</div>
-    <p>Thank you for helping test CogniTrust. We'll email <b id="who">you</b> soon with next steps.</p>
+    <p>Thank you for helping test CogniTrust. Around November 15, we'll email <b id="who">you</b> a link to download the app on your computer.</p>
   </div>
 
   <form id="f" action="https://formsubmit.co/decarloanya758@gmail.com" method="POST">
@@ -43,12 +43,10 @@
     <input type="hidden" name="_captcha" value="false">
     <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
     <input type="hidden" name="_next" id="next">
+    <input type="hidden" name="_autoresponse" value="Thank you for signing up to test CogniTrust, an app that detects early signs of dementia from speech. Around November 15, we'll email you a link to download the app on your computer. This is a beta test, not a research study: we don't keep your recordings or scores. We just want to know how the app works for you.">
 
     <label for="email">Email address</label>
     <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
-
-    <label for="availability">Availability <span class="hint">(days, times, time zone, anything we should know)</span></label>
-    <textarea id="availability" name="availability" placeholder="e.g. Weekday evenings after 6pm, or Saturday mornings"></textarea>
 
     <button type="submit" id="btn">Sign me up</button>
     <div class="err" id="err" role="alert"></div>
