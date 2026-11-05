@@ -37,16 +37,11 @@
     <p>Thank you for helping test CogniTrust. Around November 15, we'll email <b id="who">you</b> a link to download the app on your computer.</p>
   </div>
 
-  <form id="f" action="https://formsubmit.co/decarloanya758@gmail.com" method="POST">
-    <input type="hidden" name="_subject" value="New CogniTrust beta sign-up">
-    <input type="hidden" name="_template" value="table">
-    <input type="hidden" name="_captcha" value="false">
-    <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
-    <input type="hidden" name="_next" id="next">
-    <input type="hidden" name="_autoresponse" value="Thank you for signing up to test CogniTrust, an app that detects early signs of dementia from speech. Around November 15, we'll email you a link to download the app on your computer. This is a beta test, not a research study: we don't keep your recordings or scores. We just want to know how the app works for you.">
+  <form id="f" action="https://docs.google.com/forms/d/e/1FAIpQLSe_w2W7rrmXXSMkP0Sma9QlDBbw-7gMXWpBwhNt_QMuxq7zwQ/formResponse" method="POST">
+    <input type="text" id="honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
 
     <label for="email">Email address</label>
-    <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+    <input id="email" name="entry.744834734" type="email" required autocomplete="email" placeholder="you@example.com">
 
     <button type="submit" id="btn">Sign me up</button>
     <div class="err" id="err" role="alert"></div>
@@ -57,7 +52,6 @@
 </main>
 <script>
   const f = document.getElementById("f"), btn = document.getElementById("btn"), err = document.getElementById("err");
-  document.getElementById("next").value = location.href.split(/[?#]/)[0] + "?thanks=1";
 
   function showThanks(email) {
     if (email) document.getElementById("who").textContent = email;
@@ -70,20 +64,15 @@
 
   f.addEventListener("submit", async e => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(f));
-    if (data._honey) return;
+    if (document.getElementById("honey").value) return;
+    const email = document.getElementById("email").value.trim();
     btn.disabled = true; btn.textContent = "Signing you up\u2026"; err.style.display = "none";
     try {
-      const r = await fetch(f.action.replace("formsubmit.co/", "formsubmit.co/ajax/"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(data)
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok || String(d.success) !== "true") throw new Error(d.message || "");
-      showThanks(data.email);
+      // Google Forms doesn't allow reading the reply, so a completed request counts as success.
+      await fetch(f.action, { method: "POST", mode: "no-cors", body: new URLSearchParams(new FormData(f)) });
+      showThanks(email);
     } catch (x) {
-      err.textContent = "Sorry, that didn't go through. Please try again in a minute." + (x.message ? " (" + x.message + ")" : "");
+      err.textContent = "Sorry, that didn't go through. Please check your connection and try again.";
       err.style.display = "block";
       btn.disabled = false; btn.textContent = "Sign me up";
     }
