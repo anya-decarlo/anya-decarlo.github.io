@@ -18,7 +18,11 @@
   input:focus, textarea:focus { outline: 3px solid #000; outline-offset: 2px; }
   button { margin-top: 22px; width: 100%; font: inherit; font-weight: 800; padding: 14px; border: 0; border-radius: 6px; background: #000; color: #fff; cursor: pointer; }
   .small { font-size: 14px; margin-top: 18px; }
-  .done { display: none; border: 3px solid #000; padding: 16px; border-radius: 6px; }
+  button:disabled { opacity: .6; cursor: wait; }
+  .done { display: none; border: 4px solid #000; padding: 22px 20px; border-radius: 6px; }
+  .done .big { font-family: Georgia, "Times New Roman", serif; font-size: 30px; font-weight: 700; line-height: 1.15; margin-bottom: 10px; }
+  .done p { margin: 0; }
+  .err { display: none; border: 3px solid #000; padding: 12px 14px; border-radius: 6px; margin-top: 18px; font-weight: 700; }
   footer { margin-top: 32px; padding-top: 10px; border-top: 6px solid #000; font-family: Georgia, serif; font-style: italic; }
 </style>
 </head>
@@ -28,7 +32,10 @@
   <h1>Help us test CogniTrust.</h1>
   <p id="intro">Leave your email and when you're usually free. We'll reach out with next steps.</p>
 
-  <div class="done" id="thanks"><b>Thank you!</b> You're on the list. We'll email you soon.</div>
+  <div class="done" id="thanks" role="status" aria-live="polite">
+    <div class="big">&#10003; You're signed up!</div>
+    <p>Thank you for helping test CogniTrust. We'll email <b id="who">you</b> soon with next steps.</p>
+  </div>
 
   <form id="f" action="https://formsubmit.co/decarloanya758@gmail.com" method="POST">
     <input type="hidden" name="_subject" value="New CogniTrust beta sign-up">
@@ -43,19 +50,46 @@
     <label for="availability">Availability <span class="hint">(days, times, time zone, anything we should know)</span></label>
     <textarea id="availability" name="availability" placeholder="e.g. Weekday evenings after 6pm, or Saturday mornings"></textarea>
 
-    <button type="submit">Sign me up</button>
+    <button type="submit" id="btn">Sign me up</button>
+    <div class="err" id="err" role="alert"></div>
     <p class="small">We only use your email to contact you about the beta.</p>
   </form>
 
   <footer>Accurate dementia research is the mission. That means everyone.</footer>
 </main>
 <script>
+  const f = document.getElementById("f"), btn = document.getElementById("btn"), err = document.getElementById("err");
   document.getElementById("next").value = location.href.split(/[?#]/)[0] + "?thanks=1";
-  if (/thanks=1/.test(location.search)) {
-    document.getElementById("f").style.display = "none";
+
+  function showThanks(email) {
+    if (email) document.getElementById("who").textContent = email;
+    f.style.display = "none";
     document.getElementById("intro").style.display = "none";
     document.getElementById("thanks").style.display = "block";
+    window.scrollTo(0, 0);
   }
+  if (/thanks=1/.test(location.search)) showThanks();
+
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(f));
+    if (data._honey) return;
+    btn.disabled = true; btn.textContent = "Signing you up\u2026"; err.style.display = "none";
+    try {
+      const r = await fetch(f.action.replace("formsubmit.co/", "formsubmit.co/ajax/"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(data)
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || String(d.success) !== "true") throw new Error(d.message || "");
+      showThanks(data.email);
+    } catch (x) {
+      err.textContent = "Sorry, that didn't go through. Please try again in a minute." + (x.message ? " (" + x.message + ")" : "");
+      err.style.display = "block";
+      btn.disabled = false; btn.textContent = "Sign me up";
+    }
+  });
 </script>
 </body>
 </html>
