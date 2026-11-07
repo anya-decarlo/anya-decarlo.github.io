@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Private LLM</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 18px; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  main { max-width:1100px; margin:0 auto; padding:20px 32px 48px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 4px; font-size:15px; }
+  .card p { margin:0 0 8px; }
+  .card ul { margin:6px 0 4px; padding-left:20px; }
+  .flow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin:4px 0 10px; }
+  .flow .step { border:1px solid var(--line); border-radius:6px; padding:4px 10px; background:#fff; color:var(--ink); }
+  .flow .arr { color:var(--accent); }
+  .soon { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#8a5a00; background:#fdf3d7; border:1px solid #f0d68a; border-radius:999px; padding:2px 10px; vertical-align:middle; }
+  .links { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .links a { font-size:12.5px; border:1px solid var(--blue); color:var(--blue); border-radius:6px; padding:4px 12px; text-decoration:none; }
+  .links a:hover { background:var(--blue); color:#fff; }
+  footer { max-width:1100px; margin:0 auto; padding:0 32px 32px; color:var(--muted); font-size:12.5px; }
+  footer a { color:var(--blue); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Private LLM</h1>
+  <p>Intelligence that runs on your hardware — your data, your model, your machine.</p>
+  <div class="meta">
+    <span><b>Status</b> Section opened — pieces in flight</span>
+    <span><b>Home base</b> CogniTrust</span>
+  </div>
+</header>
+<main>
+
+  <div class="card">
+    <h2>The idea</h2>
+    <p>Most "AI" products are a pipe: your data leaves your device, crosses a network,
+       and gets processed on someone else's servers under someone else's terms.
+       This section collects work that refuses the pipe. Models run locally —
+       Apple Intelligence's on-device model, MLX, llama.cpp, whatever fits —
+       against data that never leaves the machine that produced it.</p>
+    <p>The interesting engineering isn't just "can a small model run" — it's
+       <i>what becomes possible when the model is allowed to see everything</i>:
+       continuous health streams, voice, calendar, files, all of it, because none
+       of it needs to be shipped anywhere first.</p>
+  </div>
+
+  <div class="card">
+    <h2>What's in the pipeline</h2>
+    <div class="flow">
+      <span class="step">Apple Health stream</span><span class="arr">→</span>
+      <span class="step">Local model</span><span class="arr">→</span>
+      <span class="step">Insights on-device</span>
+    </div>
+    <ul>
+      <li><b>HealthKit-connected inference</b> <span class="soon">planned</span> —
+          heart rate, sleep, steps, respiratory rate and more already flow into
+          CogniTrust through HealthKit. The private-LLM layer turns that stream
+          into interpretation instead of just storage.</li>
+      <li><b>Voice watcher intelligence</b> <span class="soon">planned</span> —
+          voicelog's always-on transcription tape gets a local model that can
+          actually understand what was said, not just pattern-match keywords.</li>
+      <li><b>Cognitive assessment interpretation</b> <span class="soon">planned</span> —
+          assessment results summarized and contextualized entirely on-device.</li>
+    </ul>
+    <p style="color:var(--muted);font-size:12.5px;">Entries land here as pieces ship.
+       Anything that touches a cloud API does not belong in this section.</p>
+  </div>
+
+</main>
+<footer>
+  Part of the <a href="/">portfolio</a> · Built inside <a href="https://github.com/anya-decarlo">CogniTrust</a>
+</footer>
+</body>
+</html>

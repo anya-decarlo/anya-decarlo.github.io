@@ -16,6 +16,7 @@
         <a href="#sec">SEC</a>
         <a href="#work">Work</a>
         <a href="#analysis-tools">Analysis Tools</a>
+        <a href="#private-llm">Private LLM</a>
         <a href="#creative">Creative</a>
         <a href="#education">Education</a>
         <a href="#presentations">Presentations</a>
@@ -36,6 +37,9 @@
     <div class="filters" id="tools-filters"></div>
     <p class="count" id="tools-count"></p>
     <div class="grid" id="tools-grid"></div>
+
+    <h2 id="private-llm">Private LLM</h2>
+    <div class="grid" id="private-llm-grid"></div>
 
     <h2 id="creative">Creative</h2>
     <div class="grid" id="creative-grid"></div>
@@ -59,6 +63,7 @@
     renderSimple("sec-grid", sec);
     renderFiltered("work", work);
     renderFiltered("tools", analysisTools);
+    renderSimple("private-llm-grid", privateLlm);
     renderSimple("creative-grid", creative);
     renderSimple("education-grid", education);
     renderPresentations();

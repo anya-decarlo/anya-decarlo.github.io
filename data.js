@@ -94,6 +94,15 @@ const analysisTools = [
   //   languages: ["Python"], topics: ["Dementia Research"] },
 ];
 
+// PRIVATE LLM — on-device intelligence. Models that run on your hardware,
+// not someone else's cloud. Growing collection; entries land here as pieces ship.
+const privateLlm = [
+  { title: "Private LLM",
+    description: "On-device intelligence. Models that run on your hardware instead of someone else's cloud — Apple Health, voice, and assessment data feeding local models rather than APIs. This section collects the pieces as they ship: the CogniTrust private inference layer, HealthKit-connected insights, and whatever else gets built to stay yours.",
+    file: "private-llm/index.html",
+    languages: ["Swift", "Python", "MLX"], topics: ["on-device LLM", "Apple HealthKit", "privacy"] },
+];
+
 // PROJECTS — multi-page projects. Files go in /projects/<id>/. Each card opens project.html?p=<id>.
 const projects = [
   { id: "computer-vision", title: "Computer Vision: Pixel Extraction & Reconstruction",
