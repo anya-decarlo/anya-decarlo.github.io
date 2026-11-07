@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LENIA — life from three lines of math</title>
+<style>
+  * { box-sizing:border-box; margin:0; }
+  html, body { height:100%; overflow:hidden; background:#04060b; }
+  body { font:13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:#c9d3e3; }
+  canvas#world { position:fixed; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
+  #ui { position:fixed; inset:0; pointer-events:none; transition:opacity 1.2s; z-index:2; }
+  #ui.hidden { opacity:0; }
+  #title { position:absolute; top:26px; left:30px; }
+  #title h1 { font-size:20px; font-weight:300; letter-spacing:.55em; color:#e8eefb; }
+  #title p { font-size:11.5px; color:#5a6b8c; margin-top:3px; letter-spacing:.04em; }
+  #title .verse { margin-top:10px; font-size:12px; color:#7d90b5; font-style:italic; max-width:300px; }
+  #panel { position:absolute; top:26px; right:28px; text-align:right; }
+  .species { display:flex; gap:6px; justify-content:flex-end; }
+  .species button, .actions button {
+    pointer-events:auto; font:inherit; font-size:12px; letter-spacing:.03em;
+    background:rgba(10,16,30,.55); color:#9fb2d6; border:1px solid #1e2c4d;
+    border-radius:999px; padding:5px 14px; cursor:pointer; backdrop-filter:blur(6px);
+    transition:all .25s;
+  }
+  .species button:hover, .actions button:hover { color:#fff; border-color:#4a6db3; }
+  .species button.on { background:#22407c; color:#fff; border-color:#22407c; }
+  .actions { margin-top:8px; display:flex; gap:6px; justify-content:flex-end; }
+  #stats { margin-top:10px; font-size:11px; color:#44557a; font-variant-numeric:tabular-nums; }
+  #stats b { color:#8fa5cf; font-weight:500; }
+  #hint { position:absolute; bottom:26px; left:50%; transform:translateX(-50%);
+          font-size:12px; color:#5a6b8c; letter-spacing:.06em; text-align:center; }
+  #err { position:fixed; inset:0; display:none; place-items:center; background:#04060b; color:#8fa5cf; text-align:center; padding:40px; z-index:3; }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<div id="ui">
+  <div id="title">
+    <h1>LENIA</h1>
+    <p>life from three lines of math</p>
+    <div class="verse">nothing on this screen is drawn.<br>it is only permitted.</div>
+  </div>
+  <div id="panel">
+    <div class="species" id="speciesBtns"></div>
+    <div class="actions">
+      <button id="stirBtn">stir the water</button>
+      <button id="soundBtn">sound</button>
+      <button id="resetBtn">reseed</button>
+    </div>
+    <div id="stats">step <b>0</b> · live cells <b>—</b> · <b>0</b> fps</div>
+  </div>
+  <div id="hint">drag to stir · click to seed life · the creatures are real — they're running the same equations your hand just disturbed</div>
+</div>
+<div id="err"><div><h2 style="font-weight:300;letter-spacing:.3em;margin-bottom:12px">LENIA</h2><p>This piece needs WebGL2 with float render targets.<br>Try a recent Chrome, Edge, Safari or Firefox.</p></div></div>
+
+<script>
+"use strict";
+/* LENIA — continuous cellular automaton (Bert Chan, 2019).
+   update rule per cell:  n = K * A  (ring-kernel convolution, torus)
+                          g = 2·exp(-(n-μ)²/2σ²) - 1
+                          A ← clamp(A + dt·g)
+   Parameters below were validated against a CPU reference sim before
+   being trusted to the shader — each regime is a different species. */
+
+const SIM = 512, R = 13;
+const SPECIES = [
+  { name: "Reef",       mu: 0.15, sig: 0.03, ktype: 0, dt: 0.10,
+    lo: [.02,.10,.22], hi: [.15,.85,.95], glow: [.45,1.0,1.0] },
+  { name: "Leviathan",  mu: 0.20, sig: 0.05, ktype: 1, dt: 0.10,
+    lo: [.16,.06,.02], hi: [.95,.55,.15], glow: [1.0,.75,.3] },
+  { name: "Overgrowth", mu: 0.12, sig: 0.05, ktype: 0, dt: 0.10,
+    lo: [.06,.05,.14], hi: [.55,.9,.45],  glow: [.75,1.0,.55] },
+];
+
+const canvas = document.getElementById("world");
+const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
+if (!gl || !gl.getExtension("EXT_color_buffer_float")) {
+  document.getElementById("err").style.display = "grid";
+  throw new Error("no float render targets");
+}
+
+const VS = `#version 300 es
+void main(){ vec2 p = vec2((gl_VertexID<<1&2)*2.-1.,(gl_VertexID&2)*2.-1.);
+gl_Position = vec4(p,0,1); }`;
+
+const CONV_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uState, uKernel;
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float acc = 0.;
+  for (int y=-${R}; y<=${R}; y++)
+    for (int x=-${R}; x<=${R}; x++) {
+      float w = texelFetch(uKernel, ivec2(x+${R},y+${R}), 0).r;
+      acc += w * texture(uState, uv + vec2(x,y)*uTexel).r;
+    }
+  o = vec4(acc,0,0,1);
+}`;
+
+const GROW_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uState, uPot;
+uniform float uMu, uSig, uDt;
+uniform vec4 uBrush;   // xy=uv center, z=radius, w=strength
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float s = texture(uState, uv).r;
+  float n = texture(uPot, uv).r;
+  float g = 2.*exp(-(n-uMu)*(n-uMu)/(2.*uSig*uSig)) - 1.;
+  s = clamp(s + uDt*g, 0., 1.);
+  if (uBrush.z > 0.) {
+    vec2 d = uv - uBrush.xy;
+    d -= floor(d + .5);                    // toroidal distance
+    s += uBrush.w * exp(-dot(d,d)/(uBrush.z*uBrush.z));
+    s = clamp(s, 0., 1.);
+  }
+  o = vec4(s,0,0,1);
+}`;
+
+const SEED_FS = `#version 300 es
+precision highp float;
+uniform float uSeed;
+uniform vec2 uTexel;
+out vec4 o;
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)+uSeed))*43758.5453); }
+float vnoise(vec2 p){
+  vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),
+             mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y);
+}
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float n = vnoise(uv*9.)*0.65 + vnoise(uv*22.)*0.35;
+  o = vec4(smoothstep(0.58, 0.78, n),0,0,1);
+}`;
+
+const TRAIL_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uState, uTrail;
+uniform vec3 uLo, uHi, uGlow;
+uniform vec2 uTexel;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  float s = texture(uState, uv).r;
+  vec3 body = mix(uLo, uHi, smoothstep(0.12, 0.85, s));
+  vec3 cur = body + uGlow * pow(max(s-0.55,0.)/0.45, 2.5) * .9;
+  cur *= smoothstep(0.03, 0.22, s);
+  vec3 prev = texture(uTrail, uv).rgb * 0.965;
+  o = vec4(max(prev, cur), 1.);
+}`;
+
+const SHOW_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uImg;
+uniform vec2 uTexel;
+uniform vec2 uCenter;
+uniform float uAspect;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy * uTexel;
+  vec3 c = texture(uImg, uv).rgb;
+  vec2 p = (uv - .5); p.x *= uAspect;
+  float vig = smoothstep(1.15, .35, length(p)*1.15);
+  o = vec4(c * (0.35 + 0.65*vig), 1.);
+}`;
+
+function shader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+function prog(fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, shader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error(gl.getProgramInfoLog(p));
+  const u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) u[gl.getActiveUniform(p, i).name] =
+    gl.getUniformLocation(p, gl.getActiveUniform(p, i).name);
+  return { p, u };
+}
+function target(w, h) {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA,
+                gl.HALF_FLOAT, null);
+  const f = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                          gl.TEXTURE_2D, t, 0);
+  return { t, f, w, h };
+}
+
+const pConv = prog(CONV_FS), pGrow = prog(GROW_FS),
+      pSeed = prog(SEED_FS), pTrail = prog(TRAIL_FS), pShow = prog(SHOW_FS);
+const quad = gl.createVertexArray();
+
+const stateA = target(SIM, SIM), stateB = target(SIM, SIM),
+      pot    = target(SIM, SIM),
+      trailA = target(SIM, SIM), trailB = target(SIM, SIM);
+let [cur, nxt] = [stateA, stateB], [tr, tr2] = [trailA, trailB];
+
+const kernelTex = gl.createTexture();
+function uploadKernel(ktype) {
+  const size = 2 * R + 1, data = new Float32Array(size * size);
+  let sum = 0;
+  for (let y = -R; y <= R; y++)
+    for (let x = -R; x <= R; x++) {
+      const r = Math.hypot(x, y) / R; let w = 0;
+      if (r < 1 && r > 0) {
+        if (ktype === 0)
+          w = Math.exp(1 - 1 / (4 * r * (1 - r)));          // Chan ring
+        else
+          w = Math.exp(-(((r - .25) / .12) ** 2))
+            + 0.7 * Math.exp(-(((r - .7) / .12) ** 2));     // two shells
+      }
+      data[(y + R) * size + x + R] = w; sum += w;
+    }
+  for (let i = 0; i < data.length; i++) data[i] /= sum;
+  gl.bindTexture(gl.TEXTURE_2D, kernelTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, size, size, 0, gl.RED,
+                gl.FLOAT, data);
+}
+
+function pass(pr, dst, bind) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, dst ? dst.f : null);
+  gl.viewport(0, 0, dst ? dst.w : canvas.width, dst ? dst.h : canvas.height);
+  gl.useProgram(pr.p);
+  gl.bindVertexArray(quad);
+  if (bind) bind();
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+function tex(unit, t) {
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, t);
+}
+
+let species = SPECIES[0], steps = 0, seed = Math.random() * 100;
+function reseed() {
+  seed = Math.random() * 100;
+  pass(pSeed, cur, () => {
+    gl.uniform2f(pSeed.u.uTexel, 1 / SIM, 1 / SIM);
+    gl.uniform1f(pSeed.u.uSeed, seed);
+  });
+  for (const t of [trailA, trailB]) {   // trails start black
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.f);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+  steps = 0;
+}
+function setSpecies(s) {
+  species = s; uploadKernel(s.ktype); reseed();
+  document.querySelectorAll("#speciesBtns button").forEach(b =>
+    b.classList.toggle("on", SPECIES[b.dataset.i] === s));
+}
+
+/* ---------- controls ---------- */
+const sb = document.getElementById("speciesBtns");
+SPECIES.forEach((s, i) => {
+  const b = document.createElement("button");
+  b.textContent = s.name; b.dataset.i = i;
+  b.onclick = () => setSpecies(s);
+  sb.appendChild(b);
+});
+document.getElementById("resetBtn").onclick = reseed;
+document.getElementById("stirBtn").onclick = () => {
+  for (let i = 0; i < 7; i++) stirAt(Math.random(), Math.random());
+};
+
+const ptr = { x: 0, y: 0, down: false };
+const stirQueue = [];
+function stirAt(u, v) { stirQueue.push([u, v]); }
+canvas.addEventListener("pointermove", e => {
+  ptr.x = e.clientX / innerWidth; ptr.y = 1 - e.clientY / innerHeight;
+  wake();
+});
+canvas.addEventListener("pointerdown", e => {
+  ptr.down = true; stirAt(e.clientX / innerWidth, 1 - e.clientY / innerHeight);
+  wake();
+});
+addEventListener("pointerup", () => ptr.down = false);
+
+/* ---------- ambient drone (optional) ---------- */
+let actx = null, drone = null;
+document.getElementById("soundBtn").onclick = e => {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const g = actx.createGain(), flt = actx.createBiquadFilter(),
+          lfo = actx.createOscillator(), lg = actx.createGain();
+    flt.type = "lowpass"; flt.frequency.value = 220; flt.Q.value = 4;
+    g.gain.value = 0;
+    [55, 55 * 1.5, 110 * 1.02].forEach(f => {
+      const o = actx.createOscillator();
+      o.type = "sine"; o.frequency.value = f; o.connect(flt); o.start();
+    });
+    lfo.frequency.value = 0.07; lg.gain.value = 90;
+    lfo.connect(lg); lg.connect(flt.frequency); lfo.start();
+    flt.connect(g); g.connect(actx.destination);
+    drone = { g, flt };
+  }
+  const on = g => drone.g.gain.linearRampToValueAtTime(g, actx.currentTime + 1.2);
+  drone.on = !drone.on; on(drone.on ? 0.05 : 0);
+  e.target.classList.toggle("on", drone.on);
+};
+
+/* ---------- idle fade ---------- */
+const ui = document.getElementById("ui");
+let idle = setTimeout(() => ui.classList.add("hidden"), 7000);
+function wake() {
+  ui.classList.remove("hidden");
+  clearTimeout(idle);
+  idle = setTimeout(() => ui.classList.add("hidden"), 7000);
+}
+
+/* ---------- stats ---------- */
+const statsEl = document.querySelectorAll("#stats b");
+let frames = 0, fps = 0, lastT = performance.now(),
+    liveCells = "—", liveN = 0;
+const readBuf = new Float32Array(64 * 64 * 4);
+const tiny = target(64, 64);
+function countLive() {
+  // downsample state -> 64x64 then read back (cheap, every ~2s)
+  pass(pShow, tiny, () => {
+    tex(0, cur.t); gl.uniform1i(pShow.u.uImg, 0);
+    gl.uniform2f(pShow.u.uTexel, 1 / 64, 1 / 64);
+    gl.uniform1f(pShow.u.uAspect, 1);
+  });
+  gl.bindFramebuffer(gl.FRAMEBUFFER, tiny.f);
+  gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.FLOAT, readBuf);
+  let n = 0;
+  for (let i = 0; i < readBuf.length; i += 4) if (readBuf[i] > 0.12) n++;
+  liveN = n * 64;
+  liveCells = liveN.toLocaleString();
+}
+
+/* ---------- resize ---------- */
+function resize() {
+  const d = Math.min(devicePixelRatio, 2);
+  canvas.width = innerWidth * d; canvas.height = innerHeight * d;
+}
+addEventListener("resize", resize); resize();
+
+/* ---------- main loop ---------- */
+uploadKernel(0); reseed();
+setSpecies(SPECIES[0]);
+
+function frame() {
+  requestAnimationFrame(frame);
+  const bursts = ptr.down ? 2 : stirQueue.length ? 1 : 0;
+  for (let s = 0; s < 2 + bursts; s++) {         // sim steps per frame
+    pass(pConv, pot, () => {
+      tex(0, cur.t); tex(1, kernelTex);
+      gl.uniform1i(pConv.u.uState, 0); gl.uniform1i(pConv.u.uKernel, 1);
+      gl.uniform2f(pConv.u.uTexel, 1 / SIM, 1 / SIM);
+    });
+    pass(pGrow, nxt, () => {
+      tex(0, cur.t); tex(1, pot.t);
+      gl.uniform1i(pGrow.u.uState, 0); gl.uniform1i(pGrow.u.uPot, 1);
+      gl.uniform1f(pGrow.u.uMu, species.mu);
+      gl.uniform1f(pGrow.u.uSig, species.sig);
+      gl.uniform1f(pGrow.u.uDt, species.dt);
+      let bx = 0, by = 0, br = -1, bs = 0;
+      if (ptr.down) { bx = ptr.x; by = ptr.y; br = .045; bs = .35; }
+      else if (stirQueue.length) {
+        const [u, v] = stirQueue.shift();
+        bx = u; by = v; br = .05; bs = .8;
+      }
+      gl.uniform4f(pGrow.u.uBrush, bx, by, br, bs);
+      gl.uniform2f(pGrow.u.uTexel, 1 / SIM, 1 / SIM);
+    });
+    [cur, nxt] = [nxt, cur]; steps++;
+  }
+
+  pass(pTrail, tr2, () => {
+    tex(0, cur.t); tex(1, tr.t);
+    gl.uniform1i(pTrail.u.uState, 0); gl.uniform1i(pTrail.u.uTrail, 1);
+    gl.uniform3fv(pTrail.u.uLo, species.lo);
+    gl.uniform3fv(pTrail.u.uHi, species.hi);
+    gl.uniform3fv(pTrail.u.uGlow, species.glow);
+    gl.uniform2f(pTrail.u.uTexel, 1 / SIM, 1 / SIM);
+  });
+  [tr, tr2] = [tr2, tr];
+
+  pass(pShow, null, () => {
+    tex(0, tr.t);
+    gl.uniform1i(pShow.u.uImg, 0);
+    gl.uniform2f(pShow.u.uTexel, 1 / canvas.width, 1 / canvas.height);
+    gl.uniform1f(pShow.u.uAspect, canvas.width / canvas.height);
+  });
+
+  frames++;
+  const now = performance.now();
+  if (now - lastT > 1000) {
+    fps = Math.round(frames * 1000 / (now - lastT));
+    frames = 0; lastT = now;
+    statsEl[0].textContent = steps.toLocaleString();
+    statsEl[1].textContent = liveCells;
+    statsEl[2].textContent = fps;
+    if (drone && drone.on)
+      drone.flt.frequency.value = 160 + liveN * 0.4;
+  }
+  if (steps % 90 === 1) { try { countLive(); } catch (e) {} }
+}
+frame();
+</script>
+</body>
+</html>

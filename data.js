@@ -145,6 +145,9 @@ const projects = [
 
 // CREATIVE — fun HTMLs, no tags. Files go in /creative.
 const creative = [
+  { title: "Lenia — Life From Three Lines of Math",
+    description: "A living primordial soup you can reach into. Lenia is a continuous cellular automaton: give every pixel a ring kernel and a Gaussian growth rule and recognizable organisms emerge on their own — pulsing, gliding, colliding — with nothing drawn by hand. Three verified species regimes (Reef's drifting cells, Leviathan's sweeping ribbons, Overgrowth's continents) each tuned against a CPU reference simulation before the shader was written. Real-time WebGL2: a 729-tap convolution and growth update per pixel per step, comet-trail rendering, live cell census read back from the GPU, and an optional ambient drone that follows the living mass. Drag to stir the water.",
+    file: "creative/lenia/index.html" },
   { title: "Hall of Mirrors",
     description: "A website redesign concept for William Lasry, built with my own pixel reconstructor. I pulled the LASRY display wordmark off his site, extracted every pixel, rebuilt it as an SVG with my Quadrant Hex Reconstructor, and set it inside a hall of glassy blue mirror panels that shimmer at random, tilt in 3D as you move your mouse, and glow under the cursor.",
     file: "creative/hall-of-mirrors/index.html" },
