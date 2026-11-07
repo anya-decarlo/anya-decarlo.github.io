@@ -2,6 +2,11 @@
 
 // SEC — pieces built to match the SEC role. Files go in /sec. Same fields as Work; tags optional.
 const sec = [
+  { title: "Data Engineering Series: Quality → SQL → Stats → Reproducibility",
+    description: "Four repos over the same real EDGAR companyfacts data, each demonstrating a different competency. sec-data-quality runs DQ checks, cross-filing reconciliation and fitness verdicts — every number carries its filing accession (it catches Apple's 2009 restatement and the 7:1 split's EPS mismatches on its own). sec-financial-analytics does the cleaning, joining, aggregating and validating in SQL, with six data tests gating the build. sec-stats-dashboard is a live interactive page: descriptive stats, OLS vs log-linear trend fits with residual diagnostics, outlier case files that open every filing behind a flagged point, and a chart-selection decision table. reproducible-analysis makes the process itself the deliverable: documented transformations in manifest.toml, sha256 input provenance, a recompute-and-compare reproducibility proof, baselined known violations, and PR/CODEOWNERS review scaffolding — its own demo PR caught a real tag-variant double-count bug while adding TSLA. Same metric mappings throughout, so the repos cross-check each other's findings.",
+    languages: ["Python", "SQL", "JavaScript"],
+    topics: ["SEC EDGAR", "XBRL", "Data Quality", "Reproducibility"],
+    file: "sec/repo-series/index.html" },
   { title: "Recurring Reports: Weekly Late Filers",
     description: "A weekly report on companies that told the SEC they'd miss a 10-K or 10-Q deadline (NT 10-K and NT 10-Q notices), built on two years of real EDGAR data that a scheduled GitHub Action refreshes every Monday. It matches each notice to the company's next 10-K or 10-Q to show whether it filed within the Rule 12b-25 extension. It has week-over-week and year-over-year measures, filters for form, industry, location and listing, alerts for repeat filers, missed extensions and volume spikes, and Public, Analyst and Compliance admin views. Every measure is documented on the page.",
     languages: ["Python", "JavaScript"],

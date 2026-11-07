@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEC Data Engineering Series</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 18px; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  main { max-width:1100px; margin:0 auto; padding:20px 32px 48px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 4px; font-size:15px; }
+  .card h2 a { color:var(--blue); text-decoration:none; }
+  .card h2 a:hover { text-decoration:underline; }
+  .card .sub { margin:0 0 10px; color:var(--muted); font-size:12.5px; }
+  .card p { margin:0 0 8px; }
+  .card ul { margin:6px 0 4px; padding-left:20px; }
+  .num { display:inline-block; min-width:22px; height:22px; line-height:22px; text-align:center; background:var(--blue); color:#fff; border-radius:6px; font-size:12px; font-weight:600; margin-right:8px; }
+  .links { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .links a { font-size:12.5px; border:1px solid var(--blue); color:var(--blue); border-radius:6px; padding:4px 12px; text-decoration:none; }
+  .links a:hover { background:var(--blue); color:#fff; }
+  .flow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin:4px 0 2px; }
+  .flow .step { border:1px solid var(--line); border-radius:6px; padding:4px 10px; background:#fff; color:var(--ink); }
+  .flow .arr { color:var(--accent); }
+  code { font-size:12.5px; background:#f1f2f4; padding:1px 5px; border-radius:4px; }
+  .finding { border-left:3px solid var(--accent); background:#fdf6f7; padding:8px 12px; border-radius:0 6px 6px 0; font-size:13px; margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SEC Data Engineering Series</h1>
+  <p>Four repos, one dataset: every tagged XBRL fact from SEC EDGAR's companyfacts API, examined from a different angle.</p>
+  <div class="meta">
+    <span><b>Data</b> SEC EDGAR companyfacts (AAPL, MSFT, TSLA)</span>
+    <span><b>Stack</b> Python · SQLite · JavaScript — stdlib-first, no heavy deps</span>
+    <span><b>Theme</b> same number, four questions: is it right? what does it say? is it unusual? can you reproduce it?</span>
+  </div>
+</header>
+<main>
+
+<div class="card">
+  <h2>How the series fits together</h2>
+  <div class="flow">
+    <span class="step">EDGAR companyfacts</span><span class="arr">→</span>
+    <span class="step">1 · quality &amp; lineage</span><span class="arr">→</span>
+    <span class="step">2 · SQL analytics</span><span class="arr">→</span>
+    <span class="step">3 · statistics &amp; viz</span><span class="arr">→</span>
+    <span class="step">4 · reproducible process</span>
+  </div>
+  <p style="margin-top:10px">Each repo stands alone — different tools, different deliverables — but they share the same raw data and the same canonical metric mapping, so findings cross-check. The quality repo's reconciliation engine and the SQL repo's tie-out check independently flag the same Microsoft FY2016 gap; the dashboard's outlier case files explain it.</p>
+</div>
+
+<div class="card">
+  <h2><span class="num">1</span><a href="https://github.com/anya-decarlo/sec-data-quality">sec-data-quality</a></h2>
+  <p class="sub">Where did this number come from, and is it fit for use?</p>
+  <p>Data-quality checks, reconciliation reports, issue logs, and lineage over EDGAR companyfacts. Every emitted number carries its filing accession, form, and filed date; every number gets a FIT / REVIEW / NOT-FIT verdict.</p>
+  <ul>
+    <li>Six DQ rules (missing lineage, duplicates, period sanity, impossible signs, unit mixing, magnitude jumps) + three reconciliation rules</li>
+    <li>Cross-filing reconciliation: the same period compared across every filing that reports it — MATCH / RESTATED / MISMATCH</li>
+    <li>Quarters-vs-annual tie-out and implied-Q4 derivation (the fourth quarter is almost never tagged — analysts derive it)</li>
+    <li>Deliverables: <code>issue_log.csv</code>, <code>lineage.csv</code>, <code>reconciliation.csv</code>, <code>fitness_summary.csv</code>, <code>summary.md</code></li>
+  </ul>
+  <div class="finding">Real catch: Apple's 2009 retrospective restatement and the 7:1 split surfacing as cross-filing EPS mismatches — automatically classified, not hand-found.</div>
+  <div class="links"><a href="https://github.com/anya-decarlo/sec-data-quality">repo</a></div>
+</div>
+
+<div class="card">
+  <h2><span class="num">2</span><a href="https://github.com/anya-decarlo/sec-financial-analytics">sec-financial-analytics</a></h2>
+  <p class="sub">Query, clean, join, aggregate, validate — in SQL.</p>
+  <p>The same EDGAR data loaded into SQLite: staging → cleaned fact table → analysis views → validation views that return violations. Python only orchestrates; the logic lives in numbered SQL files.</p>
+  <ul>
+    <li>Cleaning in SQL: in-filing dedupe, latest-filed supersession, tag→metric dimension map (three revenue tags collapse to one concept)</li>
+    <li>Aggregates: annual financials, YoY growth via <code>LAG</code>, quarterly flows, operating/net margins, implied Q4, latest-year snapshot</li>
+    <li>Six data tests as violation-returning views; the runner exits non-zero so it's a CI gate</li>
+    <li>Every view exports to spreadsheet-ready CSV</li>
+  </ul>
+  <div class="finding">Independently flags MSFT FY2016 — quarters under-report annual net income by $3.7B — the same gap repo 1 catches.</div>
+  <div class="links"><a href="https://github.com/anya-decarlo/sec-financial-analytics">repo</a></div>
+</div>
+
+<div class="card">
+  <h2><span class="num">3</span><a href="https://github.com/anya-decarlo/sec-stats-dashboard">sec-stats-dashboard</a></h2>
+  <p class="sub">Descriptive statistics, trend analysis, outlier investigation, modeling, chart selection.</p>
+  <p>An interactive page — live on GitHub Pages — where a Python build layer computes the statistics and the JS layer only renders. Every panel states why its chart was chosen and what it rejected.</p>
+  <ul>
+    <li>Descriptives across three windows (annual, quarterly, YoY) with CV/skew interpretation</li>
+    <li>OLS vs log-linear fits side by side, R², CAGR, residual diagnostics — the model is validated by where it's wrong</li>
+    <li>IQR-fence and z&gt;2 outlier flags with click-through <b>case files</b>: every filing that reported the number, plus a restated badge</li>
+    <li>Revenue→income regression, hand-drawn SVG box plots, and a chart-selection decision table</li>
+  </ul>
+  <div class="links"><a href="https://anya-decarlo.github.io/sec-stats-dashboard/">live page</a><a href="https://github.com/anya-decarlo/sec-stats-dashboard">repo</a></div>
+</div>
+
+<div class="card">
+  <h2><span class="num">4</span><a href="https://github.com/anya-decarlo/reproducible-analysis">reproducible-analysis</a></h2>
+  <p class="sub">The habits that make analysis reproducible — the practices are the deliverable.</p>
+  <p>A deliberately small pipeline where the infrastructure is the point: documented transformations, hashed provenance, gated checks, and review scaffolding.</p>
+  <ul>
+    <li><code>manifest.toml</code> documents every transformation; the PR template requires updating it in the same commit</li>
+    <li><code>make verify</code> recomputes all outputs from recorded inputs and compares sha256 — byte-identical or it fails</li>
+    <li>Investigated violations are baselined with written reasons; <em>new</em> violations still fail the build</li>
+    <li>Committed outputs → data changes are reviewable as diffs; CI runs tests + pipeline + verify on every PR; PR template, CODEOWNERS, review protocol</li>
+  </ul>
+  <div class="finding">The workflow proved itself on PR #1: adding TSLA surfaced a tag-variant double-count bug in the tie-out check — caught, investigated, fixed, documented.</div>
+  <div class="links"><a href="https://github.com/anya-decarlo/reproducible-analysis">repo</a><a href="https://github.com/anya-decarlo/reproducible-analysis/pull/1">demo PR</a></div>
+</div>
+
+</main>
+</body>
+</html>
