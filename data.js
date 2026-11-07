@@ -2,6 +2,11 @@
 
 // SEC — pieces built to match the SEC role. Files go in /sec. Same fields as Work; tags optional.
 const sec = [
+  { title: "Findings Brief: Same Data, Three Audiences",
+    description: "One findings report that rewrites itself for three readers — plain language, analyst, and technical — from real EDGAR pipeline results. Microsoft's FY2016 quarters-vs-annual gap explained to the Nokia impairment era, Apple's 2009 restatement detected automatically, Apple's EPS 'crash' debunked as the 7:1 split, the Tesla check that turned out to be our bug, and two different growth regimes (Microsoft compounds ~10%/yr, Apple adds linearly). Assumptions are stated with what they'd break if wrong; limitations include what the data can't see; follow-ups are ranked by audience. Every finding carries its filing accession numbers.",
+    languages: ["JavaScript", "Data Storytelling"],
+    topics: ["SEC EDGAR", "Communication", "Findings"],
+    file: "sec/audience-brief/index.html" },
   { title: "Data Engineering Series: Quality → SQL → Stats → Reproducibility",
     description: "Four repos over the same real EDGAR companyfacts data, each demonstrating a different competency. sec-data-quality runs DQ checks, cross-filing reconciliation and fitness verdicts — every number carries its filing accession (it catches Apple's 2009 restatement and the 7:1 split's EPS mismatches on its own). sec-financial-analytics does the cleaning, joining, aggregating and validating in SQL, with six data tests gating the build. sec-stats-dashboard is a live interactive page: descriptive stats, OLS vs log-linear trend fits with residual diagnostics, outlier case files that open every filing behind a flagged point, and a chart-selection decision table. reproducible-analysis makes the process itself the deliverable: documented transformations in manifest.toml, sha256 input provenance, a recompute-and-compare reproducibility proof, baselined known violations, and PR/CODEOWNERS review scaffolding — its own demo PR caught a real tag-variant double-count bug while adding TSLA. Same metric mappings throughout, so the repos cross-check each other's findings.",
     languages: ["Python", "SQL", "JavaScript"],

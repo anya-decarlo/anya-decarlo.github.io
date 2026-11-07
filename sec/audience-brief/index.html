@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Findings Brief — Same Data, Three Audiences</title>
+<style>
+  :root { --navy:#0b2545; --blue:#13315c; --accent:#c8102e; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --ok:#1f7a4d; --warn:#b54708; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--navy); color:#fff; padding:22px 32px 18px; }
+  header h1 { margin:0; font-size:22px; font-weight:600; }
+  header p { margin:4px 0 0; color:#c9d3e3; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:12px; font-size:12.5px; color:#c9d3e3; }
+  .meta b { color:#fff; font-weight:600; }
+  .audbar { position:sticky; top:0; background:#fff; border-bottom:1px solid var(--line); padding:10px 32px; display:flex; align-items:center; gap:10px; z-index:10; }
+  .audbar .lbl { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .roles { display:flex; border:1px solid #cfd4dc; border-radius:6px; overflow:hidden; }
+  .roles button { font:inherit; border:0; background:#fff; padding:6px 14px; cursor:pointer; color:var(--ink); }
+  .roles button + button { border-left:1px solid #cfd4dc; }
+  .roles button.on { background:var(--blue); color:#fff; }
+  .audbar .note { color:var(--muted); font-size:12.5px; }
+  main { max-width:1100px; margin:0 auto; padding:20px 32px 48px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 4px; font-size:15px; }
+  .card .sub { margin:0 0 10px; color:var(--muted); font-size:12.5px; }
+  .findings .card { border-left:4px solid var(--blue); }
+  .findings .card.sev-warn { border-left-color:var(--warn); }
+  .findings .card.sev-ok { border-left-color:var(--ok); }
+  .evid { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .evid span { font-size:11.5px; background:#f1f2f4; border-radius:4px; padding:2px 8px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  table.two { width:100%; border-collapse:collapse; }
+  table.two th, table.two td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--line); font-size:13px; }
+  table.two th { width:36%; color:var(--blue); font-weight:600; }
+  .fu { display:flex; gap:14px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .fu:last-child { border-bottom:0; }
+  .fu .n { min-width:26px; height:26px; line-height:26px; text-align:center; background:var(--blue); color:#fff; border-radius:6px; font-weight:600; font-size:13px; }
+  .fu .who { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  code { font-size:12.5px; background:#f1f2f4; padding:1px 5px; border-radius:4px; }
+  .tldr { background:#eef3fb; border:1px solid #d5e0f2; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Findings Brief: Three Companies' XBRL Facts, Read Three Ways</h1>
+  <p>Findings, assumptions, limitations, and recommended follow-up from the EDGAR data pipeline — written for a general reader, an analyst, and an auditor. Same facts, three registers. Pick yours above the fold and the whole page rewrites.</p>
+  <div class="meta">
+    <span><b>Scope</b> AAPL · MSFT · TSLA — EDGAR companyfacts, focus metrics</span>
+    <span><b>Data</b> ~4,000 tagged facts, lineage to accession numbers</span>
+    <span><b>Source repos</b> sec-data-quality · sec-financial-analytics · sec-stats-dashboard · reproducible-analysis</span>
+  </div>
+</header>
+
+<div class="audbar">
+  <span class="lbl">Reader</span>
+  <div class="roles" id="roles">
+    <button data-a="lay" class="on">Plain language</button>
+    <button data-a="analyst">Analyst</button>
+    <button data-a="tech">Technical</button>
+  </div>
+  <span class="note" id="audnote"></span>
+</div>
+
+<main>
+
+<div class="card tldr">
+  <h2>Summary</h2>
+  <p class="sub" id="tldr-sub"></p>
+  <p id="tldr"></p>
+</div>
+
+<h2 style="margin:18px 0 10px; font-size:15px;">Findings</h2>
+<div class="findings" id="findings"></div>
+
+<div class="card">
+  <h2>Assumptions the analysis stands on</h2>
+  <p class="sub">Each is stated, testable, and — where it could be wrong — mapped to the finding it would break.</p>
+  <table class="two" id="assumptions"></table>
+</div>
+
+<div class="card">
+  <h2>Limitations</h2>
+  <p class="sub">What this does <b>not</b> tell you — said plainly, because understating it would be worse than the gap itself.</p>
+  <table class="two" id="limitations"></table>
+</div>
+
+<div class="card">
+  <h2>Recommended follow-up</h2>
+  <p class="sub">Ranked by value per effort. "Who" = the audience the step mainly serves.</p>
+  <div id="followups"></div>
+</div>
+
+<div class="card">
+  <h2>Provenance</h2>
+  <p class="sub">Every number above traces to a filing.</p>
+  <p>Figures come from SEC EDGAR's companyfacts API; each value carries the filing accession, form, and filed date shown under its finding. The checks described are implemented in the sibling repos and run as build gates — the findings here are outputs, not anecdotes. Methodology and transformation rules are documented in each repo's README and manifest.</p>
+</div>
+
+</main>
+<script>
+const FINDINGS = [
+  {
+    title: "Microsoft's FY2016 quarterly reports don't sum to its annual report",
+    sev: "warn",
+    evid: ["net income gap: 18.2%", "operating income gap: 22.6%", "revenue gap: 6.4%", "annual accn 0001564590-18-019062"],
+    lay: "Add up Microsoft's four quarterly reports for fiscal 2016 and you get $16.8 billion in profit. The annual report says $20.5 billion — $3.7 billion more. This isn't a bug we introduced: it lines up with the year Microsoft wrote down its Nokia phone business, when annual figures were adjusted in ways the earlier quarterly reports weren't. We flagged it, investigated it, and recorded it as a known, explained difference — rather than silently dropping it or letting it fail every future run.",
+    analyst: "The quarters-vs-annual tie-out fails three FY2016 metrics: net income (annual $20.539B vs ΣQ $16.798B, 18.2%), operating income (22.6%), revenue (6.4%). The pattern is consistent with Nokia-impairment-era reporting: quarterly facts reflect the pre-adjustment figures, while the latest-filed annual comparatives include the catch-up. All three are baselined in known_violations.json with reasons, so the gate stays green for new violations.",
+    tech: "Check: for each annual fact (duration 350–400d) with four quarter-length facts (75–105d) inside its window, assert |annual − ΣQ| ≤ 0.5%. FY2016 violates it on three metrics across tag variants. Latest-filed supersession means the annual value comes from the FY2018 10-K comparative (accn 0001564590-18-019062, filed 2018-08-03), while the quarterlies come from the original 10-Qs — the check is comparing pre- and post-adjustment presentations. Verify by pulling the FY2016 10-Qs vs the FY2018 10-K comparative column."
+  },
+  {
+    title: "Apple rewrote 2009's numbers — and the record shows it",
+    sev: "warn",
+    evid: ["Assets FY2009: $53.9B → $47.5B", "classified: RESTATED", "3–4 filings report each period"],
+    lay: "In 2009 Apple changed how it accounted for iPhone sales and went back to restate earlier years. We didn't take anyone's word for that: the pipeline noticed that Apple's total assets for fiscal 2009 appear as $53.9 billion in one filing and $47.5 billion in a later one, and classified the difference as a restatement — with the newer number marked authoritative and the older one flagged as superseded.",
+    analyst: "Cross-filing reconciliation compares the same tagged period across filings. FY2009 Assets shows $53,851,000,000 (10-K filed 2009-10-27) vs $47,501,000,000 (10-K filed 2011-10-26): classified RESTATED because every later filing agrees with the newer value — a retrospective change, matching Apple's adoption of subscription-style iPhone revenue recognition. The superseded facts are marked NOT-FIT in the lineage output.",
+    tech: "Rule REC001: group facts by (entity, tag, unit, start, end); if values differ across distinct accession numbers and all later filings agree on the newest value → RESTATED; older fact ids → NOT-FIT + 'superseded' note in lineage.csv. FY2008 Assets ($39.6B vs $36.2B) classifies MISMATCH instead — later filings didn't converge, which is worth a manual look."
+  },
+  {
+    title: "Apple's EPS 'crash' is a stock split, not a story",
+    sev: "ok",
+    evid: ["FY2012 EPS: 44.15 vs 6.31", "44.15 ÷ 7 ≈ 6.31", "7:1 split, June 2014"],
+    lay: "One filing says Apple's 2012 earnings per share was $44.15; a later filing says $6.31 for the same year. That's not an 86% collapse — Apple split its stock 7-to-1 in 2014 and restated old per-share figures to the new share count. Any automated check that doesn't know about splits would flag a fake catastrophe. Ours records it as a mismatch for a human, which is the honest answer.",
+    analyst: "REC002 flags FY2012 EarningsPerShareDiluted: $44.15 (10-K 2012) vs $6.31 (8-K filed 2015-01-28). The 7:1 ratio confirms split adjustment, not restatement — but mechanically, cross-filing disagreement and split adjustment are indistinguishable without corporate-action data. This is exactly the class of finding that should route to a review queue rather than auto-resolve.",
+    tech: "Known false-positive class: per-share tags are retroactively adjusted for splits, so same-period EPS differs legitimately across filings. Options: (a) exclude USD/shares facts from REC002, (b) join a corporate-action source and scale pre-split values, or (c) keep flagging and let the case file show both values — chosen, because a silently 'fixed' split would hide real revisions too."
+  },
+  {
+    title: "Tesla's 'missing quarter' was our bug, not Tesla's",
+    sev: "ok",
+    evid: ["FY2022 revenue: $81.462B", "Q3 tagged under 2 tag variants", "caught by adding TSLA to the pipeline"],
+    lay: "When we added Tesla to the pipeline, a quality check suddenly claimed its 2022 quarterly revenues didn't match the annual figure. Digging in, the problem wasn't Tesla's books: the same third quarter appeared twice in the data under two different labels, so the check counted five quarters instead of four. The check was fixed to count each period once. A good example of why automated flags need investigation before conclusions.",
+    analyst: "Adding TSLA produced two NEW quarters_vs_annual violations at 3.5%. Root cause: Tesla reports Q3 FY2022 under both Revenues and RevenueFromContractWithCustomerExcludingAssessedTax; both survive tag-level dedupe, so the check saw Q1+Q2+Q3+Q3(dup) = 4 'quarters' and missed that true Q4 is never tagged. Fix: dedupe to one fact per (start, end) at the canonical metric level. Documented in the demo PR — the workflow caught it before a reviewer had to.",
+    tech: "Repro in reproducible-analysis PR #1. per_period() now keys facts by (entity, metric, unit, start, end) inside the check; transform deliberately keeps both tag variants for lineage. Same latent bug patched in the SQL repo's v_check_quarters_tie (added DISTINCT on period). Lesson encoded as a test: tag-variant duplicates must not double-count."
+  },
+  {
+    title: "Two different ways to grow",
+    sev: "ok",
+    evid: ["MSFT rev: log R²=0.961 vs linear 0.847 — ~10%/yr", "AAPL rev: linear R²=0.975 vs log 0.856 — CAGR 16.9%", "marginal margins: AAPL 27% · MSFT 42%"],
+    lay: "Apple and Microsoft grew very differently over ~20 years. Microsoft compounds — each year is roughly a 10% multiplier on the last, so a curve fits best. Apple adds — its revenue rises by strikingly steady dollar amounts, so a straight line fits best. And when each makes a dollar of revenue, Microsoft keeps about 42 cents as profit to Apple's 27 cents.",
+    analyst: "Two fits per metric, honestly compared: MSFT revenue favors log-linear (R² .961 vs .847; implied 10.0%/yr compounding; CAGR 9.9%), AAPL revenue favors linear (R² .975 vs .856; +$24B/yr; CAGR 16.9% over 19 years). Revenue→net-income regression gives marginal margins: AAPL 0.268, MSFT 0.425 (R² .98 / .97). Interpretation caveat: marginal ≠ incremental — both reflect scale effects and buyback-adjacent margin expansion, not causal pricing power.",
+    tech: "OLS on fiscal-year series (n=19–20); log fit on log10(val), slope→(10^slope−1)×100%/yr. Scatter regression slope is in val units (NI per revenue), reported as marginal margin. Residuals published per year — AAPL's linear model underpredicts the iPhone-supercycle years, visible as the largest positive residuals; that's where the story lives."
+  }
+];
+
+const SUMMARY = {
+  lay: "Three companies' real SEC filings were checked against each other and against themselves. Most of what looks alarming isn't: a $3.7B gap is a decade-old write-down, an 86% EPS 'crash' is a stock split. The genuinely interesting parts are the ones the data admits freely — a real restatement, a check that was wrong about Tesla, and two very different growth stories.",
+  analyst: "1,300+ cleaned facts across AAPL/MSFT/TSLA focus metrics. Reconciliation classifies 47 restatements and 23 unresolved mismatches; the FY2016 MSFT tie-out failures are baselined as investigated. Outlier z>2 catches MSFT FY2019 NI +137% (tax-reform year). Fits: MSFT revenue compounds ~10%/yr, AAPL grows ~linearly; marginal margins 42% vs 27%.",
+  tech: "Pipeline: EDGAR companyfacts → T1–T5 transforms → 6+3 DQ/recon rules → fitness verdicts, all lineage-anchored to accession numbers. Determinism enforced via sha256 recompute gate; known violations baselined with written reasons. Residual method debt: per-share splits produce irreducible REC002 positives absent corporate-action data."
+};
+
+const ASSUMPTIONS = [
+  ["Latest filing is authoritative", "When two filings report different values for the same period, the later-filed wins. If a company issued a retroactively wrong amendment, we'd inherit it.", "Findings 1–2"],
+  ["Tag→metric map is correct", "Revenue = SalesRevenueNet + Revenues + RevenueFromContractWithCustomer{Ex,In}cludingAssessedTax. Filers using other revenue tags are invisible to that metric.", "Finding 5, all totals"],
+  ["Durations define period type", "350–400 days = annual, 75–105 = quarter. A filer reporting an odd interim period (e.g., transition year) could be silently re-bucketed or excluded.", "Tie-out checks"],
+  ["±0.5% is a tie-out tolerance, not materiality", "It absorbs presentation rounding. It is not a statement about what difference matters — 0.5% of $80B is $400M.", "Findings 1, 4"],
+  ["companyfacts is complete for these tags", "The API flattens dimensional facts; if a filer only tagged a value with dimensions, it's absent and we can't see the absence.", "All checks"]
+];
+
+const LIMITATIONS = [
+  ["Three companies, eight metrics", "This is a depth demo, not a population study. Nothing here generalizes to 'all filers'.", "Coverage"],
+  ["No segment or dimension data", "companyfacts drops dimensioned facts — geographic/product-line reconciliation needs raw filing XBRL.", "Scope"],
+  ["Splits produce irreducible false positives", "Without corporate-action data, per-share cross-filing mismatches can't be auto-resolved — they're routed to humans instead.", "Finding 3"],
+  ["Can't read intent", "The checks detect that numbers disagree; they cannot distinguish a restatement from a reclassification from a scope change without reading the filing itself.", "Findings 1–2"],
+  ["No materiality framework", "A 3.5% gap on $81B is flagged identically to a 3.5% gap on $8M. Ranking needs either a dollar floor or peer-relative scoring.", "Follow-up #2"]
+];
+
+const FOLLOWUPS = [
+  ["Verify flagged numbers against filing text", "Pull the FY2016 MSFT 10-Qs vs FY2018 10-K comparative and confirm the Nokia-adjustment explanation end-to-end — the evidence points there but the filing is the proof.", "Auditor"],
+  ["Add a materiality floor", "Report gaps only when >0.5% AND >$100M (or percentile-ranked vs sector), so the issue log reads like an exception queue, not noise.", "Analyst"],
+  ["Corporate-action adjustment for per-share tags", "Join split data to rescale pre-split EPS/price facts; would clear most REC002 positives while preserving real mismatches.", "Engineering"],
+  ["Widen coverage to the filer population", "Same checks over all ~6,900 filers' facts — the variance repo already proves the scale; this adds the tie-out and restatement machinery to it.", "Engineering"],
+  ["Scheduled refresh + alerting", "Run on a cron like the late-filers report: new filings → new reconciliation deltas → alert only on NEW violations, never baselined ones.", "Compliance"]
+];
+
+const NOTES = {
+  lay: "Reading for: anyone — no accounting or code assumed.",
+  analyst: "Reading for: analysts — methods and numbers, judgment included.",
+  tech: "Reading for: engineers/auditors — check logic, accessions, failure modes."
+};
+
+function render() {
+  const a = window._aud;
+  document.querySelectorAll("#roles button").forEach(b =>
+    b.classList.toggle("on", b.dataset.a === a));
+  document.getElementById("audnote").textContent = NOTES[a];
+  document.getElementById("tldr").textContent = SUMMARY[a];
+  document.getElementById("tldr-sub").textContent =
+    a === "lay" ? "The one-paragraph version" :
+    a === "analyst" ? "What was found, at working depth" : "The engineering view";
+
+  document.getElementById("findings").innerHTML = FINDINGS.map((f, i) => `
+    <div class="card sev-${f.sev}">
+      <h2>${i + 1}. ${f.title}</h2>
+      <p class="sub">${a === "lay" ? "What it means" : a === "analyst" ? "Analysis" : "Mechanics"}</p>
+      <p>${f[a]}</p>
+      <div class="evid">${f.evid.map(e => `<span>${e}</span>`).join("")}</div>
+    </div>`).join("");
+
+  const tbl = (rows, h1, h2) =>
+    rows.map(r => `<tr><th>${r[0]}</th><td>${r[1]} <span style="color:var(--muted); font-size:12px">— affects: ${r[2]}</span></td></tr>`).join("");
+  document.getElementById("assumptions").innerHTML = tbl(ASSUMPTIONS);
+  document.getElementById("limitations").innerHTML = tbl(LIMITATIONS);
+  document.getElementById("followups").innerHTML = FOLLOWUPS.map((f, i) => `
+    <div class="fu"><div class="n">${i + 1}</div>
+      <div><b>${f[0]}.</b> ${f[1]} <div class="who">serves: ${f[2]}</div></div>
+    </div>`).join("");
+}
+
+window._aud = "lay";
+document.getElementById("roles").addEventListener("click", e => {
+  if (e.target.dataset.a) { window._aud = e.target.dataset.a; render(); }
+});
+render();
+</script>
+</body>
+</html>
